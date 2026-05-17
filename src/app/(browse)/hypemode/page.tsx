@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getHypemodeVideos } from "@/features/videos/api/videoQueries";
 import { clientEnv } from "@/config/env";
+import { OG } from "@/lib/seo";
 import { HypemodeContent } from "@/app/hypemode/HypemodeContent";
 
 const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
@@ -18,14 +19,14 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     url: `${SITE}/hypemode`,
-    images: [{ url: `${SITE}/seo/Explore.webp`, width: 1200, height: 630, alt: "WeCinema HypeMode" }],
+    images: [{ url: OG.explore, width: 1200, height: 630, alt: "WeCinema HypeMode" }],
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
-    images: [`${SITE}/seo/Explore.webp`],
+    images: [OG.explore],
   },
 };
 

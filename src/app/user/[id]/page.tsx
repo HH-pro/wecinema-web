@@ -3,6 +3,7 @@ import Layout from "@/components/layout/Layout";
 import { apiFetch } from "@/lib/fetch/serverFetch";
 import type { FullUser } from "@/types";
 import { clientEnv } from "@/config/env";
+import { OG } from "@/lib/seo";
 import { UserProfileClient } from "@/features/profile/components/UserProfileClient";
 
 const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
@@ -29,7 +30,7 @@ export async function generateMetadata({
   const description = user.bio
     ? user.bio.slice(0, 155)
     : `View ${user.username}'s profile on WeCinema.`;
-  const image = user.avatar ?? `${SITE}/wecinema.webp`;
+  const image = user.avatar ?? OG.default;
 
   return {
     title,

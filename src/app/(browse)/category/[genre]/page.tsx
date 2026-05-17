@@ -5,6 +5,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { getVideosByCategory } from "@/features/videos/api/videoQueries";
 import { CATEGORIES } from "@/lib/constants";
 import { clientEnv } from "@/config/env";
+import { OG } from "@/lib/seo";
 
 export const revalidate = 300;
 
@@ -29,13 +30,13 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
       title: `${label} Films | WeCinema`,
       description: `Stream independent ${label.toLowerCase()} films on WeCinema.`,
       url: `${SITE}/category/${genre}`,
-      images: [{ url: `${SITE}/seo/WeCinema.webp`, width: 1200, height: 630, alt: `${label} films on WeCinema` }],
+      images: [{ url: OG.default, width: 1200, height: 630, alt: `${label} films on WeCinema` }],
     },
     twitter: {
       card: "summary_large_image",
       title: `${label} Films | WeCinema`,
       description: `Stream independent ${label.toLowerCase()} films on WeCinema.`,
-      images: [`${SITE}/seo/WeCinema.webp`],
+      images: [OG.default],
     },
   };
 }

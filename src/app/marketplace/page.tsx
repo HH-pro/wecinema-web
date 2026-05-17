@@ -7,6 +7,7 @@ import {
 } from "react-icons/fa";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { clientEnv } from "@/config/env";
+import { OG } from "@/lib/seo";
 
 const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
 const TITLE = "Film & Script Marketplace — Buy and Sell on WeCinema";
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     url: `${SITE}/marketplace`,
-    images: [{ url: `${SITE}/seo/WeCinema.webp`, width: 1200, height: 630, alt: "WeCinema Marketplace" }],
+    images: [{ url: OG.default, width: 1200, height: 630, alt: "WeCinema Marketplace" }],
     locale: "en_US",
   },
   twitter: {
@@ -31,7 +32,7 @@ export const metadata: Metadata = {
     site: "@wecinema",
     title: TITLE,
     description: DESCRIPTION,
-    images: [`${SITE}/seo/WeCinema.webp`],
+    images: [OG.default],
   },
 };
 

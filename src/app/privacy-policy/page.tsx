@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Layout from "@/components/layout/Layout";
+import { OG } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | WeCinema",
@@ -10,13 +11,13 @@ export const metadata: Metadata = {
     siteName: "WeCinema",
     title: "Privacy Policy | WeCinema",
     description: "How WeCinema collects, uses, stores, and protects your personal information.",
-    images: [{ url: "/seo/Privacy.webp", width: 1200, height: 630, alt: "WeCinema Privacy Policy" }],
+    images: [{ url: OG.privacy, width: 1200, height: 630, alt: "WeCinema Privacy Policy" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Privacy Policy | WeCinema",
     description: "How WeCinema collects, uses, stores, and protects your personal information.",
-    images: ["/seo/Privacy.webp"],
+    images: [OG.privacy],
   },
 };
 

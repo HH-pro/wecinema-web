@@ -6,7 +6,7 @@ import { VideoGallery } from "@/features/videos/components/VideoGallery";
 import { ScriptsSection } from "@/features/scripts/components/ScriptsSection";
 import { AnalyticsSectionClient } from "@/features/analytics/components/AnalyticsSectionClient";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { clientEnv } from "@/config/env";
+import { OG, SITE_ORIGIN } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Watch, Create & Sell Films and Scripts Online",
@@ -18,8 +18,8 @@ export const metadata: Metadata = {
     siteName: "WeCinema",
     title: "WeCinema — Watch, Create & Sell Films and Scripts Online",
     description: "WeCinema is the home of independent film. Watch movies, upload your own, browse scripts, and sell your work to a global audience.",
-    url: (clientEnv.NEXT_PUBLIC_SITE_URL ?? "https://wecinema.co"),
-    images: [{ url: "/seo/WeCinema.webp", width: 1200, height: 630, alt: "WeCinema — Independent Film Platform" }],
+    url: SITE_ORIGIN,
+    images: [{ url: OG.default, width: 1200, height: 630, alt: "WeCinema — Independent Film Platform" }],
     locale: "en_US",
   },
   twitter: {
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     site: "@wecinema",
     title: "WeCinema — Watch, Create & Sell Films and Scripts Online",
     description: "WeCinema is the home of independent film. Watch movies, upload your own, browse scripts, and sell your work to a global audience.",
-    images: ["/seo/WeCinema.webp"],
+    images: [OG.default],
   },
 };
 
@@ -92,7 +92,7 @@ function ScriptsSkeleton() {
 }
 
 export default function HomePage() {
-  const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+  const SITE = SITE_ORIGIN;
 
   return (
     <Layout>

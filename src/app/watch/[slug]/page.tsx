@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Layout from "@/components/layout/Layout";
 import { getVideoBySlug } from "@/features/videos/api/videoQueries";
 import { clientEnv } from "@/config/env";
+import { OG } from "@/lib/seo";
 import { WatchClient } from "@/features/watch/components/WatchClient";
 
 export const revalidate = 0;
@@ -23,7 +24,7 @@ export async function generateMetadata({
 
   const title = `${video.title} | WeCinema`;
   const description = video.description ?? "Watch this video on WeCinema.";
-  const image = video.thumbnail ?? `${SITE}/wecinema.webp`;
+  const image = video.thumbnail ?? OG.video;
 
   return {
     title,

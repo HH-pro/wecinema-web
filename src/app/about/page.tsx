@@ -12,6 +12,7 @@ import {
 import Layout from "@/components/layout/Layout";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { clientEnv } from "@/config/env";
+import { OG } from "@/lib/seo";
 
 interface WebsiteFeature { icon: React.ReactNode; title: string; description: string; details: string[] }
 interface Feature { icon: React.ReactNode; title: string; description: string; category: string }
@@ -76,7 +77,7 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     url: `${SITE}/about`,
-    images: [{ url: `${SITE}/seo/WeCinema-About.webp`, width: 1200, height: 630, alt: "Wecinema – Movies & Scripts Platform" }],
+    images: [{ url: OG.about, width: 1200, height: 630, alt: "Wecinema – Movies & Scripts Platform" }],
     locale: "en_US",
   },
   twitter: {
@@ -84,7 +85,7 @@ export const metadata: Metadata = {
     site: "@wecinema",
     title: TITLE,
     description: DESCRIPTION,
-    images: [`${SITE}/seo/WeCinema-About.webp`],
+    images: [OG.about],
   },
 };
 

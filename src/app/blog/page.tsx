@@ -4,6 +4,7 @@ import Image from "next/image";
 import Layout from "@/components/layout/Layout";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { clientEnv } from "@/config/env";
+import { OG } from "@/lib/seo";
 import { getBlogPosts, getBlogCategories, resolveAuthorName, resolveAuthorAvatar } from "@/features/blog/api/blogQueries";
 import type { BlogPost } from "@/features/blog/api/blogQueries";
 
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
     description:
       "Explore the Wecinema blog for filmmaking insights, platform tutorials, creator stories, and the latest updates from the WeCinema team.",
     url: `${SITE}/blog`,
-    images: [{ url: `${SITE}/seo/Wecinema-Blog.webp`, width: 1200, height: 630, alt: "Wecinema Blog" }],
+    images: [{ url: OG.blog, width: 1200, height: 630, alt: "Wecinema Blog" }],
     locale: "en_US",
   },
   twitter: {
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
     site: "@wecinema",
     title: "Wecinema Blog",
     description: "Filmmaking insights, platform tutorials, and creator stories.",
-    images: [`${SITE}/seo/Wecinema-Blog.webp`],
+    images: [OG.blog],
   },
 };
 

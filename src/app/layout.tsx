@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Poppins, Roboto } from "next/font/google";
 import { Providers } from "@/components/layout/Providers";
 import { clientEnv } from "@/config/env";
+import { OG, SITE_ORIGIN } from "@/lib/seo";
 import "./globals.css";
 
 // Preload only the most-used weight eagerly; remaining weights load on swap.
@@ -63,13 +64,13 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: `${SITE_NAME} — Watch, Create & Sell Films`,
     description: DESCRIPTION,
-    images: [{ url: "/seo/WeCinema.webp", width: 1200, height: 630, alt: SITE_NAME }],
+    images: [{ url: OG.default, width: 1200, height: 630, alt: SITE_NAME }],
   },
   twitter: {
     card: "summary_large_image",
     title: `${SITE_NAME} — Watch, Create & Sell Films`,
     description: DESCRIPTION,
-    images: ["/seo/WeCinema.webp"],
+    images: [OG.default],
   },
   robots: {
     index: true,

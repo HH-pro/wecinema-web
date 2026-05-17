@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Layout from "@/components/layout/Layout";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { clientEnv } from "@/config/env";
+import { OG } from "@/lib/seo";
 import SupportContent from "./SupportContent";
 import { FAQS } from "./data";
 
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     url: `${SITE}/support`,
-    images: [{ url: `${SITE}/seo/WeCinemaSupport.webp`, width: 1200, height: 630, alt: "Wecinema – Movies & Scripts Platform" }],
+    images: [{ url: OG.support, width: 1200, height: 630, alt: "Wecinema – Movies & Scripts Platform" }],
     locale: "en_US",
   },
   twitter: {
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
     site: "@wecinema",
     title: TITLE,
     description: DESCRIPTION,
-    images: [`${SITE}/seo/WeCinemaSupport.webp`],
+    images: [OG.support],
   },
 };
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Layout from "@/components/layout/Layout";
+import { OG } from "@/lib/seo";
 import VideoEditorLoader from "./VideoEditorLoader";
 
 export const metadata: Metadata = {
@@ -11,13 +12,13 @@ export const metadata: Metadata = {
     siteName: "WeCinema",
     title: "Video Editor | WeCinema",
     description: "Edit videos in the browser — add text overlays, apply filters, adjust audio, and export.",
-    images: [{ url: "/seo/Video.webp", width: 1200, height: 630, alt: "WeCinema Video Editor" }],
+    images: [{ url: OG.video, width: 1200, height: 630, alt: "WeCinema Video Editor" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Video Editor | WeCinema",
     description: "Edit videos in the browser — add text overlays, apply filters, adjust audio, and export.",
-    images: ["/seo/Video.webp"],
+    images: [OG.video],
   },
 };
 

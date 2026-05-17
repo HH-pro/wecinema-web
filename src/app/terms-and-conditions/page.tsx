@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Layout from "@/components/layout/Layout";
 import { clientEnv } from "@/config/env";
+import { OG } from "@/lib/seo";
 
 const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
 const EFFECTIVE_DATE = "May 17, 2026";
@@ -16,13 +17,13 @@ export const metadata: Metadata = {
     title: "WeCinema Terms & Conditions",
     description: "Official platform agreement for WeCinema — video distribution and marketplace.",
     url: `${SITE}/terms-and-conditions`,
-    images: [{ url: `${SITE}/seo/WeCinema.webp`, width: 1200, height: 630, alt: "WeCinema Terms & Conditions" }],
+    images: [{ url: OG.default, width: 1200, height: 630, alt: "WeCinema Terms & Conditions" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "WeCinema Terms & Conditions",
     description: "Official platform agreement for WeCinema — video distribution and marketplace.",
-    images: [`${SITE}/seo/WeCinema.webp`],
+    images: [OG.default],
   },
 };
 

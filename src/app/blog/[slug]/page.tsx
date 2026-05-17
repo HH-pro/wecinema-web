@@ -6,6 +6,7 @@ import Layout from "@/components/layout/Layout";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { SafeHtml } from "@/components/ui/SafeHtml";
 import { clientEnv } from "@/config/env";
+import { OG } from "@/lib/seo";
 import { getBlogPost, resolveAuthorName, resolveAuthorAvatar } from "@/features/blog/api/blogQueries";
 
 const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
@@ -26,7 +27,7 @@ export async function generateMetadata({
 
   const title       = post.seoTitle ?? `${post.title} | Wecinema Blog`;
   const description = post.seoDescription ?? post.excerpt ?? "";
-  const image       = post.ogImage ?? post.featuredImage?.url ?? `${SITE}/seo/Wecinema-Blog.webp`;
+  const image       = post.ogImage ?? post.featuredImage?.url ?? OG.blog;
   const canonical   = `/blog/${post.slug}`;
 
   return {
