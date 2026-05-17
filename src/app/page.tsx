@@ -1,65 +1,135 @@
-import Image from "next/image";
+import { Suspense } from "react";
+import type { Metadata } from "next";
+import Layout from "@/components/layout/Layout";
+import { ThemePills } from "@/features/videos/components/ThemePills";
+import { VideoGallery } from "@/features/videos/components/VideoGallery";
+import { ScriptsSection } from "@/features/scripts/components/ScriptsSection";
+import { AnalyticsSectionClient } from "@/features/analytics/components/AnalyticsSectionClient";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { clientEnv } from "@/config/env";
 
-export default function Home() {
+export const metadata: Metadata = {
+  title: "Watch, Create & Sell Films and Scripts Online",
+  description:
+    "WeCinema is the home of independent film. Watch movies, upload your own, browse scripts, and sell your work to a global audience.",
+  alternates: { canonical: "/" },
+};
+
+export const revalidate = 300;
+
+const GALLERY_SECTIONS = [
+  { title: "Action",    category: "Action",    viewAllHref: "/category/action" },
+  { title: "Comedy",    category: "Comedy",    viewAllHref: "/category/comedy" },
+  { title: "Adventure", category: "Adventure", viewAllHref: "/category/adventure" },
+  { title: "Horror",    category: "Horror",    viewAllHref: "/category/horror" },
+  { title: "Drama",     category: "Drama",     viewAllHref: "/category/drama" },
+  { title: "Love",      category: "Love",      viewAllHref: "/category/love" },
+] as const;
+
+function GallerySkeleton() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div style={{ padding: "24px 24px 32px" }}>
+      <div
+        style={{
+          height: 24,
+          width: 120,
+          marginBottom: 16,
+          borderRadius: 6,
+          backgroundColor: "var(--color-skeleton-base)",
+        }}
+        className="animate-pulse"
+      />
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+          gap: 16,
+        }}
+      >
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            style={{
+              aspectRatio: "16/9",
+              borderRadius: 12,
+              backgroundColor: "var(--color-skeleton-base)",
+            }}
+            className="animate-pulse"
+          />
+        ))}
+      </div>
     </div>
+  );
+}
+
+function ScriptsSkeleton() {
+  return (
+    <div style={{ padding: "24px 24px 32px" }}>
+      <div style={{ height: 24, width: 140, marginBottom: 16, borderRadius: 6, backgroundColor: "var(--color-skeleton-base)" }} className="animate-pulse" />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} style={{ height: 96, borderRadius: 12, backgroundColor: "var(--color-skeleton-base)" }} className="animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function HomePage() {
+  const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+
+  return (
+    <Layout>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "WeCinema",
+          url: SITE,
+          potentialAction: {
+            "@type": "SearchAction",
+            target: { "@type": "EntryPoint", urlTemplate: `${SITE}/search/{search_term_string}` },
+            "query-input": "required name=search_term_string",
+          },
+        }}
+      />
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "WeCinema",
+          url: SITE,
+          logo: `${SITE}/wecinema.webp`,
+          sameAs: ["https://wecinema.co"],
+        }}
+      />
+
+      <h1 className="sr-only">
+        WeCinema — Watch, Create, and Sell Films and Scripts Online
+      </h1>
+
+      {/* Analytics graphs — client-only, collapsed by default so LCP is unaffected */}
+      <AnalyticsSectionClient title="Analytics" />
+
+      <ThemePills />
+
+      <main id="main-content" aria-labelledby="genres-heading">
+        <h2 id="genres-heading" className="sr-only">Browse Films by Genre</h2>
+
+        {GALLERY_SECTIONS.map((section) => (
+          <Suspense key={section.title} fallback={<GallerySkeleton />}>
+            <VideoGallery
+              title={section.title}
+              category={section.category}
+              viewAllHref={section.viewAllHref}
+            />
+          </Suspense>
+        ))}
+
+        <Suspense fallback={<ScriptsSkeleton />}>
+          <ScriptsSection />
+        </Suspense>
+      </main>
+    </Layout>
   );
 }

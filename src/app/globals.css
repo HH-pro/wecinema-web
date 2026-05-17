@@ -1,26 +1,310 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ===========================================================================
+   WECINEMA — Design tokens (ported from old React app)
+   =========================================================================== */
+
+:root,
+[data-theme="light"] {
+  /* Backgrounds — layered surfaces for proper depth */
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: #F4F4F5;   /* page / panel backgrounds */
+  --color-bg-tertiary: #EBEBEC;    /* input fields, hover states */
+  --color-bg-elevated: #FFFFFF;    /* modals, dropdowns */
+  --color-bg-overlay: rgba(0, 0, 0, 0.5);
+  --color-bg-inverse: #1A1A1A;
+
+  /* Text */
+  --color-text-primary: #0F0F0F;
+  --color-text-secondary: #505050;
+  --color-text-tertiary: #888888;
+  --color-text-inverse: #FFFFFF;
+  --color-text-link: #CC5500;
+
+  /* Brand / Accent */
+  --color-accent-primary: #FFBB00;
+  --color-accent-secondary: #FFBB00;
+  --color-accent-tertiary: #FFBB00;
+  --color-accent-hover: #E5A800;
+  --color-accent-active: #CC9600;
+
+  /* Borders */
+  --color-border-primary: #D0D0D2;
+  --color-border-secondary: #E2E2E4;
+  --color-border-focus: #FFBB00;
+
+  /* Semantic */
+  --color-success: #16A34A;
+  --color-success-bg: #DCFCE7;
+  --color-danger: #DC2626;
+  --color-danger-bg: #FEE2E2;
+  --color-warning: #D97706;
+  --color-warning-bg: #FEF3C7;
+  --color-info: #2563EB;
+  --color-info-bg: #DBEAFE;
+
+  /* Components */
+  --color-nav-bg: #FFFFFF;
+  --color-nav-text: #606060;
+  --color-nav-text-active: #0F0F0F;
+  --color-card-bg: #FFFFFF;
+  --color-card-border: #E0E0E2;
+  --color-card-hover: #FAFAF0;
+  --color-input-bg: #FFFFFF;
+  --color-input-border: #CECECE;
+  --color-input-focus: #FFBB00;
+  --color-input-placeholder: #9E9EA0;
+  --color-modal-bg: #FFFFFF;
+  --color-modal-overlay: rgba(0, 0, 0, 0.55);
+  --color-skeleton-base: #E4E4E6;
+  --color-skeleton-shimmer: #F0F0EE;
+  --color-scrollbar: #CFCFD1;
+  --color-scrollbar-hover: #A0A0A2;
+  --color-divider: #E4E4E6;
+  --color-shadow: rgba(0, 0, 0, 0.07);
+
+  /* Button system */
+  --color-btn-primary-text: #000000;
+  --color-btn-secondary-bg: #F4F4F5;
+  --color-btn-secondary-text: #505050;
+  --color-btn-secondary-hover: #E8E8EA;
+  --color-btn-secondary-border: #D0D0D2;
+
+  /* Fonts */
+  --font-heading: var(--font-poppins), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-body: var(--font-roboto), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+[data-theme="dark"] {
+  --color-bg-primary: #000000;
+  --color-bg-secondary: #141414;
+  --color-bg-tertiary: #1C1C1C;
+  --color-bg-elevated: #1A1A1A;
+  --color-bg-overlay: rgba(0, 0, 0, 0.75);
+  --color-bg-inverse: #FFFFFF;
+
+  --color-text-primary: #F0F0F0;
+  --color-text-secondary: #A8A8A8;
+  --color-text-tertiary: #686868;
+  --color-text-inverse: #0F0F0F;
+  --color-text-link: #FFBB00;
+
+  --color-accent-primary: #FFBB00;
+  --color-accent-secondary: #FFBB00;
+  --color-accent-tertiary: #FFEE00;
+  --color-accent-hover: #E5A800;
+  --color-accent-active: #CC9600;
+
+  --color-border-primary: #2C2C2C;
+  --color-border-secondary: #222222;
+  --color-border-focus: #FFBB00;
+
+  --color-success: #22C55E;
+  --color-success-bg: rgba(34, 197, 94, 0.12);
+  --color-danger: #EF4444;
+  --color-danger-bg: rgba(239, 68, 68, 0.12);
+  --color-warning: #FFBB00;
+  --color-warning-bg: rgba(255, 187, 0, 0.12);
+  --color-info: #3B82F6;
+  --color-info-bg: rgba(59, 130, 246, 0.12);
+
+  --color-nav-bg: #000000;
+  --color-nav-text: #AAAAAA;
+  --color-nav-text-active: #FFFFFF;
+  --color-card-bg: #141414;
+  --color-card-border: #222222;
+  --color-card-hover: #1C1C1C;
+  --color-input-bg: #1A1A1A;
+  --color-input-border: #2C2C2C;
+  --color-input-focus: #FFBB00;
+  --color-input-placeholder: #686868;
+  --color-modal-bg: #141414;
+  --color-modal-overlay: rgba(0, 0, 0, 0.82);
+  --color-skeleton-base: #1C1C1C;
+  --color-skeleton-shimmer: #2A2A2A;
+  --color-scrollbar: #2C2C2C;
+  --color-scrollbar-hover: #3C3C3C;
+  --color-divider: #222222;
+  --color-shadow: rgba(0, 0, 0, 0.45);
+
+  /* Button system */
+  --color-btn-primary-text: #000000;
+  --color-btn-secondary-bg: #1C1C1C;
+  --color-btn-secondary-text: #A8A8A8;
+  --color-btn-secondary-hover: #262626;
+  --color-btn-secondary-border: #2C2C2C;
+}
+
+/* ============================================================================
+   Tailwind v4 — expose tokens as Tailwind utilities (e.g. bg-bg-primary)
+   ============================================================================ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Backgrounds */
+  --color-bg-primary: var(--color-bg-primary);
+  --color-bg-secondary: var(--color-bg-secondary);
+  --color-bg-tertiary: var(--color-bg-tertiary);
+  --color-bg-elevated: var(--color-bg-elevated);
+
+  /* Text */
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-tertiary: var(--color-text-tertiary);
+
+  /* Accent — expose both full name and alias */
+  --color-accent-primary: var(--color-accent-primary);
+  --color-accent-secondary: var(--color-accent-secondary);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent: var(--color-accent-primary);        /* bg-accent, text-accent, border-accent */
+
+  /* Borders */
+  --color-border-primary: var(--color-border-primary);
+  --color-border-secondary: var(--color-border-secondary);
+  --color-border: var(--color-border-primary);        /* border-border */
+
+  /* Card */
+  --color-card-bg: var(--color-card-bg);              /* bg-card-bg */
+  --color-card-border: var(--color-card-border);      /* border-card-border */
+
+  /* Inputs */
+  --color-input-bg: var(--color-input-bg);
+  --color-input-border: var(--color-input-border);
+  --color-input-focus: var(--color-input-focus);
+
+  /* Modal */
+  --color-modal-bg: var(--color-modal-bg);
+
+  /* Semantic */
+  --color-divider: var(--color-divider);
+  --color-danger: var(--color-danger);
+  --color-danger-bg: var(--color-danger-bg);
+  --color-success: var(--color-success);
+  --color-success-bg: var(--color-success-bg);
+  --color-warning: var(--color-warning);
+  --color-warning-bg: var(--color-warning-bg);
+  --color-info: var(--color-info);
+  --color-info-bg: var(--color-info-bg);
+
+  /* Nav */
+  --color-nav-bg: var(--color-nav-bg);
+
+  /* Buttons */
+  --color-btn-primary-text: var(--color-btn-primary-text);  /* text-btn-primary-text */
+  --color-btn-secondary-bg: var(--color-btn-secondary-bg);
+  --color-btn-secondary-text: var(--color-btn-secondary-text);
+  --color-btn-secondary-hover: var(--color-btn-secondary-hover);
+  --color-btn-secondary-border: var(--color-btn-secondary-border);
+
+  /* Fonts */
+  --font-sans: var(--font-body);
+  --font-heading: var(--font-heading);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@keyframes pulse-custom {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+.animate-pulse-custom { animation: pulse-custom 1.2s ease-in-out infinite; }
+
+/* ============================================================================
+   Reset + base
+   ============================================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+  font-size: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-scrollbar) transparent;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  transition: color var(--transition-base), background-color var(--transition-base);
+}
+
+img, picture, video, canvas, svg { display: block; max-width: 100%; }
+input, button, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; border: none; background: none; }
+ul, ol { list-style: none; padding: 0; margin: 0; }
+
+a { color: inherit; text-decoration: none; }
+
+/* Headings */
+h1, .text-h1 { font-family: var(--font-heading); font-size: 1.5rem; font-weight: 700; line-height: 1.2; letter-spacing: -0.025em; color: var(--color-text-primary); }
+h2, .text-h2 { font-family: var(--font-heading); font-size: 1.25rem; font-weight: 600; line-height: 1.2; letter-spacing: -0.015em; color: var(--color-text-primary); }
+h3, .text-h3 { font-family: var(--font-heading); font-size: 1.125rem; font-weight: 600; line-height: 1.35; color: var(--color-text-primary); }
+
+@media (min-width: 768px) {
+  h1, .text-h1 { font-size: 1.75rem; }
+  h2, .text-h2 { font-size: 1.375rem; }
+  h3, .text-h3 { font-size: 1.1875rem; }
+}
+@media (min-width: 1024px) {
+  h1, .text-h1 { font-size: 2rem; }
+  h2, .text-h2 { font-size: 1.5rem; }
+  h3, .text-h3 { font-size: 1.25rem; }
+}
+
+/* Focus + selection */
+:focus-visible { outline: 2px solid var(--color-accent-primary); outline-offset: 2px; border-radius: var(--radius-sm); }
+:focus:not(:focus-visible) { outline: none; }
+::selection { background-color: var(--color-accent-primary); color: #FFFFFF; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--color-scrollbar);
+  border-radius: var(--radius-full);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--color-scrollbar-hover); background-clip: padding-box; }
+
+/* Utilities */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+
+.line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ===========================================================================
+   Admin Panel CSS Variables
+   Dark purple/blue theme — independent from main site theme
+   =========================================================================== */
+:root {
+  --ap-bg: #080810;
+  --ap-surface: #0f0f1a;
+  --ap-surface-alt: #161625;
+  --ap-border: rgba(124, 58, 237, 0.18);
+  --ap-hover: rgba(124, 58, 237, 0.08);
+  --ap-text: #f1f5f9;
+  --ap-text-2: #94a3b8;
+  --ap-text-3: #475569;
+}
+
+/* Admin layout overrides — always dark regardless of site theme */
+.admin-panel,
+[data-admin="true"] {
+  color-scheme: dark;
 }

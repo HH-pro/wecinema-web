@@ -1,36 +1,112 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# wecinema-web
 
-## Getting Started
+Next.js 16 frontend for [WeCinema](https://wecinema.co) — the migration target replacing the React + Vite app under `../wecinema-frontend`.
 
-First, run the development server:
+**Stack:** Next.js 16 App Router · React 19 · TypeScript · Tailwind v4 · Turbopack · Framer Motion
+
+---
+
+## Quick start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local   # then edit
+npm install
+npm run dev                  # → http://localhost:3001
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The backend is expected at `BACKEND_URL`. Defaults point at production (`https://wecinema.co/api`); swap to `http://localhost:3000` to develop against a local backend.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Script | What it does |
+|---|---|
+| `dev` | Dev server on port 3001 with Turbopack + HMR |
+| `build` | Production build |
+| `start` | Run the production build |
+| `lint` / `lint:fix` | ESLint |
+| `type-check` | `tsc --noEmit`, full project type check |
+| `format` / `format:check` | Prettier (with Tailwind class sorter) |
 
-## Learn More
+## Folder structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/                    Next.js App Router
+│   ├── layout.tsx          Root layout: fonts, metadata, ThemeProvider
+│   ├── page.tsx            Homepage (RSC, ISR every 5 min)
+│   ├── loading.tsx         Route-level loading UI
+│   ├── error.tsx           Route-level error boundary
+│   ├── not-found.tsx       404 page
+│   ├── robots.ts           Generated /robots.txt
+│   ├── sitemap.ts          Generated /sitemap.xml
+│   └── globals.css         Design tokens + Tailwind v4
+├── components/
+│   ├── layout/             Header, Sidebar, Layout shell, ThemeProvider
+│   ├── video/              Gallery, VideoCard, ThemePills
+│   └── seo/                JsonLd helper
+├── config/
+│   └── env.ts              Zod-validated env (server + client)
+└── lib/
+    ├── api.ts              fetch helper: timeout, ApiError, ISR + tags
+    ├── videos.ts           Video API functions
+    ├── types.ts            Shared TS types
+    └── constants.ts        Categories, themes, ratings, layout dims
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Architecture
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Server Components by default** — galleries fetch on the server, stream HTML inline. Add `"use client"` only at the leaf where state/effects are needed (Header, Sidebar).
+- **Streaming with Suspense** — slow gallery sections don't block faster ones; each renders as it resolves.
+- **ISR** — homepage revalidates every 5 minutes (`export const revalidate = 300`). Per-fetch cache tags (`videos:category:action`) allow on-demand invalidation later.
+- **No client-side data fetching for the homepage** — keeps initial JS small and SEO-friendly.
 
-## Deploy on Vercel
+## SEO
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `metadataBase` driven by `NEXT_PUBLIC_SITE_URL` so all OG images resolve absolute.
+- Canonical URLs per page via `alternates.canonical`.
+- Open Graph + Twitter cards on the root layout.
+- JSON-LD (`WebSite` + `Organization`) inlined on the homepage.
+- `app/sitemap.ts` enumerates static + categorical routes.
+- `app/robots.ts` blocks `/api/`, `/admin/`, `/_next/`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Performance
+
+- Fonts via `next/font` — `display: swap`, preloaded, scoped subsets.
+- AVIF + WebP via `next/image` (`formats: ["image/avif", "image/webp"]`).
+- LCP image (`/wecinema.webp` logo) marked `priority`.
+- Static asset cache header: `public, max-age=31536000, immutable`.
+- `compress: true`, `productionBrowserSourceMaps: false`, `poweredByHeader: false`.
+
+## Security
+
+- `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, scoped `Permissions-Policy`.
+- HSTS in production only (max-age 2 years, includeSubDomains, preload).
+- Env validation throws at startup if required vars are missing.
+- No tokens in `localStorage` (will live in memory + httpOnly refresh cookie when auth lands).
+
+CSP is intentionally not set yet — it needs per-route nonces and middleware to coexist with `next/font`, `next/script`, and HMR. Add when the auth surface stabilises.
+
+## Backend integration
+
+The browser calls `/api/*` → Next.js rewrites to `${BACKEND_URL}/*`. Server Components call backend directly (skip the rewrite hop) via `apiFetch`.
+
+```ts
+import { apiFetch } from "@/lib/api";
+const data = await apiFetch<MyResponse>("/some/endpoint", { revalidate: 60 });
+```
+
+## Tooling
+
+- **ESLint** — `eslint-config-next/core-web-vitals` + `typescript`
+- **Prettier** — Tailwind class sorter via `prettier-plugin-tailwindcss`
+- **TypeScript** — `strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`
+- **VS Code** — recommended extensions and format-on-save in `.vscode/`
+
+## What's not done yet
+
+- Auth (login/signup/profile)
+- Marketplace pages
+- Video detail (`/watch/[slug]`)
+- Search results
+- CSP middleware
+- Tests (Vitest + Playwright)
