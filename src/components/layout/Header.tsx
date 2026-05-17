@@ -8,7 +8,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { MdMenu, MdMic, MdMicOff } from "react-icons/md";
-import { Search, X, Sun, Moon, ChevronDown, LogOut, User, Settings } from "lucide-react";
+import { Search, X, Sun, Moon, ChevronDown, LogOut, User, Settings, Upload, FileText } from "lucide-react";
 import { CATEGORIES, RATINGS, RATING_META } from "@/lib/constants";
 import { useTheme } from "@/components/layout/ThemeProvider";
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -341,6 +341,21 @@ const Header: FC<HeaderProps> = ({ toggleSidebar, isMobile: isMobileProp }) => {
                           <Settings size={15} style={{ flexShrink: 0 }} />
                           Settings
                         </Link>
+                      </div>
+                      <div style={{ height: 1, background: "var(--color-divider)", margin: "0 4px" }} />
+                      <div style={{ padding: "4px 4px 2px", paddingTop: 2 }}>
+                        <p style={{ margin: "6px 0 4px 10px", fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--color-text-tertiary)" }}>Create</p>
+                        <Link href="/upload/video" className="hdr-row" onClick={() => setUserMenuOpen(false)}>
+                          <Upload size={15} style={{ flexShrink: 0, color: "var(--color-accent-primary)" }} />
+                          Upload Video
+                        </Link>
+                        <Link href="/upload/script" className="hdr-row" onClick={() => setUserMenuOpen(false)}>
+                          <FileText size={15} style={{ flexShrink: 0, color: "var(--color-accent-primary)" }} />
+                          Upload Script
+                        </Link>
+                      </div>
+                      <div style={{ height: 1, background: "var(--color-divider)", margin: "0 4px" }} />
+                      <div style={{ padding: 4 }}>
                         <button
                           className="hdr-row"
                           onClick={async () => { setUserMenuOpen(false); await logout(); router.push("/"); }}

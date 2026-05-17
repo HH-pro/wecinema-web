@@ -24,7 +24,7 @@ import {
 import {
   RiAddCircleLine, RiFlagLine, RiListCheck, RiMessageLine,
   RiMovie2Line, RiShoppingBagLine, RiStoreLine, RiCustomerService2Line,
-  RiFileList3Line, RiUploadCloud2Line,
+  RiFileList3Line,
 } from "react-icons/ri";
 
 import { SIDEBAR_COLLAPSED_W, SIDEBAR_EXPANDED_W } from "@/lib/constants";
@@ -562,7 +562,6 @@ export default function Sidebar({ expand }: SidebarProps) {
               <NavItem href="/video-editor" icon={<TbVideoPlus />}        label="Video Editor" expand={expand} active={isActive("/video-editor")} />
               <NavItem href="/chatbot"      icon={<MdChatBubbleOutline />} label="AI ChatBot"   expand={expand} active={isActive("/chatbot")} />
               <NavItem href="/scripts"      icon={<RiFileList3Line />}     label="Scripts"      expand={expand} active={pathname.startsWith("/scripts")} />
-              <NavItem href="/upload/video" icon={<RiUploadCloud2Line />}  label="Upload Video" expand={expand} active={isActive("/upload/video")} />
             </nav>
 
             {showMarketplace && (
