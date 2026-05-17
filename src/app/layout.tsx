@@ -30,7 +30,7 @@ const roboto = Roboto({
 });
 
 const SITE_NAME = "WeCinema";
-const SITE_URL = clientEnv.NEXT_PUBLIC_SITE_URL;
+const SITE_URL = (clientEnv.NEXT_PUBLIC_SITE_URL ?? "https://wecinema.co").replace(/\/$/, "");
 const DESCRIPTION =
   "WeCinema is the home of independent film. Watch movies, upload your own, browse scripts, and sell your work to a global audience.";
 

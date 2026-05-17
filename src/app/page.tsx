@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     siteName: "WeCinema",
     title: "WeCinema — Watch, Create & Sell Films and Scripts Online",
     description: "WeCinema is the home of independent film. Watch movies, upload your own, browse scripts, and sell your work to a global audience.",
-    url: clientEnv.NEXT_PUBLIC_SITE_URL,
+    url: (clientEnv.NEXT_PUBLIC_SITE_URL ?? "https://wecinema.co"),
     images: [{ url: "/seo/WeCinema.webp", width: 1200, height: 630, alt: "WeCinema — Independent Film Platform" }],
     locale: "en_US",
   },

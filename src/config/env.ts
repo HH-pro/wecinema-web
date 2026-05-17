@@ -20,7 +20,7 @@ const ClientEnv = z.object({
   NEXT_PUBLIC_SITE_URL: z
     .string()
     .url()
-    .default("http://localhost:3001")
+    .default("https://wecinema.co")
     .describe("Canonical absolute URL — used for metadataBase, sitemap, OG tags"),
   NEXT_PUBLIC_API_BASE_URL: z
     .string()
