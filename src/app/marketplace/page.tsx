@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     url: `${SITE}/marketplace`,
-    images: [{ url: `${SITE}/wecinema.webp`, width: 1200, height: 630, alt: "WeCinema Marketplace" }],
+    images: [{ url: `${SITE}/seo/WeCinema.webp`, width: 1200, height: 630, alt: "WeCinema Marketplace" }],
     locale: "en_US",
   },
   twitter: {
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     site: "@wecinema",
     title: TITLE,
     description: DESCRIPTION,
-    images: [`${SITE}/wecinema.webp`],
+    images: [`${SITE}/seo/WeCinema.webp`],
   },
 };
 

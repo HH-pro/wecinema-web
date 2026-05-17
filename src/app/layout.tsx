@@ -63,13 +63,13 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: `${SITE_NAME} — Watch, Create & Sell Films`,
     description: DESCRIPTION,
-    images: [{ url: "/wecinema.webp", width: 1128, height: 990, alt: SITE_NAME }],
+    images: [{ url: "/seo/WeCinema.webp", width: 1200, height: 630, alt: SITE_NAME }],
   },
   twitter: {
     card: "summary_large_image",
     title: `${SITE_NAME} — Watch, Create & Sell Films`,
     description: DESCRIPTION,
-    images: ["/wecinema.webp"],
+    images: ["/seo/WeCinema.webp"],
   },
   robots: {
     index: true,

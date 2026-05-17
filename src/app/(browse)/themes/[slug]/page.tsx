@@ -29,13 +29,13 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
       title: `${label} Films | WeCinema`,
       description: `Films about ${label.toLowerCase()} from independent filmmakers on WeCinema.`,
       url: `${SITE}/themes/${slug}`,
-      images: [{ url: `${SITE}/wecinema.webp`, width: 1200, height: 630, alt: `${label} themed films` }],
+      images: [{ url: `${SITE}/seo/WeCinema.webp`, width: 1200, height: 630, alt: `${label} themed films` }],
     },
     twitter: {
       card: "summary_large_image",
       title: `${label} Films | WeCinema`,
       description: `Films about ${label.toLowerCase()} from independent filmmakers on WeCinema.`,
-      images: [`${SITE}/wecinema.webp`],
+      images: [`${SITE}/seo/WeCinema.webp`],
     },
   };
 }

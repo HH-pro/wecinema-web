@@ -12,9 +12,17 @@ export const metadata: Metadata = {
   alternates: { canonical: "/terms-and-conditions" },
   openGraph: {
     type: "website",
+    siteName: "WeCinema",
     title: "WeCinema Terms & Conditions",
     description: "Official platform agreement for WeCinema — video distribution and marketplace.",
     url: `${SITE}/terms-and-conditions`,
+    images: [{ url: `${SITE}/seo/WeCinema.webp`, width: 1200, height: 630, alt: "WeCinema Terms & Conditions" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "WeCinema Terms & Conditions",
+    description: "Official platform agreement for WeCinema — video distribution and marketplace.",
+    images: [`${SITE}/seo/WeCinema.webp`],
   },
 };
 

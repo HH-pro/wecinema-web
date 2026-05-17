@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     url: `${SITE}/explore`,
-    images: [{ url: `${SITE}/wecinema.webp`, width: 1200, height: 630, alt: "WeCinema HypeMode" }],
+    images: [{ url: `${SITE}/seo/Explore.webp`, width: 1200, height: 630, alt: "WeCinema HypeMode" }],
     locale: "en_US",
   },
   twitter: {
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     site: "@wecinema",
     title: TITLE,
     description: DESCRIPTION,
-    images: [`${SITE}/wecinema.webp`],
+    images: [`${SITE}/seo/Explore.webp`],
   },
 };
 
@@ -40,7 +40,7 @@ export default function ExplorePage() {
           name: "WeCinema HypeMode",
           description: DESCRIPTION,
           url: `${SITE}/explore`,
-          image: `${SITE}/wecinema.webp`,
+          image: `${SITE}/seo/Explore.webp`,
           brand: { "@type": "Brand", name: "WeCinema" },
           offers: [
             { "@type": "Offer", name: "Basic Plan", price: "5.00", priceCurrency: "USD", availability: "https://schema.org/InStock", url: `${SITE}/explore` },

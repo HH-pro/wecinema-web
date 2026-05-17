@@ -5,6 +5,19 @@ export const metadata: Metadata = {
   title: "Privacy Policy | WeCinema",
   description: "How WeCinema collects, uses, stores, and protects your personal information — including security practices, third-party services, and your GDPR/CCPA rights.",
   alternates: { canonical: "/privacy-policy" },
+  openGraph: {
+    type: "website",
+    siteName: "WeCinema",
+    title: "Privacy Policy | WeCinema",
+    description: "How WeCinema collects, uses, stores, and protects your personal information.",
+    images: [{ url: "/seo/Privacy.webp", width: 1200, height: 630, alt: "WeCinema Privacy Policy" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Privacy Policy | WeCinema",
+    description: "How WeCinema collects, uses, stores, and protects your personal information.",
+    images: ["/seo/Privacy.webp"],
+  },
 };
 
 const EFFECTIVE_DATE = "May 17, 2026";

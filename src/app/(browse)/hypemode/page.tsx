@@ -18,14 +18,14 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     url: `${SITE}/hypemode`,
-    images: [{ url: `${SITE}/wecinema.webp`, width: 1200, height: 630, alt: "WeCinema HypeMode" }],
+    images: [{ url: `${SITE}/seo/Explore.webp`, width: 1200, height: 630, alt: "WeCinema HypeMode" }],
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
-    images: [`${SITE}/wecinema.webp`],
+    images: [`${SITE}/seo/Explore.webp`],
   },
 };
 

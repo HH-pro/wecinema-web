@@ -13,6 +13,22 @@ export const metadata: Metadata = {
   description:
     "WeCinema is the home of independent film. Watch movies, upload your own, browse scripts, and sell your work to a global audience.",
   alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "WeCinema",
+    title: "WeCinema — Watch, Create & Sell Films and Scripts Online",
+    description: "WeCinema is the home of independent film. Watch movies, upload your own, browse scripts, and sell your work to a global audience.",
+    url: clientEnv.NEXT_PUBLIC_SITE_URL,
+    images: [{ url: "/seo/WeCinema.webp", width: 1200, height: 630, alt: "WeCinema — Independent Film Platform" }],
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "@wecinema",
+    title: "WeCinema — Watch, Create & Sell Films and Scripts Online",
+    description: "WeCinema is the home of independent film. Watch movies, upload your own, browse scripts, and sell your work to a global audience.",
+    images: ["/seo/WeCinema.webp"],
+  },
 };
 
 export const revalidate = 300;

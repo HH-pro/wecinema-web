@@ -30,13 +30,13 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
       title: `Rated ${rating} Films | WeCinema`,
       description: `Watch ${rating}-rated independent films on WeCinema.`,
       url: `${SITE}/ratings/${rating}`,
-      images: [{ url: `${SITE}/wecinema.webp`, width: 1200, height: 630, alt: `Rated ${rating} films` }],
+      images: [{ url: `${SITE}/seo/WeCinema.webp`, width: 1200, height: 630, alt: `Rated ${rating} films` }],
     },
     twitter: {
       card: "summary_large_image",
       title: `Rated ${rating} Films | WeCinema`,
       description: `Watch ${rating}-rated independent films on WeCinema.`,
-      images: [`${SITE}/wecinema.webp`],
+      images: [`${SITE}/seo/WeCinema.webp`],
     },
   };
 }
