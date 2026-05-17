@@ -112,6 +112,7 @@ export default function RootLayout({
       lang="en"
       dir="ltr"
       data-theme="light"
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
       className={`${poppins.variable} ${poppinsExtra.variable} ${roboto.variable}`}
     >

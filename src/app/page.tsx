@@ -116,12 +116,13 @@ export default function HomePage() {
       <main id="main-content" aria-labelledby="genres-heading">
         <h2 id="genres-heading" className="sr-only">Browse Films by Genre</h2>
 
-        {GALLERY_SECTIONS.map((section) => (
+        {GALLERY_SECTIONS.map((section, i) => (
           <Suspense key={section.title} fallback={<GallerySkeleton />}>
             <VideoGallery
               title={section.title}
               category={section.category}
               viewAllHref={section.viewAllHref}
+              prioritizeFirst={i === 0}
             />
           </Suspense>
         ))}

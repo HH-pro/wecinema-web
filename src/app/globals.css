@@ -226,10 +226,13 @@ html {
   -webkit-text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  scroll-behavior: smooth;
   font-size: 16px;
   scrollbar-width: thin;
   scrollbar-color: var(--color-scrollbar) transparent;
+}
+
+[data-scroll-behavior="smooth"] {
+  scroll-behavior: smooth;
 }
 
 body {

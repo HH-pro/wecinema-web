@@ -24,7 +24,7 @@ function timeAgo(dateStr?: string): string {
   return `${Math.floor(days / 365)}y ago`;
 }
 
-export function VideoCard({ video }: { video: Video }) {
+export function VideoCard({ video, priority = false }: { video: Video; priority?: boolean }) {
   const href = `/watch/${video.slug ?? video._id}`;
   const thumb = video.thumbnailSmall ?? video.thumbnail ?? FALLBACK_THUMB;
   const author =
@@ -61,6 +61,8 @@ export function VideoCard({ video }: { video: Video }) {
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           className="object-cover transition-transform duration-300 group-hover/thumb:scale-105"
           unoptimized={thumb.startsWith("data:")}
+          priority={priority}
+          loading={priority ? "eager" : "lazy"}
         />
 
         {/* Hover play overlay */}

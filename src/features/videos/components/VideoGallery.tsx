@@ -8,9 +8,10 @@ interface VideoGalleryProps {
   category: string;
   viewAllHref: string;
   limit?: number;
+  prioritizeFirst?: boolean;
 }
 
-export async function VideoGallery({ title, category, viewAllHref, limit = 6 }: VideoGalleryProps) {
+export async function VideoGallery({ title, category, viewAllHref, limit = 6, prioritizeFirst = false }: VideoGalleryProps) {
   const videos = await getVideosByCategory(category, limit);
 
   return (
@@ -72,8 +73,8 @@ export async function VideoGallery({ title, category, viewAllHref, limit = 6 }: 
             gap: 20,
           }}
         >
-          {videos.map((video) => (
-            <VideoCard key={video._id} video={video} />
+          {videos.map((video, i) => (
+            <VideoCard key={video._id} video={video} priority={prioritizeFirst && i === 0} />
           ))}
         </div>
       )}
