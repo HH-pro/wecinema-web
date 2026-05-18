@@ -2,7 +2,10 @@ import type { MetadataRoute } from "next";
 import { clientEnv } from "@/config/env";
 import { CATEGORIES, THEMES, RATINGS } from "@/lib/constants";
 
-const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+// Never emit localhost URLs into the sitemap — they are rejected by Google Search Console.
+// Falls back to the canonical production URL if the env var is missing or local.
+const raw = clientEnv.NEXT_PUBLIC_SITE_URL ?? "";
+const SITE = /localhost/i.test(raw) ? "https://wecinema.co" : raw.replace(/\/$/, "");
 
 /**
  * Static + enumerable URLs only. When dynamic routes (videos, listings) come

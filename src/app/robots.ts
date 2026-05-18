@@ -1,6 +1,9 @@
 import type { MetadataRoute } from "next";
 import { clientEnv } from "@/config/env";
 
+const raw = clientEnv.NEXT_PUBLIC_SITE_URL ?? "";
+const SITE = /localhost/i.test(raw) ? "https://wecinema.co" : raw.replace(/\/$/, "");
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
@@ -10,7 +13,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/", "/admin/", "/_next/"],
       },
     ],
-    sitemap: `${clientEnv.NEXT_PUBLIC_SITE_URL}/sitemap.xml`,
-    host: clientEnv.NEXT_PUBLIC_SITE_URL,
+    sitemap: `${SITE}/sitemap.xml`,
+    host: SITE,
   };
 }
