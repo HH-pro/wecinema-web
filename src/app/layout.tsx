@@ -92,6 +92,9 @@ export const metadata: Metadata = {
     ],
   },
   manifest: "/manifest.webmanifest",
+  verification: {
+    google: "jHqhnnIBc46TMhJgBRGRwqAL0Lb1U_UJHF_TsjoveNs",   // Google Search Console → Verify → HTML tag → content="..."
+  },
 };
 
 export const viewport: Viewport = {
