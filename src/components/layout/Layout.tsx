@@ -1,17 +1,44 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
+import { IoMdHome } from "react-icons/io";
+import { RiMovie2Line } from "react-icons/ri";
+import { MdChatBubbleOutline, MdMenu } from "react-icons/md";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
 import { SIDEBAR_COLLAPSED_W, SIDEBAR_EXPANDED_W } from "@/lib/constants";
+
+const BOTTOM_NAV_H = 58;
 
 interface LayoutProps {
   children: ReactNode;
   hasHeader?: boolean;
 }
 
+function BottomNavItem({
+  href, icon, label, active,
+}: { href: string; icon: ReactNode; label: string; active: boolean }) {
+  return (
+    <Link
+      href={href}
+      style={{
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        gap: 3, flex: 1, padding: "6px 4px", textDecoration: "none",
+        color: active ? "var(--color-accent-primary)" : "var(--color-text-tertiary)",
+        transition: "color 0.15s",
+      }}
+    >
+      {icon}
+      <span style={{ fontSize: 10, fontWeight: 600, lineHeight: 1 }}>{label}</span>
+    </Link>
+  );
+}
+
 export default function Layout({ children, hasHeader = true }: LayoutProps) {
+  const pathname = usePathname();
   const [expanded, setExpanded] = useState(false);
   const [screenWidth, setScreenWidth] = useState(1280);
 
@@ -22,8 +49,11 @@ export default function Layout({ children, hasHeader = true }: LayoutProps) {
     return () => window.removeEventListener("resize", fn);
   }, []);
 
+  // Close drawer whenever the user navigates
+  useEffect(() => { setExpanded(false); }, [pathname]);
+
   const isTabletOrMobile = screenWidth <= 1120;
-  const isMobile = screenWidth <= 420;
+  const isMobile = screenWidth <= 768;
 
   const sidebarPx = useMemo(() => {
     if (isTabletOrMobile) return 0;
@@ -39,7 +69,7 @@ export default function Layout({ children, hasHeader = true }: LayoutProps) {
         />
       )}
 
-      {/* Mobile drawer overlay */}
+      {/* Mobile / tablet drawer */}
       {expanded && isTabletOrMobile && (
         <>
           <motion.div
@@ -56,7 +86,7 @@ export default function Layout({ children, hasHeader = true }: LayoutProps) {
             className="fixed inset-y-0 left-0 z-50"
             style={{ width: SIDEBAR_EXPANDED_W }}
           >
-            <Sidebar expand={true} />
+            <Sidebar expand={true} onClose={() => setExpanded(false)} />
           </motion.div>
         </>
       )}
@@ -76,7 +106,11 @@ export default function Layout({ children, hasHeader = true }: LayoutProps) {
           animate={{ marginLeft: sidebarPx, width: `calc(100% - ${sidebarPx}px)` }}
           transition={{ type: "tween", duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
           className="flex flex-col"
-          style={{ backgroundColor: "var(--color-bg-primary)", color: "var(--color-text-primary)" }}
+          style={{
+            backgroundColor: "var(--color-bg-primary)",
+            color: "var(--color-text-primary)",
+            paddingBottom: isMobile ? BOTTOM_NAV_H : 0,
+          }}
         >
           <div>{children}</div>
 
@@ -101,6 +135,40 @@ export default function Layout({ children, hasHeader = true }: LayoutProps) {
           </footer>
         </motion.main>
       </div>
+
+      {/* Mobile bottom navigation bar */}
+      {isMobile && (
+        <nav
+          style={{
+            position: "fixed", bottom: 0, left: 0, right: 0,
+            height: BOTTOM_NAV_H, zIndex: 60,
+            backgroundColor: "var(--color-nav-bg)",
+            borderTop: "1px solid var(--color-divider)",
+            display: "flex", alignItems: "stretch",
+            backdropFilter: "blur(14px)",
+            WebkitBackdropFilter: "blur(14px)",
+          }}
+        >
+          <BottomNavItem href="/"        icon={<IoMdHome size={22} />}            label="Home"    active={pathname === "/"} />
+          <BottomNavItem href="/explore" icon={<RiMovie2Line size={22} />}         label="Explore" active={pathname.startsWith("/explore") || pathname.startsWith("/hypemode")} />
+          <BottomNavItem href="/chatbot" icon={<MdChatBubbleOutline size={22} />} label="AI Chat" active={pathname === "/chatbot"} />
+          <button
+            type="button"
+            onClick={() => setExpanded((p) => !p)}
+            aria-label="Open menu"
+            style={{
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+              gap: 3, flex: 1, padding: "6px 4px", border: "none", background: "transparent",
+              cursor: "pointer",
+              color: expanded ? "var(--color-accent-primary)" : "var(--color-text-tertiary)",
+              transition: "color 0.15s",
+            }}
+          >
+            <MdMenu size={22} />
+            <span style={{ fontSize: 10, fontWeight: 600, lineHeight: 1 }}>Menu</span>
+          </button>
+        </nav>
+      )}
     </div>
   );
 }

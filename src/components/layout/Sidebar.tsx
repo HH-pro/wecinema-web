@@ -26,6 +26,7 @@ import {
   RiMovie2Line, RiShoppingBagLine, RiStoreLine, RiCustomerService2Line,
   RiFileList3Line,
 } from "react-icons/ri";
+import { X } from "lucide-react";
 
 import { SIDEBAR_COLLAPSED_W, SIDEBAR_EXPANDED_W } from "@/lib/constants";
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -35,6 +36,7 @@ import type { UserType } from "@/types";
 
 interface SidebarProps {
   expand: boolean;
+  onClose?: () => void;
 }
 
 // ─── Portal Tooltip ───────────────────────────────────────────
@@ -476,7 +478,7 @@ const ProfilePopup = ({ isOpen, onClose, anchorRef, userMode, onModeChange }: Pr
 };
 
 // ─── Main Sidebar ─────────────────────────────────────────────
-export default function Sidebar({ expand }: SidebarProps) {
+export default function Sidebar({ expand, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { authUser, isAuthenticated, logout, refreshUser } = useAuth();
   const router = useRouter();
@@ -537,6 +539,26 @@ export default function Sidebar({ expand }: SidebarProps) {
       >
         {/* Scrollable nav area */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden hide-scrollbar">
+          {onClose && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 12px 6px" }}>
+              <span style={{ fontSize: "0.9375rem", fontWeight: 800, fontFamily: "var(--font-heading)", color: "var(--color-text-primary)", letterSpacing: "-0.02em" }}>
+                Menu
+              </span>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close menu"
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: 32, height: 32, borderRadius: 9999, border: "none",
+                  background: "var(--color-bg-tertiary)", color: "var(--color-text-secondary)",
+                  cursor: "pointer", transition: "background 0.15s",
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+          )}
           <div className="px-1.5 py-3 pt-5 space-y-0.5">
             <nav className="space-y-0.5">
               <NavItem href="/" icon={<IoMdHome />} label="Home" expand={expand} active={isActive("/")} />
