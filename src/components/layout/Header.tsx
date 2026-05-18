@@ -1,9 +1,11 @@
 "use client";
 
 import {
-  useState, useRef, useEffect, useCallback, memo,
+  useState, useRef, useEffect, useLayoutEffect, useCallback, memo,
   type FC, type FormEvent,
 } from "react";
+
+const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
@@ -129,16 +131,17 @@ const Header: FC<HeaderProps> = ({ toggleSidebar, isMobile: isMobileProp }) => {
   const showNavLinks = screenW > 880;
   const showFilters = screenW > 1060;
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     setScreenW(window.innerWidth);
     const onResize = () => setScreenW(window.innerWidth);
-    const onScroll = () => setScrolled(window.scrollY > 8);
     window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("resize", onResize);
-      window.removeEventListener("scroll", onScroll);
-    };
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   useEffect(() => {

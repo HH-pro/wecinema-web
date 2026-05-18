@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
+
+const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
@@ -42,7 +44,7 @@ export default function Layout({ children, hasHeader = true }: LayoutProps) {
   const [expanded, setExpanded] = useState(false);
   const [screenWidth, setScreenWidth] = useState(1280);
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     setScreenWidth(window.innerWidth);
     const fn = () => setScreenWidth(window.innerWidth);
     window.addEventListener("resize", fn);
