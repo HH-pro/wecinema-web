@@ -7,7 +7,8 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { SafeHtml } from "@/components/ui/SafeHtml";
 import { clientEnv } from "@/config/env";
 import { OG } from "@/lib/seo";
-import { getBlogPost, resolveAuthorName, resolveAuthorAvatar } from "@/features/blog/api/blogQueries";
+import { getBlogPost, getBlogPosts, resolveAuthorName, resolveAuthorAvatar } from "@/features/blog/api/blogQueries";
+import type { BlogPost } from "@/features/blog/api/blogQueries";
 
 const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
 
@@ -77,6 +78,13 @@ export default async function BlogPostPage({
   const imageAlt     = post.featuredImage?.alt ?? post.title;
   const publishedAt  = post.publishedAt ?? post.createdAt;
 
+  const related = (await getBlogPosts({ category: post.category })).posts
+    .filter((p: BlogPost) => p.slug !== post.slug)
+    .slice(0, 3);
+
+  const shareUrl  = `${SITE}/blog/${post.slug}`;
+  const shareText = encodeURIComponent(post.title);
+
   return (
     <Layout>
       <JsonLd
@@ -90,88 +98,131 @@ export default async function BlogPostPage({
           datePublished: publishedAt,
           dateModified: post.createdAt,
           publisher: { "@type": "Organization", name: "Wecinema", url: `${SITE}/` },
-          mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE}/blog/${post.slug}` },
+          mainEntityOfPage: { "@type": "WebPage", "@id": shareUrl },
         }}
       />
 
-      <div style={{ minHeight: "100vh", backgroundColor: "var(--color-bg-primary)" }}>
-        {/* Back */}
-        <div style={{ maxWidth: 800, margin: "0 auto", padding: "24px 24px 0" }}>
-          <Link
-            href="/blog"
-            style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "var(--color-text-secondary)", textDecoration: "none" }}
-            className="hover:text-[var(--color-accent-primary)] transition-colors"
-          >
-            ← Back to Blog
-          </Link>
-        </div>
+      <div className="blog-post-page">
+        {/* Hero */}
+        <header className="blog-post-hero">
+          <div className="blog-post-container">
+            <Link href="/blog" className="blog-post-back">
+              <span aria-hidden>←</span> Back to Blog
+            </Link>
 
-        <article style={{ maxWidth: 800, margin: "0 auto", padding: "24px 24px 64px" }}>
-          {/* Category */}
-          <div style={{ marginBottom: 14 }}>
             <Link
               href={`/blog?category=${encodeURIComponent(post.category)}`}
-              style={{
-                display: "inline-block", padding: "3px 12px", borderRadius: 9999,
-                fontSize: 12, fontWeight: 700, textDecoration: "none",
-                backgroundColor: "color-mix(in srgb, var(--color-accent-primary) 12%, transparent)",
-                color: "var(--color-accent-primary)",
-                border: "1px solid color-mix(in srgb, var(--color-accent-primary) 25%, transparent)",
-              }}
+              className="blog-post-category"
             >
               {post.category}
             </Link>
-          </div>
 
-          {/* Title */}
-          <h1 style={{
-            margin: "0 0 18px", fontSize: "clamp(1.6rem, 4vw, 2.2rem)",
-            fontWeight: 900, fontFamily: "var(--font-heading)",
-            color: "var(--color-text-primary)", lineHeight: 1.2,
-          }}>
-            {post.title}
-          </h1>
+            <h1 className="blog-post-title">{post.title}</h1>
 
-          {/* Author + meta */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28, flexWrap: "wrap" }}>
-            {avatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatar} alt={author} width={36} height={36} className="rounded-full object-cover" style={{ width: 36, height: 36 }} />
-            ) : (
-              <div style={{ width: 36, height: 36, borderRadius: 9999, background: "var(--color-accent-primary)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700 }}>
-                {author[0]?.toUpperCase()}
-              </div>
+            {post.excerpt && (
+              <p className="blog-post-excerpt">{post.excerpt}</p>
             )}
-            <div>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "var(--color-text-primary)" }}>{author}</p>
-              <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-tertiary)" }}>
-                {formatDate(publishedAt)}
-                {post.readTime ? ` · ${post.readTime} min read` : ""}
-                {post.views ? ` · ${post.views.toLocaleString()} views` : ""}
-              </p>
+
+            <div className="blog-post-meta">
+              <div className="blog-post-author">
+                {avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={avatar}
+                    alt={author}
+                    width={44}
+                    height={44}
+                    className="blog-post-avatar"
+                  />
+                ) : (
+                  <div className="blog-post-avatar blog-post-avatar--fallback">
+                    {author[0]?.toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <p className="blog-post-author-name">{author}</p>
+                  <p className="blog-post-meta-line">
+                    <span>{formatDate(publishedAt)}</span>
+                    {post.readTime ? <span aria-hidden>·</span> : null}
+                    {post.readTime ? <span>{post.readTime} min read</span> : null}
+                    {post.views ? <span aria-hidden>·</span> : null}
+                    {post.views ? <span>{post.views.toLocaleString()} views</span> : null}
+                  </p>
+                </div>
+              </div>
+
+              <div className="blog-post-share" aria-label="Share this article">
+                <a
+                  className="blog-post-share-btn"
+                  href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${shareText}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Share on Twitter / X"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
+                </a>
+                <a
+                  className="blog-post-share-btn"
+                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Share on Facebook"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                    <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12" />
+                  </svg>
+                </a>
+                <a
+                  className="blog-post-share-btn"
+                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Share on LinkedIn"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.852 3.37-1.852 3.601 0 4.267 2.37 4.267 5.455v6.288zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.063 2.063 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                  </svg>
+                </a>
+              </div>
             </div>
           </div>
+        </header>
 
-          {/* Featured image */}
-          {imageUrl && (
-            <div style={{ position: "relative", width: "100%", aspectRatio: "16/9", borderRadius: 16, overflow: "hidden", marginBottom: 32 }}>
-              <Image src={imageUrl} alt={imageAlt} fill className="object-cover" sizes="(max-width: 800px) 100vw, 800px" priority />
+        {/* Featured image */}
+        {imageUrl && (
+          <div className="blog-post-container">
+            <div className="blog-post-featured">
+              <Image
+                src={imageUrl}
+                alt={imageAlt}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, (max-width: 1100px) 90vw, 880px"
+                priority
+              />
             </div>
+          </div>
+        )}
+
+        {/* Body */}
+        <article className="blog-post-container blog-post-article">
+          {post.content ? (
+            <SafeHtml html={post.content} className="prose-wecinema" />
+          ) : (
+            post.excerpt && (
+              <p className="blog-post-fallback">{post.excerpt}</p>
+            )
           )}
 
-          {/* Tags */}
           {post.tags.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 28 }}>
+            <div className="blog-post-tags">
               {post.tags.map(tag => (
                 <Link
                   key={tag}
                   href={`/blog?tag=${encodeURIComponent(tag)}`}
-                  style={{
-                    padding: "3px 10px", borderRadius: 9999, fontSize: 12, fontWeight: 500,
-                    textDecoration: "none", color: "var(--color-text-secondary)",
-                    backgroundColor: "var(--color-bg-elevated)",
-                    border: "1px solid var(--color-border-secondary)",
-                  }}
+                  className="blog-post-tag"
                 >
                   #{tag}
                 </Link>
@@ -179,34 +230,74 @@ export default async function BlogPostPage({
             </div>
           )}
 
-          {/* Content */}
-          {post.content ? (
-            <SafeHtml
-              html={post.content}
-              className="prose-wecinema"
-              style={{
-                fontSize: 16, lineHeight: 1.8,
-                color: "var(--color-text-primary)",
-              }}
-            />
-          ) : (
-            post.excerpt && (
-              <p style={{ fontSize: 16, lineHeight: 1.8, color: "var(--color-text-secondary)" }}>
-                {post.excerpt}
+          {/* Author card */}
+          <aside className="blog-post-author-card">
+            {avatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={avatar}
+                alt={author}
+                width={64}
+                height={64}
+                className="blog-post-author-card-avatar"
+              />
+            ) : (
+              <div className="blog-post-author-card-avatar blog-post-avatar--fallback">
+                {author[0]?.toUpperCase()}
+              </div>
+            )}
+            <div>
+              <p className="blog-post-author-card-label">Written by</p>
+              <p className="blog-post-author-card-name">{author}</p>
+              <p className="blog-post-author-card-bio">
+                Contributing writer at Wecinema, sharing filmmaking insights and platform updates.
               </p>
-            )
-          )}
-
-          {/* Footer divider */}
-          <div style={{ marginTop: 48, paddingTop: 24, borderTop: "1px solid var(--color-divider)" }}>
-            <Link
-              href="/blog"
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "var(--color-accent-primary)", textDecoration: "none" }}
-            >
-              ← More from the Blog
-            </Link>
-          </div>
+            </div>
+          </aside>
         </article>
+
+        {/* Related */}
+        {related.length > 0 && (
+          <section className="blog-post-related">
+            <div className="blog-post-container">
+              <div className="blog-post-related-header">
+                <h2>Continue reading</h2>
+                <Link href="/blog" className="blog-post-related-link">
+                  View all posts →
+                </Link>
+              </div>
+              <div className="blog-post-related-grid">
+                {related.map((p: BlogPost) => {
+                  const pImg = p.featuredImage?.url;
+                  return (
+                    <Link key={p.slug} href={`/blog/${p.slug}`} className="blog-post-related-card">
+                      <div className="blog-post-related-thumb">
+                        {pImg ? (
+                          <Image
+                            src={pImg}
+                            alt={p.featuredImage?.alt ?? p.title}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 100vw, 33vw"
+                          />
+                        ) : (
+                          <div className="blog-post-related-thumb-placeholder">
+                            <span>{p.category}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="blog-post-related-body">
+                        <span className="blog-post-related-category">{p.category}</span>
+                        <h3 className="line-clamp-2">{p.title}</h3>
+                        {p.excerpt && <p className="line-clamp-2">{p.excerpt}</p>}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        )}
       </div>
     </Layout>
   );
