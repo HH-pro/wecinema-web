@@ -7,7 +7,7 @@ import {
   type BlogPost,
   resolveAuthorName,
   resolveAuthorAvatar,
-} from "@/features/blog/api/blogQueries";
+} from "@/features/blog/types";
 
 const PAGE_SIZE = 6;
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
