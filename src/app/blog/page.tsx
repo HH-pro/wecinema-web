@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import Layout from "@/components/layout/Layout";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { clientEnv } from "@/config/env";
 import { OG } from "@/lib/seo";
-import { getBlogPosts, getBlogCategories, resolveAuthorName, resolveAuthorAvatar } from "@/features/blog/api/blogQueries";
-import type { BlogPost } from "@/features/blog/api/blogQueries";
+import { getBlogPosts, getBlogCategories } from "@/features/blog/api/blogQueries";
+import BlogList from "@/features/blog/components/BlogList";
+
+const INITIAL_PAGE_SIZE = 6;
 
 const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
 
@@ -36,94 +37,6 @@ export const metadata: Metadata = {
 
 export const revalidate = 120;
 
-function formatDate(iso?: string) {
-  if (!iso) return "";
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
-
-function BlogCard({ post, featured }: { post: BlogPost; featured?: boolean }) {
-  const author     = resolveAuthorName(post.author);
-  const avatar     = resolveAuthorAvatar(post.author);
-  const imageUrl   = post.featuredImage?.url;
-  const imageAlt   = post.featuredImage?.alt ?? post.title;
-
-  return (
-    <Link
-      href={`/blog/${post.slug}`}
-      style={{ textDecoration: "none" }}
-      className={`group block rounded-2xl overflow-hidden border border-[var(--color-border-secondary)] bg-[var(--color-bg-elevated)] hover:border-[var(--color-accent-primary)] hover:-translate-y-1 transition-all duration-200 ${featured ? "md:grid md:grid-cols-2" : ""}`}
-    >
-      {/* Image */}
-      <div className={`relative overflow-hidden bg-[var(--color-bg-tertiary)] ${featured ? "min-h-[220px]" : "h-48"}`}>
-        {imageUrl ? (
-          <Image
-            src={imageUrl}
-            alt={imageAlt}
-            fill
-            className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <span style={{ fontSize: "4rem", fontWeight: 900, opacity: 0.08, color: "var(--color-accent-primary)" }}>
-              {post.title[0]?.toUpperCase()}
-            </span>
-          </div>
-        )}
-        <span style={{
-          position: "absolute", top: 10, left: 10, padding: "3px 10px",
-          borderRadius: 9999, fontSize: 11, fontWeight: 700,
-          backgroundColor: "rgba(0,0,0,0.65)", color: "var(--color-accent-primary)",
-          backdropFilter: "blur(4px)", border: "1px solid rgba(255,187,0,0.3)",
-        }}>
-          {post.category}
-        </span>
-      </div>
-
-      {/* Body */}
-      <div style={{ padding: "18px 20px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-        <div>
-          <h2 style={{
-            margin: "0 0 8px", fontSize: featured ? 18 : 15, fontWeight: 700,
-            fontFamily: "var(--font-heading)", color: "var(--color-text-primary)",
-            lineHeight: 1.35, display: "-webkit-box", WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical", overflow: "hidden",
-          }}>
-            {post.title}
-          </h2>
-          {post.excerpt && (
-            <p style={{
-              margin: 0, fontSize: 13, color: "var(--color-text-secondary)",
-              lineHeight: 1.6, display: "-webkit-box", WebkitLineClamp: 3,
-              WebkitBoxOrient: "vertical", overflow: "hidden",
-            }}>
-              {post.excerpt}
-            </p>
-          )}
-        </div>
-
-        <div style={{ marginTop: 14, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {avatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatar} alt={author} width={26} height={26} className="rounded-full object-cover" style={{ width: 26, height: 26 }} />
-            ) : (
-              <div style={{ width: 26, height: 26, borderRadius: 9999, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", background: "var(--color-accent-primary)" }}>
-                {author[0]?.toUpperCase()}
-              </div>
-            )}
-            <span style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>{author}</span>
-          </div>
-          <div style={{ display: "flex", gap: 10, fontSize: 11, color: "var(--color-text-tertiary)" }}>
-            {post.readTime && <span>{post.readTime}m read</span>}
-            <span>{formatDate(post.publishedAt ?? post.createdAt)}</span>
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
 export default async function BlogPage({
   searchParams,
 }: {
@@ -133,12 +46,9 @@ export default async function BlogPage({
   const category = typeof sp.category === "string" ? sp.category : undefined;
 
   const [{ posts, total }, categories] = await Promise.all([
-    getBlogPosts({ category }),
+    getBlogPosts({ category, limit: INITIAL_PAGE_SIZE }),
     getBlogCategories(),
   ]);
-
-  const featured = posts[0];
-  const rest     = posts.slice(1);
 
   return (
     <Layout>
@@ -214,27 +124,7 @@ export default async function BlogPage({
                 )}
               </div>
             ) : (
-              <>
-                {/* Featured */}
-                {featured && (
-                  <div style={{ marginBottom: 20 }}>
-                    <BlogCard post={featured} featured />
-                  </div>
-                )}
-                {/* Grid */}
-                <div style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-                  gap: 16,
-                }}>
-                  {rest.map(post => (
-                    <BlogCard key={post._id} post={post} />
-                  ))}
-                </div>
-                <p style={{ textAlign: "center", marginTop: 32, fontSize: 13, color: "var(--color-text-tertiary)" }}>
-                  Showing {posts.length} of {total} posts
-                </p>
-              </>
+              <BlogList initialPosts={posts} initialTotal={total} category={category} />
             )}
           </main>
 

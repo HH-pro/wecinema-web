@@ -47,12 +47,14 @@ const REVALIDATE = 120; // 2 minutes
 
 export async function getBlogPosts(opts: {
   page?: number;
+  limit?: number;
   category?: string;
   tag?: string;
   search?: string;
 } = {}): Promise<PostsResponse> {
   const params = new URLSearchParams();
   if (opts.page)     params.set("page",     String(opts.page));
+  if (opts.limit)    params.set("limit",    String(opts.limit));
   if (opts.category) params.set("category", opts.category);
   if (opts.tag)      params.set("tag",      opts.tag);
   if (opts.search)   params.set("search",   opts.search);
