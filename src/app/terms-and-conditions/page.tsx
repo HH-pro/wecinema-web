@@ -6,23 +6,26 @@ import { OG } from "@/lib/seo";
 const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
 const EFFECTIVE_DATE = "May 17, 2026";
 
+const TERMS_DESCRIPTION =
+  "Review the terms, policies, and creator guidelines for using WeCinema.";
+
 export const metadata: Metadata = {
-  title: "Terms & Conditions | WeCinema",
-  description: "WeCinema Terms & Conditions — covering account registration, video uploads, marketplace transactions, payments, intellectual property, DMCA, and user responsibilities.",
+  title: { absolute: "Terms & Conditions | WeCinema" },
+  description: TERMS_DESCRIPTION,
   keywords: ["WeCinema terms", "video marketplace policy", "content licensing", "indie film platform", "online video terms"],
   alternates: { canonical: "/terms-and-conditions" },
   openGraph: {
     type: "website",
     siteName: "WeCinema",
-    title: "WeCinema Terms & Conditions",
-    description: "Official platform agreement for WeCinema — video distribution and marketplace.",
+    title: "Terms & Conditions | WeCinema",
+    description: TERMS_DESCRIPTION,
     url: `${SITE}/terms-and-conditions`,
     images: [{ url: OG.default, width: 1200, height: 630, alt: "WeCinema Terms & Conditions" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "WeCinema Terms & Conditions",
-    description: "Official platform agreement for WeCinema — video distribution and marketplace.",
+    title: "Terms & Conditions | WeCinema",
+    description: TERMS_DESCRIPTION,
     images: [OG.default],
   },
 };

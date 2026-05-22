@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { LoginForm } from "@/features/auth/components/LoginForm";
 
 export const metadata: Metadata = {
-  title: "Sign In",
-  description: "Sign in to your WeCinema account.",
+  title: { absolute: "Login to WeCinema" },
+  description: "Access your WeCinema account to manage films, scripts, marketplace listings, and creator tools.",
   robots: { index: false, follow: false },
 };
 

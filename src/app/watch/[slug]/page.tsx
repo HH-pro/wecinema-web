@@ -10,6 +10,10 @@ export const revalidate = 0;
 
 const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
 
+const WATCH_FALLBACK_TITLE = "Watch Independent Films | WeCinema";
+const WATCH_FALLBACK_DESCRIPTION =
+  "Stream independent films, creator projects, and original stories on WeCinema.";
+
 export async function generateMetadata({
   params,
 }: {
@@ -19,15 +23,18 @@ export async function generateMetadata({
   const video = await getVideoBySlug(slug);
 
   if (!video) {
-    return { title: "Video Not Found" };
+    return {
+      title: { absolute: WATCH_FALLBACK_TITLE },
+      description: WATCH_FALLBACK_DESCRIPTION,
+    };
   }
 
   const title = `${video.title} | WeCinema`;
-  const description = video.description ?? "Watch this video on WeCinema.";
+  const description = video.description ?? WATCH_FALLBACK_DESCRIPTION;
   const image = video.thumbnail ?? OG.video;
 
   return {
-    title,
+    title: { absolute: title },
     description,
     alternates: { canonical: `/watch/${slug}` },
     openGraph: {

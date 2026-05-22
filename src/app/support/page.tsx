@@ -7,11 +7,11 @@ import SupportContent from "./SupportContent";
 import { FAQS } from "./data";
 
 const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
-const TITLE = "Customer Support — WeCinema Help Center & FAQs";
-const DESCRIPTION = "Need help with WeCinema? Browse our FAQs, contact support via email or WhatsApp, and get answers about uploads, marketplace orders, HypeMode, and payments.";
+const TITLE = "WeCinema Support Center";
+const DESCRIPTION = "Get help with your account, uploads, marketplace tools, and creator features on WeCinema.";
 
 export const metadata: Metadata = {
-  title: TITLE,
+  title: { absolute: TITLE },
   description: DESCRIPTION,
   keywords: ["wecinema support", "wecinema help", "wecinema faq", "customer care", "video marketplace help", "wecinema contact", "hypemode help"],
   alternates: { canonical: "/support" },

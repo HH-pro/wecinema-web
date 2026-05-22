@@ -5,12 +5,12 @@ import { OG } from "@/lib/seo";
 import { HypemodeContent } from "@/app/hypemode/HypemodeContent";
 
 const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
-const TITLE = "HypeMode — Exclusive Premium Films";
+const TITLE = "Hype Mode – Creator Discovery Feed | WeCinema";
 const DESCRIPTION =
-  "Watch exclusive premium films and videos on WeCinema HypeMode. Access the best content from top creators.";
+  "Get discovered through WeCinema Hype Mode and connect your films with audiences and industry professionals.";
 
 export const metadata: Metadata = {
-  title: TITLE,
+  title: { absolute: TITLE },
   description: DESCRIPTION,
   alternates: { canonical: "/hypemode" },
   openGraph: {

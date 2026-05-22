@@ -10,12 +10,12 @@ import { clientEnv } from "@/config/env";
 import { OG } from "@/lib/seo";
 
 const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
-const TITLE = "Film & Script Marketplace — Buy and Sell on WeCinema";
+const TITLE = "Film Marketplace | WeCinema";
 const DESCRIPTION =
-  "WeCinema Marketplace connects video creators with buyers. List your films and scripts, receive secure offers, and get paid via Stripe escrow.";
+  "Buy, sell, license, and discover independent film projects, scripts, and creative services.";
 
 export const metadata: Metadata = {
-  title: TITLE,
+  title: { absolute: TITLE },
   description: DESCRIPTION,
   alternates: { canonical: "/marketplace" },
   openGraph: {

@@ -63,11 +63,11 @@ const WORKFLOW = [
 ];
 
 const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
-const TITLE = "About WeCinema — The Marketplace for Video Creators & Buyers";
-const DESCRIPTION = "Learn about WeCinema — a marketplace where video creators sell their content directly to buyers. Explore our features, meet the team, and join free today.";
+const TITLE = "About WeCinema";
+const DESCRIPTION = "Learn about WeCinema's mission to help independent filmmakers buy, sell, stream, and network.";
 
 export const metadata: Metadata = {
-  title: TITLE,
+  title: { absolute: TITLE },
   description: DESCRIPTION,
   keywords: ["wecinema about", "video marketplace", "sell videos online", "buy video content", "film creators", "wecinema team", "wecinema features"],
   alternates: { canonical: "/about" },

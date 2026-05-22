@@ -11,17 +11,19 @@ const INITIAL_PAGE_SIZE = 6;
 
 const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
 
+const BLOG_TITLE = "WeCinema Blog – Film News & Creator Tips";
+const BLOG_DESCRIPTION =
+  "Read filmmaking advice, industry updates, creator success stories, and movie discussions.";
+
 export const metadata: Metadata = {
-  title: "Blog — Filmmaking Insights & Platform Updates",
-  description:
-    "Explore the Wecinema blog for filmmaking insights, platform tutorials, creator stories, and the latest updates from the WeCinema team.",
+  title: { absolute: BLOG_TITLE },
+  description: BLOG_DESCRIPTION,
   alternates: { canonical: "/blog" },
   openGraph: {
     type: "website",
     siteName: "Wecinema",
-    title: "Wecinema Blog — Insights, Tutorials & Film Industry Updates",
-    description:
-      "Explore the Wecinema blog for filmmaking insights, platform tutorials, creator stories, and the latest updates from the WeCinema team.",
+    title: BLOG_TITLE,
+    description: BLOG_DESCRIPTION,
     url: `${SITE}/blog`,
     images: [{ url: OG.blog, width: 1200, height: 630, alt: "Wecinema Blog" }],
     locale: "en_US",
@@ -29,8 +31,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     site: "@wecinema",
-    title: "Wecinema Blog",
-    description: "Filmmaking insights, platform tutorials, and creator stories.",
+    title: BLOG_TITLE,
+    description: BLOG_DESCRIPTION,
     images: [OG.blog],
   },
 };

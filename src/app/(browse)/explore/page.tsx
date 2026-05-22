@@ -5,12 +5,12 @@ import { OG } from "@/lib/seo";
 import { ExploreContent } from "@/app/explore/ExploreContent";
 
 const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
-const TITLE = "HypeMode — Unlock Premium WeCinema Access";
+const TITLE = "Explore Independent Films & Creators | WeCinema";
 const DESCRIPTION =
-  "Subscribe to WeCinema HypeMode. Stream in HD, watch exclusive filmmaker content ad-free, get priority marketplace placement, and pay lower platform fees.";
+  "Discover indie films, creators, scripts, and rising filmmaking talent on WeCinema.";
 
 export const metadata: Metadata = {
-  title: TITLE,
+  title: { absolute: TITLE },
   description: DESCRIPTION,
   alternates: { canonical: "/explore" },
   openGraph: {

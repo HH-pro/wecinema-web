@@ -8,16 +8,19 @@ import { AnalyticsSectionClient } from "@/features/analytics/components/Analytic
 import { JsonLd } from "@/components/seo/JsonLd";
 import { OG, SITE_ORIGIN } from "@/lib/seo";
 
+const HOME_TITLE = "WeCinema – Buy, Sell & Stream Independent Films";
+const HOME_DESCRIPTION =
+  "Upload films, sell scripts, network with filmmakers, and turn creativity into currency on WeCinema.";
+
 export const metadata: Metadata = {
-  title: "Watch, Create & Sell Films and Scripts Online",
-  description:
-    "WeCinema is the home of independent film. Watch movies, upload your own, browse scripts, and sell your work to a global audience.",
+  title: { absolute: HOME_TITLE },
+  description: HOME_DESCRIPTION,
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     siteName: "WeCinema",
-    title: "WeCinema — Watch, Create & Sell Films and Scripts Online",
-    description: "WeCinema is the home of independent film. Watch movies, upload your own, browse scripts, and sell your work to a global audience.",
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
     url: SITE_ORIGIN,
     images: [{ url: OG.default, width: 1200, height: 630, alt: "WeCinema — Independent Film Platform" }],
     locale: "en_US",
@@ -25,8 +28,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     site: "@wecinema",
-    title: "WeCinema — Watch, Create & Sell Films and Scripts Online",
-    description: "WeCinema is the home of independent film. Watch movies, upload your own, browse scripts, and sell your work to a global audience.",
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
     images: [OG.default],
   },
 };

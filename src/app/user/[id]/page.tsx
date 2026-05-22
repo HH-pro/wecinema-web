@@ -8,6 +8,10 @@ import { UserProfileClient } from "@/features/profile/components/UserProfileClie
 
 const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
 
+const PROFILE_FALLBACK_TITLE = "Creator Profile | WeCinema";
+const PROFILE_FALLBACK_DESCRIPTION =
+  "View filmmaker profiles, uploaded films, scripts, and creative portfolios on WeCinema.";
+
 export async function generateMetadata({
   params,
 }: {
@@ -23,17 +27,20 @@ export async function generateMetadata({
   }
 
   if (!user) {
-    return { title: "Profile | WeCinema" };
+    return {
+      title: { absolute: PROFILE_FALLBACK_TITLE },
+      description: PROFILE_FALLBACK_DESCRIPTION,
+    };
   }
 
   const title = `${user.username}'s Profile | WeCinema`;
   const description = user.bio
     ? user.bio.slice(0, 155)
-    : `View ${user.username}'s profile on WeCinema.`;
+    : PROFILE_FALLBACK_DESCRIPTION;
   const image = user.avatar ?? OG.default;
 
   return {
-    title,
+    title: { absolute: title },
     description,
     alternates: { canonical: `/user/${id}` },
     openGraph: {
