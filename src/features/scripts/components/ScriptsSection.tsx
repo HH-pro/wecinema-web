@@ -25,9 +25,7 @@ function ScriptCard({ script }: { script: Script }) {
 
   return (
     <Link
-      href={`${process.env.NEXT_PUBLIC_APP_URL ?? "https://wecinema.co"}/scripts/${script._id}`}
-      target="_blank"
-      rel="noopener noreferrer"
+      href={`/scripts/${script._id}`}
       style={{
         display: "flex",
         flexDirection: "column",
@@ -115,8 +113,6 @@ export async function ScriptsSection() {
   const scripts = await getLatestScripts(6);
   if (scripts.length === 0) return null;
 
-  const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://wecinema.co";
-
   return (
     <section
       style={{ padding: "24px 24px 32px", contentVisibility: "auto", containIntrinsicSize: "1px 320px" } as React.CSSProperties}
@@ -146,9 +142,7 @@ export async function ScriptsSection() {
           Latest Scripts
         </h2>
         <Link
-          href={`${APP_URL}/scripts`}
-          target="_blank"
-          rel="noopener noreferrer"
+          href="/scripts"
           style={{
             display: "inline-flex",
             alignItems: "center",
