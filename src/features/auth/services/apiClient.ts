@@ -92,7 +92,16 @@ async function apiFetch<T>(path: string, opts: FetchOptions = {}): Promise<T> {
     body: serialisedBody,
   });
 
-  if (res.status === 401 && !_retry) {
+  const isAuthEntryPath =
+    path.includes("/user/login") ||
+    path.includes("/user/register") ||
+    path.includes("/user/google") ||
+    path.includes("/user/forgot-password") ||
+    path.includes("/user/reset-password") ||
+    path.includes("/user/verify-email-otp") ||
+    path.includes("/user/resend");
+
+  if (res.status === 401 && !_retry && !isAuthEntryPath) {
     if (path.includes("/user/refresh")) {
       _onUnauthorized?.();
       throw new AppError(401, "Session expired. Please log in.");

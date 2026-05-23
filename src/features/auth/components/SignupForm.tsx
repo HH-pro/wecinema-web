@@ -21,16 +21,6 @@ import {
 } from "@/components/auth/shared";
 import { OtpInput } from "@/features/auth/components/OtpInput";
 
-// ─── Helpers ──────────────────────────────────────────────────
-
-function formatDob(dob: string): string {
-  return new Date(dob).toLocaleDateString("en-US", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
-  });
-}
-
 // ─── Panel wrapper ────────────────────────────────────────────
 
 function Panel({ children }: { children: React.ReactNode }) {
@@ -322,7 +312,7 @@ function RegisterForm() {
         email: result.data!.email,
         password: result.data!.password,
         username: result.data!.username,
-        dob: formatDob(result.data!.dob),
+        dob: result.data!.dob,
       });
       setVerifyData({ email: result.data!.email, username: result.data!.username });
       setView("verify");
