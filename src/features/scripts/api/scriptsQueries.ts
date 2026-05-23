@@ -8,10 +8,13 @@ interface ScriptsResponse {
 
 export async function getLatestScripts(limit = 6): Promise<Script[]> {
   try {
-    const data = await apiFetch<ScriptsResponse | Script[]>("/video/author/scripts", {
-      revalidate: 300,
-      tags: ["scripts:latest"],
-    });
+    const data = await apiFetch<ScriptsResponse | Script[]>(
+      `/video/author/scripts?limit=${limit}`,
+      {
+        revalidate: 60,
+        tags: ["scripts:latest"],
+      },
+    );
 
     const list = Array.isArray(data) ? data : data.scripts ?? data.data ?? [];
     return list.slice(0, limit);
