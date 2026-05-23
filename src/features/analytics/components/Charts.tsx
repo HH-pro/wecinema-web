@@ -20,6 +20,7 @@ import {
   type ChartData,
 } from "chart.js";
 import type { GraphData, GraphDateParams } from "@/types";
+import { CATEGORIES, THEMES, RATINGS } from "@/lib/constants";
 
 ChartJS.register(
   CategoryScale,
@@ -74,19 +75,56 @@ function aggregateTotals(raw: GraphData): { key: string; total: number }[] {
       key,
       total: Object.values(dates).reduce((s, v) => s + (v ?? 0), 0),
     }))
-    .filter((e) => e.total > 0)
-    .sort((a, b) => b.total - a.total);
+    .sort((a, b) => b.total - a.total || a.key.localeCompare(b.key));
 }
 
-function buildLineData(raw: GraphData, topN: number): ChartData<"line"> {
-  const allDates = Array.from(
+function ensureCanonical(raw: GraphData | null, canonical: readonly string[]): GraphData {
+  const merged: GraphData = { ...(raw ?? {}) };
+  for (const key of canonical) if (!merged[key]) merged[key] = {};
+  return merged;
+}
+
+function dateRangeDays(params?: GraphDateParams): string[] {
+  const to = params?.to ? new Date(params.to + "T00:00:00") : new Date();
+  const from = params?.from ? new Date(params.from + "T00:00:00") : (() => {
+    const d = new Date(to);
+    d.setDate(d.getDate() - 90);
+    return d;
+  })();
+  const out: string[] = [];
+  for (const d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
+    const iso = d.toISOString().split("T")[0];
+    if (iso) out.push(iso);
+  }
+  return out;
+}
+
+const TOP_LINE_COUNT = 5;
+
+interface CategoryEntry {
+  key: string;
+  total: number;
+  color: string | null; // non-null = drawn as a chart line in this color
+}
+
+function buildCategoryEntries(raw: GraphData): CategoryEntry[] {
+  return aggregateTotals(raw).map((item, idx) => ({
+    key: item.key,
+    total: item.total,
+    color: idx < TOP_LINE_COUNT ? LINE_COLORS[idx % LINE_COLORS.length] ?? null : null,
+  }));
+}
+
+function buildLineData(raw: GraphData, fallbackDates: string[], entries: CategoryEntry[]): ChartData<"line"> {
+  const fromData = Array.from(
     new Set(Object.values(raw).flatMap((d) => Object.keys(d))),
-  ).sort();
-  const topCats = aggregateTotals(raw).slice(0, topN);
+  );
+  const allDates = (fromData.length ? fromData : fallbackDates).sort();
+  const drawn = entries.filter((e) => e.color);
   return {
     labels: allDates.map(formatDateLabel),
-    datasets: topCats.map((item, idx) => {
-      const color = LINE_COLORS[idx % LINE_COLORS.length];
+    datasets: drawn.map((item, idx) => {
+      const color = item.color as string;
       return {
         label: item.key,
         data: allDates.map((d) => raw[item.key]?.[d] ?? 0),
@@ -105,14 +143,37 @@ function buildLineData(raw: GraphData, topN: number): ChartData<"line"> {
   };
 }
 
-function buildDoughnutData(raw: GraphData): ChartData<"doughnut"> {
-  const items = aggregateTotals(raw);
+function buildDoughnutEntries(raw: GraphData): CategoryEntry[] {
+  return aggregateTotals(raw).map((item, idx) => ({
+    key: item.key,
+    total: item.total,
+    color: DONUT_COLORS[idx % DONUT_COLORS.length] ?? null,
+  }));
+}
+
+function buildDoughnutData(entries: CategoryEntry[]): ChartData<"doughnut"> {
+  const sum = entries.reduce((s, e) => s + e.total, 0);
+  if (sum === 0) {
+    // Render a single muted ring so the chart visually exists when there's no data.
+    return {
+      labels: ["No data"],
+      datasets: [
+        {
+          data: [1],
+          backgroundColor: ["var(--color-skeleton-base,#E5E5E5)"],
+          borderColor: "transparent",
+          borderWidth: 0,
+          hoverOffset: 0,
+        },
+      ],
+    };
+  }
   return {
-    labels: items.map((i) => i.key),
+    labels: entries.map((e) => e.key),
     datasets: [
       {
-        data: items.map((i) => i.total),
-        backgroundColor: DONUT_COLORS.slice(0, items.length),
+        data: entries.map((e) => e.total),
+        backgroundColor: entries.map((e) => e.color ?? "#E5E5E5"),
         borderColor: "transparent",
         borderWidth: 0,
         hoverOffset: 10,
@@ -134,19 +195,7 @@ function buildLineOptions(mobile: boolean, maxTicks: number): ChartOptions<"line
     maintainAspectRatio: false,
     interaction: { mode: "index", intersect: false },
     plugins: {
-      legend: {
-        display: true,
-        position: "top",
-        align: "start",
-        labels: {
-          color: tick,
-          font: { size: mobile ? 9 : 10, family: "'Roboto',sans-serif" },
-          usePointStyle: true,
-          pointStyle: "circle",
-          boxWidth: 6,
-          padding: mobile ? 8 : 14,
-        },
-      },
+      legend: { display: false },
       tooltip: {
         backgroundColor: "rgba(15,23,42,0.92)",
         titleColor: "#f1f5f9",
@@ -188,24 +237,13 @@ function buildLineOptions(mobile: boolean, maxTicks: number): ChartOptions<"line
   };
 }
 
-function buildDoughnutOptions(mobile: boolean): ChartOptions<"doughnut"> {
-  const tick = getCSSVar("--color-text-tertiary", "#909090");
+function buildDoughnutOptions(_mobile: boolean): ChartOptions<"doughnut"> {
   return {
     responsive: true,
     maintainAspectRatio: false,
     cutout: "62%",
     plugins: {
-      legend: {
-        position: mobile ? "bottom" : "right",
-        labels: {
-          color: tick,
-          font: { size: mobile ? 9 : 10, family: "'Roboto',sans-serif" },
-          usePointStyle: true,
-          pointStyle: "circle",
-          boxWidth: 7,
-          padding: mobile ? 10 : 14,
-        },
-      },
+      legend: { display: false },
       tooltip: {
         backgroundColor: "rgba(15,23,42,0.92)",
         titleColor: "#f1f5f9",
@@ -298,7 +336,41 @@ const S = {
     animation: "livePulse 2s ease-in-out infinite",
   },
   liveText: { fontSize: "0.6rem", fontWeight: 600, color: "#22C55E" },
-  chartArea: (h: number) => ({ padding: "4px 16px 12px", height: h }),
+  chartArea: (h: number) => ({ padding: "4px 16px 8px", height: h }),
+  legendGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))",
+    gap: "4px 10px",
+    padding: "8px 14px 10px",
+    borderTop: "1px solid var(--color-divider,#E5E5E5)",
+    maxHeight: "92px",
+    overflowY: "auto" as const,
+    scrollbarWidth: "thin" as const,
+  },
+  legendItem: (active: boolean) => ({
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    fontSize: "0.7rem",
+    color: active ? "var(--color-text-secondary,#606060)" : "var(--color-text-tertiary,#909090)",
+    opacity: active ? 1 : 0.7,
+    minWidth: 0,
+  }),
+  legendDot: (color: string | null) => ({
+    width: "8px",
+    height: "8px",
+    borderRadius: "9999px",
+    flexShrink: 0,
+    background: color ?? "transparent",
+    border: color ? "none" : "1.5px solid var(--color-border-primary,#D4D4D4)",
+  }),
+  legendName: {
+    flex: 1,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap" as const,
+  },
+  legendCount: { fontWeight: 600, fontVariantNumeric: "tabular-nums" as const },
   noData: {
     height: "100%",
     display: "flex",
@@ -465,11 +537,12 @@ const LineCard: React.FC<{
   data: ChartData<"line"> | null;
   isMobile: boolean;
   isActive?: boolean;
-  categoryCount: number;
+  entries: CategoryEntry[];
   maxTicks: number;
-}> = ({ title, icon, accentColor, subtitle, data, isMobile, isActive = true, categoryCount, maxTicks }) => {
+}> = ({ title, icon, accentColor, subtitle, data, isMobile, isActive = true, entries, maxTicks }) => {
   const opts = useMemo(() => buildLineOptions(isMobile, maxTicks), [isMobile, maxTicks]);
-  const height = isMobile ? 180 : 220;
+  const height = isMobile ? 140 : 160;
+  const drawnCount = entries.filter((e) => e.color).length;
 
   return (
     <div style={S.card(isActive, isMobile)}>
@@ -497,10 +570,19 @@ const LineCard: React.FC<{
           </div>
         )}
       </div>
+      <div style={S.legendGrid}>
+        {entries.map((e) => (
+          <div key={e.key} style={S.legendItem(e.total > 0)} title={`${e.key}: ${e.total.toLocaleString()}`}>
+            <span style={S.legendDot(e.color)} />
+            <span style={S.legendName}>{e.key}</span>
+            <span style={S.legendCount}>{e.total.toLocaleString()}</span>
+          </div>
+        ))}
+      </div>
       {!isMobile && (
         <div style={S.footer}>
           <span style={S.footerText}>
-            Top <strong>{Math.min(categoryCount, 6)}</strong> of {categoryCount} categories
+            Top <strong>{drawnCount}</strong> of {entries.length} categories
           </span>
           <span style={S.footerBadge(accentColor)}>90-day trend</span>
         </div>
@@ -516,10 +598,11 @@ const DonutCard: React.FC<{
   data: ChartData<"doughnut"> | null;
   isMobile: boolean;
   isActive?: boolean;
-  totalItems: number;
-}> = ({ title, icon, accentColor, data, isMobile, isActive = true, totalItems }) => {
+  entries: CategoryEntry[];
+}> = ({ title, icon, accentColor, data, isMobile, isActive = true, entries }) => {
   const opts = useMemo(() => buildDoughnutOptions(isMobile), [isMobile]);
-  const height = isMobile ? 180 : 220;
+  const height = isMobile ? 140 : 160;
+  const activeCount = entries.filter((e) => e.total > 0).length;
 
   return (
     <div style={S.card(isActive, isMobile)}>
@@ -546,10 +629,19 @@ const DonutCard: React.FC<{
           </div>
         )}
       </div>
+      <div style={S.legendGrid}>
+        {entries.map((e) => (
+          <div key={e.key} style={S.legendItem(e.total > 0)} title={`${e.key}: ${e.total.toLocaleString()}`}>
+            <span style={S.legendDot(e.total > 0 ? e.color : null)} />
+            <span style={S.legendName}>{e.key}</span>
+            <span style={S.legendCount}>{e.total.toLocaleString()}</span>
+          </div>
+        ))}
+      </div>
       {!isMobile && (
         <div style={S.footer}>
           <span style={S.footerText}>
-            <strong>{totalItems}</strong> rating types
+            <strong>{activeCount}</strong> of {entries.length} ratings active
           </span>
           <span style={S.footerBadge(accentColor)}>Analytics</span>
         </div>
@@ -569,25 +661,26 @@ const Charts: React.FC<ChartsProps> = ({ isMobile = false, dateRange }) => {
   const loading = genreR.loading || themeR.loading || ratingR.loading;
   const err = genreR.error ?? themeR.error ?? ratingR.error;
 
-  const topN = isMobile ? 4 : 6;
   const maxTicks = isMobile ? 4 : 7;
+  const fallbackDates = useMemo(() => dateRangeDays(params), [params]);
+
+  const genreMerged = useMemo(() => ensureCanonical(genreR.data, CATEGORIES), [genreR.data]);
+  const themeMerged = useMemo(() => ensureCanonical(themeR.data, THEMES), [themeR.data]);
+  const ratingMerged = useMemo(() => ensureCanonical(ratingR.data, RATINGS), [ratingR.data]);
+
+  const genreEntries = useMemo(() => buildCategoryEntries(genreMerged), [genreMerged]);
+  const themeEntries = useMemo(() => buildCategoryEntries(themeMerged), [themeMerged]);
+  const ratingEntries = useMemo(() => buildDoughnutEntries(ratingMerged), [ratingMerged]);
 
   const genreData = useMemo(
-    () => (genreR.data && Object.keys(genreR.data).length ? buildLineData(genreR.data, topN) : null),
-    [genreR.data, topN],
+    () => buildLineData(genreMerged, fallbackDates, genreEntries),
+    [genreMerged, fallbackDates, genreEntries],
   );
   const themeData = useMemo(
-    () => (themeR.data && Object.keys(themeR.data).length ? buildLineData(themeR.data, topN) : null),
-    [themeR.data, topN],
+    () => buildLineData(themeMerged, fallbackDates, themeEntries),
+    [themeMerged, fallbackDates, themeEntries],
   );
-  const ratingData = useMemo(
-    () => (ratingR.data && Object.keys(ratingR.data).length ? buildDoughnutData(ratingR.data) : null),
-    [ratingR.data],
-  );
-
-  const genreCount = genreR.data ? Object.keys(genreR.data).length : 0;
-  const themeCount = themeR.data ? Object.keys(themeR.data).length : 0;
-  const ratingCount = ratingR.data ? Object.keys(ratingR.data).length : 0;
+  const ratingData = useMemo(() => buildDoughnutData(ratingEntries), [ratingEntries]);
 
   const [slide, setSlide] = useState(0);
   const touchX = useRef(0);
@@ -618,7 +711,7 @@ const Charts: React.FC<ChartsProps> = ({ isMobile = false, dateRange }) => {
           subtitle="Views over time by genre"
           data={genreData}
           isMobile={false}
-          categoryCount={genreCount}
+          entries={genreEntries}
           maxTicks={maxTicks}
         />
         <LineCard
@@ -628,7 +721,7 @@ const Charts: React.FC<ChartsProps> = ({ isMobile = false, dateRange }) => {
           subtitle="Views over time by theme"
           data={themeData}
           isMobile={false}
-          categoryCount={themeCount}
+          entries={themeEntries}
           maxTicks={maxTicks}
         />
         <DonutCard
@@ -637,7 +730,7 @@ const Charts: React.FC<ChartsProps> = ({ isMobile = false, dateRange }) => {
           accentColor="#3B82F6"
           data={ratingData}
           isMobile={false}
-          totalItems={ratingCount}
+          entries={ratingEntries}
         />
       </div>
     );
@@ -654,7 +747,7 @@ const Charts: React.FC<ChartsProps> = ({ isMobile = false, dateRange }) => {
       data={genreData}
       isMobile
       isActive={slide === 0}
-      categoryCount={genreCount}
+      entries={genreEntries}
       maxTicks={maxTicks}
     />,
     <LineCard
@@ -666,7 +759,7 @@ const Charts: React.FC<ChartsProps> = ({ isMobile = false, dateRange }) => {
       data={themeData}
       isMobile
       isActive={slide === 1}
-      categoryCount={themeCount}
+      entries={themeEntries}
       maxTicks={maxTicks}
     />,
     <DonutCard
@@ -677,7 +770,7 @@ const Charts: React.FC<ChartsProps> = ({ isMobile = false, dateRange }) => {
       data={ratingData}
       isMobile
       isActive={slide === 2}
-      totalItems={ratingCount}
+      entries={ratingEntries}
     />,
   ];
 
