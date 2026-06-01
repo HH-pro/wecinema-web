@@ -27,6 +27,7 @@ function timeAgo(dateStr?: string): string {
 export function VideoCard({ video, priority = false }: { video: Video; priority?: boolean }) {
   const href = `/watch/${video.slug ?? video._id}`;
   const thumb = video.thumbnailSmall ?? video.thumbnail ?? FALLBACK_THUMB;
+  const isDataThumb = thumb.startsWith("data:");
   const author =
     typeof video.author === "object" && video.author !== null ? video.author : null;
   const authorName = author?.username ?? "Unknown";
@@ -60,9 +61,13 @@ export function VideoCard({ video, priority = false }: { video: Video; priority?
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           className="object-cover transition-transform duration-300 group-hover/thumb:scale-105"
-          unoptimized={thumb.startsWith("data:")}
-          priority={priority}
+          unoptimized={isDataThumb}
+          // `priority` is deprecated in Next 16 — eager + high fetchPriority is the
+          // recommended way to prioritize the LCP image (first card of first gallery).
           loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : "auto"}
+          decoding="async"
+          {...(isDataThumb ? {} : { placeholder: "blur" as const, blurDataURL: FALLBACK_THUMB })}
         />
 
         {/* Hover play overlay */}

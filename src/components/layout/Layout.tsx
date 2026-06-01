@@ -42,20 +42,31 @@ function BottomNavItem({
 export default function Layout({ children, hasHeader = true }: LayoutProps) {
   const pathname = usePathname();
   const [expanded, setExpanded] = useState(false);
-  const [screenWidth, setScreenWidth] = useState(1280);
+  // Track only the breakpoint booleans (not the raw width) so resizing doesn't
+  // re-render the whole tree + Framer Motion on every pixel — only when a
+  // threshold is actually crossed. Defaults to desktop to match SSR output.
+  const [bp, setBp] = useState({ tabletOrMobile: false, mobile: false });
 
   useIsomorphicLayoutEffect(() => {
-    setScreenWidth(window.innerWidth);
-    const fn = () => setScreenWidth(window.innerWidth);
-    window.addEventListener("resize", fn);
-    return () => window.removeEventListener("resize", fn);
+    const compute = () => {
+      const w = window.innerWidth;
+      const next = { tabletOrMobile: w <= 1120, mobile: w <= 768 };
+      setBp((prev) =>
+        prev.tabletOrMobile === next.tabletOrMobile && prev.mobile === next.mobile
+          ? prev
+          : next,
+      );
+    };
+    compute();
+    window.addEventListener("resize", compute);
+    return () => window.removeEventListener("resize", compute);
   }, []);
 
   // Close drawer whenever the user navigates
   useEffect(() => { setExpanded(false); }, [pathname]);
 
-  const isTabletOrMobile = screenWidth <= 1120;
-  const isMobile = screenWidth <= 768;
+  const isTabletOrMobile = bp.tabletOrMobile;
+  const isMobile = bp.mobile;
 
   const sidebarPx = useMemo(() => {
     if (isTabletOrMobile) return 0;

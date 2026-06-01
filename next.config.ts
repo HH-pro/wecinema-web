@@ -54,6 +54,14 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: securityHeaders,
       },
+      {
+        // Disable reverse-proxy (nginx) response buffering so the App Router's
+        // streamed Suspense boundaries (the homepage galleries) reach the
+        // browser progressively instead of all at once. Harmless on routes that
+        // don't stream. See Next.js "Streaming → Reverse proxies".
+        source: "/:path*",
+        headers: [{ key: "X-Accel-Buffering", value: "no" }],
+      },
     ];
   },
 
