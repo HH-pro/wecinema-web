@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Poppins, Roboto } from "next/font/google";
 import { Providers } from "@/components/layout/Providers";
 import { clientEnv } from "@/config/env";
-import { OG, SITE_ORIGIN } from "@/lib/seo";
+import { OG } from "@/lib/seo";
 import "./globals.css";
 
 // Preload only the most-used weight eagerly; remaining weights load on swap.
@@ -56,7 +56,9 @@ export const metadata: Metadata = {
   creator: SITE_NAME,
   publisher: SITE_NAME,
   formatDetection: { email: false, address: false, telephone: false },
-  alternates: { canonical: "/" },
+  // No canonical here: a root-layout canonical is INHERITED by every descendant
+  // page that doesn't set its own, making Google treat them as duplicates of "/".
+  // The homepage (app/page.tsx) sets its own canonical: "/"; other pages set theirs.
   openGraph: {
     type: "website",
     locale: "en_US",
