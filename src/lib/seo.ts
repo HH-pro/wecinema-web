@@ -17,6 +17,11 @@ export const OG = {
   explore: `${SITE_ORIGIN}/seo/Explore.webp`,
   privacy: `${SITE_ORIGIN}/seo/Privacy.webp`,
   about:   `${SITE_ORIGIN}/seo/WeCinema-About.webp`,
+  login:        `${SITE_ORIGIN}/seo/Login.webp`,
+  signup:       `${SITE_ORIGIN}/seo/signup.webp`,
+  scripts:      `${SITE_ORIGIN}/seo/script.webp`,
+  scriptUpload: `${SITE_ORIGIN}/seo/script-upload.webp`,
+  search:       `${SITE_ORIGIN}/seo/search.webp`,
 } as const;
 
 export type OGKey = keyof typeof OG;

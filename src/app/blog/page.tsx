@@ -5,6 +5,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { clientEnv } from "@/config/env";
 import { OG } from "@/lib/seo";
 import { getBlogPosts, getBlogCategories } from "@/features/blog/api/blogQueries";
+import { decodeHtmlEntities } from "@/features/blog/types";
 import BlogList from "@/features/blog/components/BlogList";
 
 const INITIAL_PAGE_SIZE = 13;
@@ -47,10 +48,19 @@ export default async function BlogPage({
   const sp       = await searchParams;
   const category = typeof sp.category === "string" ? sp.category : undefined;
 
-  const [{ posts, total }, categories] = await Promise.all([
-    getBlogPosts({ category, limit: INITIAL_PAGE_SIZE }),
+  // The (WordPress) blog backend can't reliably filter by category *name*, so
+  // when a category is selected we fetch the full set and filter here instead.
+  // With no filter we keep normal server pagination (13 + load-more of 3).
+  const FILTER_FETCH_LIMIT = 100;
+  const [listResult, categories] = await Promise.all([
+    getBlogPosts({ limit: category ? FILTER_FETCH_LIMIT : INITIAL_PAGE_SIZE }),
     getBlogCategories(),
   ]);
+
+  const posts = category
+    ? listResult.posts.filter(p => p.category === category)
+    : listResult.posts;
+  const total = category ? posts.length : listResult.total;
 
   return (
     <Layout>
@@ -110,7 +120,7 @@ export default async function BlogPage({
                       border: category === cat ? "1px solid color-mix(in srgb, var(--color-accent-primary) 30%, transparent)" : "1px solid var(--color-border-secondary)",
                     }}
                   >
-                    {cat}
+                    {decodeHtmlEntities(cat)}
                   </Link>
                 ))}
               </div>
@@ -126,7 +136,7 @@ export default async function BlogPage({
                 )}
               </div>
             ) : (
-              <BlogList initialPosts={posts} initialTotal={total} category={category} />
+              <BlogList initialPosts={posts} initialTotal={total} />
             )}
           </main>
         </div>
