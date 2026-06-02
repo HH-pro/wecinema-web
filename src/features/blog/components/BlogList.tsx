@@ -7,6 +7,7 @@ import {
   type BlogPost,
   resolveAuthorName,
   resolveAuthorAvatar,
+  cleanExcerpt,
 } from "@/features/blog/types";
 
 const LOAD_MORE_SIZE = 3;
@@ -131,7 +132,8 @@ export default function BlogList({ initialPosts, initialTotal, category }: BlogL
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json() as { posts: BlogPost[]; total: number };
 
-      const incoming = Array.isArray(data.posts) ? data.posts : [];
+      const incoming = (Array.isArray(data.posts) ? data.posts : [])
+        .map(p => ({ ...p, excerpt: cleanExcerpt(p.excerpt) }));
       setPosts(prev => {
         const seen = new Set(prev.map(p => p._id));
         const merged = [...prev];

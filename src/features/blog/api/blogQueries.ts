@@ -1,8 +1,14 @@
 import { apiFetch, ApiError } from "@/lib/fetch/serverFetch";
 import type { BlogPost } from "@/features/blog/types";
+import { cleanExcerpt } from "@/features/blog/types";
 
 export type { BlogPost, BlogAuthor, BlogFeaturedImage } from "@/features/blog/types";
 export { resolveAuthorName, resolveAuthorAvatar } from "@/features/blog/types";
+
+/** Normalize a post for display — decodes WordPress entities in the excerpt. */
+function normalizePost(post: BlogPost): BlogPost {
+  return { ...post, excerpt: cleanExcerpt(post.excerpt) };
+}
 
 interface PostsResponse {
   posts: BlogPost[];
@@ -32,10 +38,11 @@ export async function getBlogPosts(opts: {
   if (opts.search)   params.set("search",   opts.search);
 
   try {
-    return await apiFetch<PostsResponse>(`/blog?${params}`, {
+    const data = await apiFetch<PostsResponse>(`/blog?${params}`, {
       revalidate: REVALIDATE,
       tags: ["blog:posts"],
     });
+    return { ...data, posts: (data.posts ?? []).map(normalizePost) };
   } catch (err) {
     if (err instanceof ApiError) console.warn("[blog] list", err.status, err.statusText);
     else console.error("[blog] list", err);
@@ -49,7 +56,7 @@ export async function getBlogPost(slug: string): Promise<BlogPost | null> {
       revalidate: REVALIDATE,
       tags: [`blog:post:${slug}`],
     });
-    return data.post;
+    return normalizePost(data.post);
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) return null;
     if (err instanceof ApiError) console.warn("[blog] post", err.status, err.statusText);
