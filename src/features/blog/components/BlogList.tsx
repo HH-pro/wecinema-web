@@ -9,7 +9,7 @@ import {
   resolveAuthorAvatar,
 } from "@/features/blog/types";
 
-const PAGE_SIZE = 6;
+const LOAD_MORE_SIZE = 3;
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 
 function formatDate(iso?: string) {
@@ -107,7 +107,6 @@ interface BlogListProps {
 export default function BlogList({ initialPosts, initialTotal, category }: BlogListProps) {
   const [posts, setPosts]     = useState<BlogPost[]>(initialPosts);
   const [total, setTotal]     = useState<number>(initialTotal);
-  const [page, setPage]       = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError]     = useState<string | null>(null);
 
@@ -120,10 +119,9 @@ export default function BlogList({ initialPosts, initialTotal, category }: BlogL
     setLoading(true);
     setError(null);
     try {
-      const nextPage = page + 1;
       const params = new URLSearchParams();
-      params.set("page",  String(nextPage));
-      params.set("limit", String(PAGE_SIZE));
+      params.set("skip",  String(posts.length));
+      params.set("limit", String(LOAD_MORE_SIZE));
       if (category) params.set("category", category);
 
       const res = await fetch(`${API_BASE}/blog?${params}`, { cache: "no-store" });
@@ -138,7 +136,6 @@ export default function BlogList({ initialPosts, initialTotal, category }: BlogL
         return merged;
       });
       if (typeof data.total === "number") setTotal(data.total);
-      setPage(nextPage);
     } catch (err) {
       console.error("[blog] load more failed", err);
       setError("Couldn't load more posts. Please try again.");

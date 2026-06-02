@@ -7,7 +7,7 @@ import { OG } from "@/lib/seo";
 import { getBlogPosts, getBlogCategories } from "@/features/blog/api/blogQueries";
 import BlogList from "@/features/blog/components/BlogList";
 
-const INITIAL_PAGE_SIZE = 6;
+const INITIAL_PAGE_SIZE = 13;
 
 const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
 
@@ -80,9 +80,9 @@ export default async function BlogPage({
           </p>
         </div>
 
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px", display: "flex", gap: 32 }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px" }}>
           {/* Main */}
-          <main style={{ flex: 1, minWidth: 0 }}>
+          <main style={{ minWidth: 0 }}>
             {/* Category filter */}
             {categories.length > 0 && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
@@ -129,38 +129,6 @@ export default async function BlogPage({
               <BlogList initialPosts={posts} initialTotal={total} category={category} />
             )}
           </main>
-
-          {/* Sidebar — hidden on narrow screens via grid */}
-          {categories.length > 0 && (
-            <aside style={{ width: 220, flexShrink: 0 }} className="hidden lg:block">
-              <div style={{
-                backgroundColor: "var(--color-bg-elevated)", borderRadius: 16,
-                border: "1px solid var(--color-border-secondary)", padding: "18px 16px",
-              }}>
-                <h3 style={{ margin: "0 0 12px", fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  Categories
-                </h3>
-                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 2 }}>
-                  {categories.map(cat => (
-                    <li key={cat}>
-                      <Link
-                        href={`/blog?category=${encodeURIComponent(cat)}`}
-                        style={{
-                          display: "block", padding: "7px 10px", borderRadius: 10,
-                          fontSize: 13, textDecoration: "none", fontWeight: 500,
-                          color: category === cat ? "var(--color-accent-primary)" : "var(--color-text-secondary)",
-                          backgroundColor: category === cat ? "color-mix(in srgb, var(--color-accent-primary) 10%, transparent)" : "transparent",
-                          transition: "background-color 0.12s",
-                        }}
-                      >
-                        {cat}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </aside>
-          )}
         </div>
       </div>
     </Layout>

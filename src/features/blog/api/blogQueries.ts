@@ -20,6 +20,7 @@ const REVALIDATE = 120; // 2 minutes
 export async function getBlogPosts(opts: {
   page?: number;
   limit?: number;
+  skip?: number;
   category?: string;
   tag?: string;
   search?: string;
@@ -27,6 +28,7 @@ export async function getBlogPosts(opts: {
   const params = new URLSearchParams();
   if (opts.page)     params.set("page",     String(opts.page));
   if (opts.limit)    params.set("limit",    String(opts.limit));
+  if (typeof opts.skip === "number") params.set("skip", String(opts.skip));
   if (opts.category) params.set("category", opts.category);
   if (opts.tag)      params.set("tag",      opts.tag);
   if (opts.search)   params.set("search",   opts.search);
