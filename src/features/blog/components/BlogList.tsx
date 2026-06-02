@@ -119,9 +119,12 @@ export default function BlogList({ initialPosts, initialTotal, category }: BlogL
     setLoading(true);
     setError(null);
     try {
+      // The blog backend paginates by page/limit (no offset support), so to grow
+      // the list by LOAD_MORE_SIZE we re-request page 1 with a larger window and
+      // merge in the new items. Works against both the WordPress and DB backends.
       const params = new URLSearchParams();
-      params.set("skip",  String(posts.length));
-      params.set("limit", String(LOAD_MORE_SIZE));
+      params.set("page",  "1");
+      params.set("limit", String(posts.length + LOAD_MORE_SIZE));
       if (category) params.set("category", category);
 
       const res = await fetch(`${API_BASE}/blog?${params}`, { cache: "no-store" });
