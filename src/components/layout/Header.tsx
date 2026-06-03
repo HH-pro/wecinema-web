@@ -283,8 +283,8 @@ const Header: FC<HeaderProps> = ({ toggleSidebar, isMobile: isMobileProp }) => {
                     aria-label="Search"
                   />
                   {term && (
-                    <button type="button" onClick={() => setTerm("")} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, border: "none", borderRadius: 9999, background: "var(--color-bg-tertiary)", color: "var(--color-text-tertiary)", cursor: "pointer", flexShrink: 0 }} aria-label="Clear">
-                      <X size={12} />
+                    <button type="button" onClick={() => setTerm("")} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, border: "none", borderRadius: 9999, background: "var(--color-bg-tertiary)", color: "var(--color-text-secondary)", cursor: "pointer", flexShrink: 0 }} aria-label="Clear search">
+                      <X size={13} />
                     </button>
                   )}
                   <button type="button" onClick={voice} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, border: "none", background: "transparent", cursor: "pointer", flexShrink: 0, color: listening ? "#EF4444" : "var(--color-text-tertiary)" }} aria-label="Voice search">
@@ -311,7 +311,9 @@ const Header: FC<HeaderProps> = ({ toggleSidebar, isMobile: isMobileProp }) => {
           {!searchOpen && (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               {isLoading ? (
-                <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--color-skeleton-base)", flexShrink: 0 }} />
+                // Match the resolved auth button's height (40px) so the swap
+                // doesn't shift the header (reduces CLS).
+                <div style={{ width: 40, height: 40, borderRadius: "50%", background: "var(--color-skeleton-base)", flexShrink: 0 }} />
               ) : isAuthenticated && authUser ? (
                 <div ref={userMenuRef} style={{ position: "relative" }}>
                   <button

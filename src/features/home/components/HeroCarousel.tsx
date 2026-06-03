@@ -148,30 +148,46 @@ export function HeroCarousel({ featured, graphs, posters = [] }: HeroCarouselPro
           <div
             style={{
               position: "absolute",
-              bottom: 14,
+              bottom: 8,
               left: "50%",
               transform: "translateX(-50%)",
               zIndex: 3,
               display: "flex",
-              gap: 8,
+              gap: 2,
             }}
           >
             {slides.map((s, i) => (
+              // Button is a ≥24px transparent hit target (WCAG 2.5.8); the visible
+              // pill lives inside. No width transition (non-composited) — the pill
+              // just swaps on slide change.
               <button
                 key={s.key}
                 aria-label={`Go to slide ${i + 1}`}
                 aria-current={i === index}
                 onClick={() => setIndex(i)}
                 style={{
-                  width: i === index ? 26 : 8,
-                  height: 8,
-                  borderRadius: 9999,
+                  width: 24,
+                  height: 24,
+                  padding: 0,
                   border: "none",
+                  background: "transparent",
                   cursor: "pointer",
-                  transition: "width 0.25s, background 0.25s",
-                  background: i === index ? "var(--color-accent-primary,#FF6B00)" : "rgba(255,255,255,0.45)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
-              />
+              >
+                <span
+                  aria-hidden
+                  style={{
+                    display: "block",
+                    width: i === index ? 26 : 8,
+                    height: 8,
+                    borderRadius: 9999,
+                    background: i === index ? "var(--color-accent-primary,#FF6B00)" : "rgba(255,255,255,0.7)",
+                  }}
+                />
+              </button>
             ))}
           </div>
         </>

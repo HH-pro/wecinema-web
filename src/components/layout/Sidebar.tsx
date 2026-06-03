@@ -616,6 +616,8 @@ export default function Sidebar({ expand, onClose }: SidebarProps) {
                   ref={profileRef}
                   type="button"
                   onClick={() => setPopupOpen(p => !p)}
+                  aria-label={`Open profile menu for ${authUser.username ?? "your account"}`}
+                  aria-expanded={popupOpen}
                   style={{
                     width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
                     padding: "8px 0", borderRadius: 12, border: "none", cursor: "pointer",

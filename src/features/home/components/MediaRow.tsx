@@ -76,7 +76,12 @@ export function MediaRow({ title, viewAllHref, itemWidth = 240, children, icon }
 
   return (
     <section
-      style={{ padding: "20px 24px 28px", contentVisibility: "auto", containIntrinsicSize: "1px 320px" } as React.CSSProperties}
+      // NOTE: previously used `content-visibility: auto` + a fixed
+      // `contain-intrinsic-size`, but the estimated height never matched the real
+      // row height, so rows jumped as the browser resolved on/off-screen state —
+      // a major CLS source (homepage CLS was ~0.4). Rows are cheap to render, so
+      // we render them normally and keep layout stable instead.
+      style={{ padding: "20px 24px 28px" }}
       aria-label={title}
     >
       <div
@@ -106,6 +111,7 @@ export function MediaRow({ title, viewAllHref, itemWidth = 240, children, icon }
         {viewAllHref && (
           <Link
             href={viewAllHref}
+            aria-label={`View all ${title}`}
             style={{
               display: "inline-flex",
               alignItems: "center",
