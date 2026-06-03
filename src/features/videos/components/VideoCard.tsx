@@ -2,9 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Video } from "@/types";
 import { Avatar } from "@/components/ui/Avatar";
-
-const FALLBACK_THUMB =
-  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiA5Ij48cmVjdCB3aWR0aD0iMTYiIGhlaWdodD0iOSIgZmlsbD0iIzI2MjYyNiIvPjwvc3ZnPg==";
+import { POSTER_FALLBACK as FALLBACK_THUMB } from "@/features/home/lib/posterFallback";
 
 function formatViews(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M views`;

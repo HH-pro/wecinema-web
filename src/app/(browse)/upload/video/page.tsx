@@ -294,6 +294,7 @@ export default function UploadVideoPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!videoFile)          { toast.error("Please select a video file"); return; }
+    if (!thumbFile)          { toast.error("Please add a thumbnail image"); return; }
     if (!title.trim())       { toast.error("Title is required"); return; }
     if (genres.length === 0) { toast.error("Select at least one genre"); return; }
     if (!rating)             { toast.error("Please select a rating"); return; }
@@ -489,7 +490,7 @@ export default function UploadVideoPage() {
                 />
               </div>
               <div>
-                <FieldLabel>Thumbnail</FieldLabel>
+                <FieldLabel required>Thumbnail</FieldLabel>
                 <DropZone
                   accept="image/*"
                   file={thumbFile}
@@ -497,7 +498,7 @@ export default function UploadVideoPage() {
                   onClear={() => setThumbFile(null)}
                   icon={ImageIcon}
                   label="Add a thumbnail image"
-                  hint="Any image · Auto-converted to WebP · Recommended 16:9"
+                  hint="Required · Any image · Auto-converted to WebP · Recommended 16:9"
                 />
               </div>
             </div>
@@ -687,7 +688,7 @@ export default function UploadVideoPage() {
           {/* Submit */}
           <button
             type="submit"
-            disabled={uploading || !videoFile}
+            disabled={uploading || !videoFile || !thumbFile}
             style={{
               width: "100%",
               padding: "15px",
@@ -697,14 +698,14 @@ export default function UploadVideoPage() {
               fontSize: 15,
               fontWeight: 700,
               border: "none",
-              cursor: uploading || !videoFile ? "not-allowed" : "pointer",
-              opacity: uploading || !videoFile ? 0.5 : 1,
+              cursor: uploading || !videoFile || !thumbFile ? "not-allowed" : "pointer",
+              opacity: uploading || !videoFile || !thumbFile ? 0.5 : 1,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               gap: 8,
               transition: "opacity 0.15s",
-              boxShadow: uploading || !videoFile ? "none" : "0 4px 20px rgba(124,58,237,0.4)",
+              boxShadow: uploading || !videoFile || !thumbFile ? "none" : "0 4px 20px rgba(124,58,237,0.4)",
             }}
           >
             {uploading ? (

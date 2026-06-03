@@ -148,3 +148,23 @@ export function approveMarketplaceListing(id: string) {
 export function rejectMarketplaceListing(id: string, reason: string) {
   return api.put<GenericAdminResponse>(`/marketplace/listings/${id}/reject`, { rejectionReason: reason });
 }
+
+export interface UpdateListingPayload {
+  title?: string;
+  description?: string;
+  price?: number;
+  type?: string;
+  category?: string;
+  status?: string;
+}
+
+export function updateMarketplaceListing(id: string, payload: UpdateListingPayload) {
+  return api.put<{ success: boolean; listing: MarketplaceListing }>(
+    `/marketplace/listings/admin/${id}`,
+    payload as Record<string, unknown>,
+  );
+}
+
+export function deleteMarketplaceListing(id: string) {
+  return api.delete<GenericAdminResponse>(`/marketplace/listings/admin/${id}`);
+}

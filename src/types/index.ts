@@ -43,6 +43,9 @@ export interface Video {
   transcodingStatus?: "pending" | "processing" | "completed" | "failed";
   isForSale?: boolean;
   red_carpet?: boolean;
+  recommended?: boolean;
+  published?: boolean;
+  duration?: string | number;
 }
 
 export interface AuthUser {

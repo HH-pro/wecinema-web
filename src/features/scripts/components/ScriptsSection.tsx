@@ -109,8 +109,8 @@ function ScriptCard({ script }: { script: Script }) {
   );
 }
 
-export async function ScriptsSection() {
-  const scripts = await getLatestScripts(6);
+export async function ScriptsSection({ scripts: provided }: { scripts?: Script[] } = {}) {
+  const scripts = provided ?? (await getLatestScripts(6));
   if (scripts.length === 0) return null;
 
   return (

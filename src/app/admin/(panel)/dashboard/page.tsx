@@ -48,7 +48,7 @@ function StatCard({ title, value, icon: Icon, color, sub }: {
             <p className="text-3xl font-bold text-[var(--ap-text)]">{value}</p>
             {sub && <p className="text-xs text-[var(--ap-text-3)] mt-1">{sub}</p>}
           </div>
-          <div className={`p-3 rounded-xl bg-gradient-to-br ${color} bg-opacity-10`}>
+          <div className={`p-3 rounded-xl bg-gradient-to-br ${color} shadow-sm`}>
             <Icon className="w-5 h-5 text-white" />
           </div>
         </div>

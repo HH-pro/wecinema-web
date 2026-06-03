@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -21,8 +20,11 @@ import {
   ShoppingBag,
   BookOpen,
   Shield,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { useTheme } from "@/components/layout/ThemeProvider";
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/admin/dashboard" },
@@ -39,7 +41,8 @@ const navItems = [
 export function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, authUser } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -48,7 +51,7 @@ export function AdminSidebar() {
     router.push("/admin/login");
   };
 
-  const SidebarContent = () => (
+  const renderSidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className={`flex items-center border-b border-[var(--ap-border)] px-4 py-5 ${collapsed ? "justify-center" : "justify-between"}`}>
@@ -59,7 +62,7 @@ export function AdminSidebar() {
             </div>
             <div>
               <span className="font-bold text-[var(--ap-text)] text-sm tracking-wider">WECINEMA</span>
-              <span className="block text-[10px] text-purple-400 font-mono tracking-widest">ADMIN PANEL</span>
+              <span className="block text-[10px] text-[var(--ap-accent)] font-mono tracking-widest">ADMIN PANEL</span>
             </div>
           </div>
         )}
@@ -81,17 +84,19 @@ export function AdminSidebar() {
                 whileHover={{ x: collapsed ? 0 : 4 }}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer group relative
                   ${active
-                    ? "bg-gradient-to-r from-purple-600/30 to-blue-600/20 border border-purple-500/30 text-[var(--ap-text)]"
-                    : "text-[var(--ap-text-2)] hover:bg-[var(--ap-hover)] hover:text-[var(--ap-text)]"
+                    ? "border text-[var(--ap-text)]"
+                    : "text-[var(--ap-text-2)] hover:bg-[var(--ap-hover)] hover:text-[var(--ap-text)] border border-transparent"
                   } ${collapsed ? "justify-center" : ""}`}
+                style={active ? { background: "var(--ap-accent-soft)", borderColor: "var(--ap-accent-ring)" } : undefined}
               >
                 {active && (
                   <motion.div
                     layoutId="sidebar-active"
-                    className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-purple-400 rounded-full"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 rounded-full"
+                    style={{ background: "var(--ap-accent)" }}
                   />
                 )}
-                <item.icon className={`w-4.5 h-4.5 flex-shrink-0 ${active ? "text-purple-400" : "text-[var(--ap-text-3)] group-hover:text-[var(--ap-text-2)]"}`} />
+                <item.icon className="w-4.5 h-4.5 flex-shrink-0" style={{ color: active ? "var(--ap-accent)" : undefined }} />
                 <AnimatePresence>
                   {!collapsed && (
                     <motion.span
@@ -115,26 +120,41 @@ export function AdminSidebar() {
         })}
       </nav>
 
-      {/* Logout */}
-      <div className="px-2 py-4 border-t border-[var(--ap-border)]">
+      {/* Footer: profile · theme · logout */}
+      <div className="px-2 py-3 border-t border-[var(--ap-border)] space-y-1">
+        {/* Admin profile */}
+        {!collapsed && authUser && (
+          <div className="flex items-center gap-3 px-2 py-2 mb-1">
+            <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 bg-gradient-to-br from-purple-600 to-blue-600">
+              {(authUser.username ?? "A").charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[var(--ap-text)] truncate">{authUser.username ?? "Admin"}</p>
+              <p className="text-[11px] text-[var(--ap-text-3)] truncate">Administrator</p>
+            </div>
+          </div>
+        )}
+
+        {/* Theme toggle */}
+        <button
+          onClick={toggleTheme}
+          aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[var(--ap-text-2)] hover:bg-[var(--ap-hover)] hover:text-[var(--ap-text)] transition-all ${collapsed ? "justify-center" : ""}`}
+        >
+          {isDark ? <Sun className="w-4.5 h-4.5 flex-shrink-0" /> : <Moon className="w-4.5 h-4.5 flex-shrink-0" />}
+          {!collapsed && (
+            <span className="text-sm font-medium whitespace-nowrap">{isDark ? "Light mode" : "Dark mode"}</span>
+          )}
+        </button>
+
+        {/* Logout */}
         <motion.button
           whileHover={{ x: collapsed ? 0 : 4 }}
           onClick={handleLogout}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[var(--ap-text-2)] hover:bg-red-500/10 hover:text-red-400 transition-all group ${collapsed ? "justify-center" : ""}`}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[var(--ap-text-2)] hover:bg-red-500/10 hover:text-red-500 transition-all group ${collapsed ? "justify-center" : ""}`}
         >
-          <LogOut className="w-4.5 h-4.5 flex-shrink-0 group-hover:text-red-400" />
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.span
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: "auto" }}
-                exit={{ opacity: 0, width: 0 }}
-                className="text-sm font-medium whitespace-nowrap overflow-hidden"
-              >
-                Logout
-              </motion.span>
-            )}
-          </AnimatePresence>
+          <LogOut className="w-4.5 h-4.5 flex-shrink-0 group-hover:text-red-500" />
+          {!collapsed && <span className="text-sm font-medium whitespace-nowrap">Logout</span>}
         </motion.button>
       </div>
     </div>
@@ -179,7 +199,7 @@ export function AdminSidebar() {
             >
               <X className="w-4 h-4" />
             </button>
-            <SidebarContent />
+            {renderSidebarContent()}
           </motion.aside>
         )}
       </AnimatePresence>
@@ -190,7 +210,7 @@ export function AdminSidebar() {
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
         className="hidden md:flex flex-col h-screen sticky top-0 bg-[var(--ap-surface)] border-r border-[var(--ap-border)] overflow-hidden flex-shrink-0 shadow-xl"
       >
-        <SidebarContent />
+        {renderSidebarContent()}
       </motion.aside>
     </>
   );

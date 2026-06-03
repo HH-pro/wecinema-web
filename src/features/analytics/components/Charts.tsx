@@ -41,6 +41,16 @@ ChartJS.register(
 interface ChartsProps {
   isMobile?: boolean;
   dateRange?: GraphDateParams;
+  /**
+   * Optional server-preloaded graph data. When provided, the charts render
+   * immediately from this data and skip the client-side fetch (no loading
+   * flicker when sliding to the analytics banner).
+   */
+  preloaded?: {
+    genres?: GraphData;
+    themes?: GraphData;
+    ratings?: GraphData;
+  };
 }
 
 function defaultDateRange(): GraphDateParams {
@@ -490,17 +500,24 @@ interface GraphState {
   error: string | null;
 }
 
-function useGraph(endpoint: string, params?: GraphDateParams): GraphState {
-  const [state, setState] = useState<GraphState>({ data: null, loading: true, error: null });
+function useGraph(endpoint: string, params?: GraphDateParams, initial?: GraphData): GraphState {
+  const hasInitial = initial !== undefined;
+  const [state, setState] = useState<GraphState>(
+    hasInitial
+      ? { data: initial, loading: false, error: null }
+      : { data: null, loading: true, error: null },
+  );
 
   useEffect(() => {
+    // Server-preloaded — no client fetch needed.
+    if (hasInitial) return;
     let cancelled = false;
     setState({ data: null, loading: true, error: null });
     fetchGraph(endpoint, params)
       .then((data) => { if (!cancelled) setState({ data, loading: false, error: null }); })
       .catch((e: Error) => { if (!cancelled) setState({ data: null, loading: false, error: e.message }); });
     return () => { cancelled = true; };
-  }, [endpoint, params?.from, params?.to]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [endpoint, params?.from, params?.to, hasInitial]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return state;
 }
@@ -652,11 +669,11 @@ const DonutCard: React.FC<{
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
-const Charts: React.FC<ChartsProps> = ({ isMobile = false, dateRange }) => {
+const Charts: React.FC<ChartsProps> = ({ isMobile = false, dateRange, preloaded }) => {
   const params = useMemo(() => dateRange ?? defaultDateRange(), [dateRange]);
-  const genreR = useGraph("/video/genres/graph", params);
-  const themeR = useGraph("/video/themes/graph", params);
-  const ratingR = useGraph("/video/ratings/graph", params);
+  const genreR = useGraph("/video/genres/graph", params, preloaded?.genres);
+  const themeR = useGraph("/video/themes/graph", params, preloaded?.themes);
+  const ratingR = useGraph("/video/ratings/graph", params, preloaded?.ratings);
 
   const loading = genreR.loading || themeR.loading || ratingR.loading;
   const err = genreR.error ?? themeR.error ?? ratingR.error;

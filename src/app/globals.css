@@ -774,21 +774,85 @@ h3, .text-h3 { font-family: var(--font-heading); font-size: 1.125rem; font-weigh
 
 /* ===========================================================================
    Admin Panel CSS Variables
-   Dark purple/blue theme — independent from main site theme
+   Purple/blue identity — now theme-aware (follows site light/dark via
+   [data-theme]). Every admin page reads these tokens, so both modes "just work".
    =========================================================================== */
-:root {
+:root,
+[data-theme="light"] {
+  --ap-bg: #f5f6fb;          /* app canvas */
+  --ap-surface: #ffffff;     /* cards / sidebar */
+  --ap-surface-alt: #eef0f8; /* insets, tooltips, table headers */
+  --ap-border: #e4e6f1;      /* hairlines */
+  --ap-hover: rgba(124, 58, 237, 0.07);
+  --ap-text: #14162b;        /* primary */
+  --ap-text-2: #545a6e;      /* secondary */
+  --ap-text-3: #8a8fa6;      /* tertiary / muted */
+  --ap-accent: #7c3aed;      /* purple */
+  --ap-accent-2: #2563eb;    /* blue */
+  --ap-accent-soft: rgba(124, 58, 237, 0.10);
+  --ap-accent-ring: rgba(124, 58, 237, 0.22);
+  --ap-shadow: 0 6px 24px rgba(20, 22, 43, 0.07);
+  --ap-shadow-lg: 0 14px 40px rgba(20, 22, 43, 0.12);
+}
+
+[data-theme="dark"] {
   --ap-bg: #080810;
   --ap-surface: #0f0f1a;
   --ap-surface-alt: #161625;
   --ap-border: rgba(124, 58, 237, 0.18);
-  --ap-hover: rgba(124, 58, 237, 0.08);
+  --ap-hover: rgba(124, 58, 237, 0.10);
   --ap-text: #f1f5f9;
   --ap-text-2: #94a3b8;
-  --ap-text-3: #475569;
+  --ap-text-3: #6b7280;
+  --ap-accent: #a855f7;
+  --ap-accent-2: #3b82f6;
+  --ap-accent-soft: rgba(124, 58, 237, 0.18);
+  --ap-accent-ring: rgba(168, 85, 247, 0.35);
+  --ap-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --ap-shadow-lg: 0 18px 48px rgba(0, 0, 0, 0.55);
 }
 
-/* Admin layout overrides — always dark regardless of site theme */
-.admin-panel,
-[data-admin="true"] {
-  color-scheme: dark;
+/* ===========================================================================
+   Homepage hero — cinematic motion
+   =========================================================================== */
+@keyframes heroKenburns {
+  0%   { transform: scale(1.06) translate3d(0, 0, 0); }
+  100% { transform: scale(1.16) translate3d(-1.5%, -1.5%, 0); }
 }
+.hero-kenburns {
+  animation: heroKenburns 18s ease-out forwards;
+  will-change: transform;
+}
+
+/* Staggered content entrance for the featured hero slide */
+@keyframes heroRise {
+  0%   { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.hero-rise {
+  opacity: 0;
+  animation: heroRise 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.hero-rise-1 { animation-delay: 0.06s; }
+.hero-rise-2 { animation-delay: 0.16s; }
+.hero-rise-3 { animation-delay: 0.26s; }
+.hero-rise-4 { animation-delay: 0.36s; }
+
+/* Floating featured-film poster card */
+@keyframes heroFloat {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50%      { transform: translateY(-14px) rotate(2deg); }
+}
+.hero-poster-float {
+  animation: heroFloat 7s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-kenburns { animation: none; }
+  .hero-rise { opacity: 1; animation: none; }
+  .hero-poster-float { animation: none; }
+}
+
+/* FAQ <details> — hide the native disclosure marker */
+summary::-webkit-details-marker { display: none; }

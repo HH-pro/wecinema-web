@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" role="img" aria-label="WeCinema cinematic backdrop">
+  <defs>
+    <!-- Deep cinematic base -->
+    <radialGradient id="base" cx="32%" cy="34%" r="95%">
+      <stop offset="0%" stop-color="#3a2614"/>
+      <stop offset="38%" stop-color="#22160d"/>
+      <stop offset="72%" stop-color="#130c08"/>
+      <stop offset="100%" stop-color="#080503"/>
+    </radialGradient>
+    <!-- Warm key-light glow (brand orange) -->
+    <radialGradient id="glow" cx="30%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#ff8a2b" stop-opacity="0.55"/>
+      <stop offset="45%" stop-color="#ff6b00" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#ff6b00" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Cool rim light bottom-right for depth -->
+    <radialGradient id="rim" cx="88%" cy="92%" r="55%">
+      <stop offset="0%" stop-color="#2b6ea8" stop-opacity="0.35"/>
+      <stop offset="60%" stop-color="#1b3a55" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#1b3a55" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="beam" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffd9a8" stop-opacity="0.30"/>
+      <stop offset="100%" stop-color="#ffd9a8" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="vignette" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#000" stop-opacity="0.05"/>
+      <stop offset="60%" stop-color="#000" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0.72"/>
+    </linearGradient>
+    <radialGradient id="vig2" cx="50%" cy="46%" r="75%">
+      <stop offset="55%" stop-color="#000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0.55"/>
+    </radialGradient>
+    <!-- Soft blur for bokeh orbs -->
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="26"/>
+    </filter>
+    <!-- Film grain -->
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.06"/></feComponentTransfer>
+    </filter>
+  </defs>
+
+  <!-- Layers -->
+  <rect width="1600" height="900" fill="url(#base)"/>
+  <rect width="1600" height="900" fill="url(#rim)"/>
+  <rect width="1600" height="900" fill="url(#glow)"/>
+
+  <!-- Volumetric light beams from upper-left -->
+  <g opacity="0.7">
+    <polygon points="-200,-100 380,-100 900,1000 -200,1000" fill="url(#beam)"/>
+    <polygon points="120,-100 360,-100 720,1000 360,1000" fill="url(#beam)" opacity="0.6"/>
+    <polygon points="420,-100 560,-100 940,1000 700,1000" fill="url(#beam)" opacity="0.4"/>
+  </g>
+
+  <!-- Cinematic bokeh orbs -->
+  <g filter="url(#soft)">
+    <circle cx="1230" cy="210" r="60" fill="#ff8a2b" opacity="0.30"/>
+    <circle cx="1410" cy="360" r="44" fill="#ffb066" opacity="0.22"/>
+    <circle cx="1080" cy="120" r="30" fill="#ffd9a8" opacity="0.28"/>
+    <circle cx="1330" cy="540" r="80" fill="#ff6b00" opacity="0.16"/>
+    <circle cx="980"  cy="430" r="26" fill="#ffd9a8" opacity="0.18"/>
+    <circle cx="1500" cy="180" r="34" fill="#ff8a2b" opacity="0.20"/>
+  </g>
+
+  <!-- Distant film-city skyline silhouette -->
+  <g fill="#0a0604" opacity="0.92">
+    <rect x="0"    y="690" width="120" height="210"/>
+    <rect x="120"  y="640" width="90"  height="260"/>
+    <rect x="210"  y="720" width="70"  height="180"/>
+    <rect x="280"  y="600" width="110" height="300"/>
+    <rect x="390"  y="700" width="80"  height="200"/>
+    <rect x="470"  y="660" width="130" height="240"/>
+    <rect x="600"  y="730" width="90"  height="170"/>
+    <rect x="690"  y="620" width="100" height="280"/>
+    <rect x="790"  y="700" width="120" height="200"/>
+    <rect x="910"  y="650" width="80"  height="250"/>
+    <rect x="990"  y="710" width="110" height="190"/>
+    <rect x="1100" y="600" width="95"  height="300"/>
+    <rect x="1195" y="690" width="120" height="210"/>
+    <rect x="1315" y="660" width="90"  height="240"/>
+    <rect x="1405" y="720" width="100" height="180"/>
+    <rect x="1505" y="640" width="95"  height="260"/>
+  </g>
+  <!-- Lit windows -->
+  <g fill="#ffb066" opacity="0.5">
+    <rect x="305" y="630" width="6" height="10"/><rect x="325" y="630" width="6" height="10"/>
+    <rect x="305" y="660" width="6" height="10"/><rect x="345" y="660" width="6" height="10"/>
+    <rect x="710" y="650" width="6" height="10"/><rect x="730" y="650" width="6" height="10"/>
+    <rect x="710" y="685" width="6" height="10"/><rect x="750" y="685" width="6" height="10"/>
+    <rect x="1120" y="635" width="6" height="10"/><rect x="1145" y="635" width="6" height="10"/>
+    <rect x="1120" y="670" width="6" height="10"/><rect x="1165" y="670" width="6" height="10"/>
+  </g>
+
+  <!-- Vignette + legibility -->
+  <rect width="1600" height="900" fill="url(#vig2)"/>
+  <rect width="1600" height="900" fill="url(#vignette)"/>
+  <!-- Grain overlay -->
+  <rect width="1600" height="900" filter="url(#grain)" opacity="0.5"/>
+</svg>

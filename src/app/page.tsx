@@ -1,16 +1,29 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Layout from "@/components/layout/Layout";
-import { ThemePills } from "@/features/videos/components/ThemePills";
-import { VideoGallery } from "@/features/videos/components/VideoGallery";
-import { ScriptsSection } from "@/features/scripts/components/ScriptsSection";
-import { AnalyticsSectionClient } from "@/features/analytics/components/AnalyticsSectionClient";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { OG, SITE_ORIGIN } from "@/lib/seo";
+import { getHomepageData } from "@/features/home/api/homepageQueries";
+import { getFeaturedListings } from "@/features/home/api/marketplaceHome";
+import { getAnalyticsGraphs } from "@/features/home/api/analyticsGraphs";
+import { getLatestScripts } from "@/features/scripts/api/scriptsQueries";
+import { HeroCarousel } from "@/features/home/components/HeroCarousel";
+import { ContinueWatchingRow } from "@/features/home/components/ContinueWatchingRow";
+import { TrendingRow } from "@/features/home/components/TrendingRow";
+import { GenreRows } from "@/features/home/components/GenreRows";
+import { MarketplaceSpotlight } from "@/features/home/components/MarketplaceSpotlight";
+import { CreatorBanner } from "@/features/home/components/CreatorBanner";
+import { HowItWorks } from "@/features/home/components/HowItWorks";
+import { WhyWeCinema } from "@/features/home/components/WhyWeCinema";
+import { FaqSection } from "@/features/home/components/FaqSection";
+import { ScriptsSection } from "@/features/scripts/components/ScriptsSection";
+import { resolveThumb } from "@/features/home/lib/posterFallback";
+import type { HeroFeatured } from "@/features/home/components/hero/PromoSlides";
+import type { Video } from "@/types";
 
 const HOME_TITLE = "WeCinema – Buy, Sell & Stream Independent Films";
 const HOME_DESCRIPTION =
-  "Upload films, sell scripts, network with filmmakers, and turn creativity into currency on WeCinema.";
+  "Watch independent films, buy and sell on the marketplace, and upload your own films and scripts to earn on WeCinema.";
 
 export const metadata: Metadata = {
   title: { absolute: HOME_TITLE },
@@ -36,43 +49,50 @@ export const metadata: Metadata = {
 
 export const revalidate = 300;
 
-const GALLERY_SECTIONS = [
-  { title: "Action",    category: "Action",    viewAllHref: "/category/action" },
-  { title: "Comedy",    category: "Comedy",    viewAllHref: "/category/comedy" },
-  { title: "Adventure", category: "Adventure", viewAllHref: "/category/adventure" },
-  { title: "Horror",    category: "Horror",    viewAllHref: "/category/horror" },
-  { title: "Drama",     category: "Drama",     viewAllHref: "/category/drama" },
-  { title: "Love",      category: "Love",      viewAllHref: "/category/love" },
-] as const;
+function toHeroFeatured(v: Video): HeroFeatured {
+  const genre = Array.isArray(v.genre) ? v.genre[0] : v.genre;
+  return {
+    id: v._id,
+    title: v.title,
+    tagline: v.description,
+    href: `/watch/${v.slug ?? v._id}`,
+    image: resolveThumb(v.thumbnail ?? v.thumbnailSmall),
+    redCarpet: Boolean(v.red_carpet),
+    genre: genre || undefined,
+    rating: v.rating || undefined,
+    views: v.views,
+  };
+}
 
-function GallerySkeleton() {
+/** Collect real film thumbnails for the hero collage backdrops. */
+function collectPosters(...lists: Video[][]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const list of lists) {
+    for (const v of list) {
+      const thumb = v.thumbnail ?? v.thumbnailSmall;
+      if (thumb && !seen.has(thumb)) {
+        seen.add(thumb);
+        out.push(thumb);
+        if (out.length >= 12) return out;
+      }
+    }
+  }
+  return out;
+}
+
+function RowSkeleton() {
   return (
-    <div style={{ padding: "24px 24px 32px" }}>
+    <div style={{ padding: "20px 24px 28px" }}>
       <div
-        style={{
-          height: 24,
-          width: 120,
-          marginBottom: 16,
-          borderRadius: 6,
-          backgroundColor: "var(--color-skeleton-base)",
-        }}
+        style={{ height: 22, width: 160, marginBottom: 16, borderRadius: 6, backgroundColor: "var(--color-skeleton-base)" }}
         className="animate-pulse"
       />
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-          gap: 16,
-        }}
-      >
+      <div style={{ display: "flex", gap: 16, overflow: "hidden" }}>
         {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={i}
-            style={{
-              aspectRatio: "16/9",
-              borderRadius: 12,
-              backgroundColor: "var(--color-skeleton-base)",
-            }}
+            style={{ width: 240, flex: "0 0 auto", aspectRatio: "16/9", borderRadius: 12, backgroundColor: "var(--color-skeleton-base)" }}
             className="animate-pulse"
           />
         ))}
@@ -81,21 +101,20 @@ function GallerySkeleton() {
   );
 }
 
-function ScriptsSkeleton() {
-  return (
-    <div style={{ padding: "24px 24px 32px" }}>
-      <div style={{ height: 24, width: 140, marginBottom: 16, borderRadius: 6, backgroundColor: "var(--color-skeleton-base)" }} className="animate-pulse" />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} style={{ height: 96, borderRadius: 12, backgroundColor: "var(--color-skeleton-base)" }} className="animate-pulse" />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-export default function HomePage() {
+export default async function HomePage() {
   const SITE = SITE_ORIGIN;
+
+  // Parallel data fetch — one /video/all call powers hero + trending + genres;
+  // marketplace and scripts each add one cached call.
+  const [home, marketplace, scripts, graphs] = await Promise.all([
+    getHomepageData(),
+    getFeaturedListings(8),
+    getLatestScripts(8),
+    getAnalyticsGraphs(),
+  ]);
+
+  const heroFeatured = home.featured.map(toHeroFeatured);
+  const heroPosters = collectPosters(home.trending, ...home.byGenre.map((b) => b.videos), home.featured);
 
   return (
     <Layout>
@@ -124,31 +143,41 @@ export default function HomePage() {
       />
 
       <h1 className="sr-only">
-        WeCinema — Watch, Create, and Sell Films and Scripts Online
+        WeCinema — Watch, Buy, Sell, and Stream Independent Films and Scripts
       </h1>
 
-      {/* Analytics graphs — client-only, collapsed by default so LCP is unaffected */}
-      <AnalyticsSectionClient title="Analytics" />
+      {/* Section 1 — Hero carousel (featured film, marketplace, creator, analytics) */}
+      <HeroCarousel featured={heroFeatured} graphs={graphs} posters={heroPosters} />
 
-      <ThemePills />
+      <main id="main-content">
+        {/* Section 3 — Continue watching (auth-only, hides when empty) */}
+        <ContinueWatchingRow />
 
-      <main id="main-content" aria-labelledby="genres-heading">
-        <h2 id="genres-heading" className="sr-only">Browse Films by Genre</h2>
+        {/* Section 2 — Trending / Recommended */}
+        <TrendingRow videos={home.trending} />
 
-        {GALLERY_SECTIONS.map((section, i) => (
-          <Suspense key={section.title} fallback={<GallerySkeleton />}>
-            <VideoGallery
-              title={section.title}
-              category={section.category}
-              viewAllHref={section.viewAllHref}
-              prioritizeFirst={i === 0}
-            />
-          </Suspense>
-        ))}
+        {/* Section 4 — Genre rows (only non-empty genres) */}
+        <GenreRows buckets={home.byGenre} />
 
-        <Suspense fallback={<ScriptsSkeleton />}>
-          <ScriptsSection />
+        {/* Section 5 — Marketplace spotlight */}
+        <MarketplaceSpotlight listings={marketplace.listings} />
+
+        {/* About the platform — value props + marketplace models */}
+        <WhyWeCinema />
+
+        {/* Section 6 — Latest scripts */}
+        <Suspense fallback={<RowSkeleton />}>
+          <ScriptsSection scripts={scripts} />
         </Suspense>
+
+        {/* Section 7 — Creator acquisition banner */}
+        <CreatorBanner />
+
+        {/* Section 8 — How WeCinema works */}
+        <HowItWorks />
+
+        {/* About the platform — frequently asked questions */}
+        <FaqSection />
       </main>
     </Layout>
   );

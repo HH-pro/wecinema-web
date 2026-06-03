@@ -3,12 +3,24 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ShoppingBag, Search, Check, X, Eye, TrendingUp, Package,
-  Clock, CheckCircle, XCircle, DollarSign, Filter,
+  ShoppingBag, Search, Check, X, Eye, Package,
+  Clock, CheckCircle, XCircle, DollarSign, Filter, Pencil, Trash2, Save,
 } from "lucide-react";
 import * as adminService from "@/features/admin/api/adminService";
 import type { MarketplaceListing } from "@/features/admin/types/admin.types";
 import toast from "react-hot-toast";
+
+const TYPE_OPTIONS = ["for_sale", "licensing", "adaptation_rights", "commission"] as const;
+const STATUS_OPTIONS = ["draft", "active", "sold", "inactive", "pending_review"] as const;
+
+interface EditForm {
+  title: string;
+  price: string;
+  type: string;
+  status: string;
+  category: string;
+  description: string;
+}
 
 const STATUS_COLORS: Record<string, string> = {
   active: "border-green-500/30 text-green-400 bg-green-500/10",
@@ -35,6 +47,9 @@ export default function MarketplacePage() {
   const [rejectReason, setRejectReason] = useState("");
   const [mutating, setMutating] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [editListing, setEditListing] = useState<MarketplaceListing | null>(null);
+  const [editForm, setEditForm] = useState<EditForm>({ title: "", price: "", type: "for_sale", status: "active", category: "", description: "" });
+  const [deleteListing, setDeleteListing] = useState<MarketplaceListing | null>(null);
 
   const fetchListings = async () => {
     setLoading(true);
@@ -88,6 +103,60 @@ export default function MarketplacePage() {
       fetchListings();
     } catch {
       toast.error("Failed to reject");
+    } finally {
+      setMutating(false);
+    }
+  };
+
+  const openEdit = (listing: MarketplaceListing) => {
+    setEditListing(listing);
+    setEditForm({
+      title: listing.title ?? "",
+      price: listing.price != null ? String(listing.price) : "",
+      type: listing.type ?? "for_sale",
+      status: listing.status ?? "active",
+      category: listing.category ?? "",
+      description: listing.description ?? "",
+    });
+  };
+
+  const handleEditSave = async () => {
+    if (!editListing) return;
+    if (!editForm.title.trim()) { toast.error("Title is required"); return; }
+    const priceNum = editForm.price ? Number(editForm.price) : undefined;
+    if (priceNum !== undefined && (isNaN(priceNum) || priceNum <= 0)) {
+      toast.error("Price must be a positive number"); return;
+    }
+    setMutating(true);
+    try {
+      await adminService.updateMarketplaceListing(editListing._id, {
+        title: editForm.title.trim(),
+        description: editForm.description.trim(),
+        category: editForm.category.trim(),
+        type: editForm.type,
+        status: editForm.status,
+        ...(priceNum !== undefined ? { price: priceNum } : {}),
+      });
+      toast.success("Listing updated");
+      setEditListing(null);
+      fetchListings();
+    } catch {
+      toast.error("Failed to update listing");
+    } finally {
+      setMutating(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteListing) return;
+    setMutating(true);
+    try {
+      await adminService.deleteMarketplaceListing(deleteListing._id);
+      toast.success("Listing deleted");
+      setDeleteListing(null);
+      fetchListings();
+    } catch {
+      toast.error("Failed to delete listing");
     } finally {
       setMutating(false);
     }
@@ -221,6 +290,20 @@ export default function MarketplacePage() {
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
+                        <button
+                          onClick={() => openEdit(listing)}
+                          className="p-1.5 rounded-lg bg-[var(--ap-surface-alt)] hover:bg-blue-500/20 text-[var(--ap-text-2)] hover:text-blue-400 transition-all"
+                          title="Edit listing"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteListing(listing)}
+                          className="p-1.5 rounded-lg bg-[var(--ap-surface-alt)] hover:bg-red-500/20 text-[var(--ap-text-2)] hover:text-red-400 transition-all"
+                          title="Delete listing"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                         {listing.status === "pending_review" && (
                           <>
                             <button
@@ -313,6 +396,125 @@ export default function MarketplacePage() {
               <button onClick={() => setDetailId(null)} className="w-full mt-5 py-2 rounded-xl bg-[var(--ap-surface-alt)] text-[var(--ap-text-2)] text-sm hover:bg-[var(--ap-hover)] transition-colors">
                 Close
               </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit modal */}
+      <AnimatePresence>
+        {editListing && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[var(--ap-surface)] border border-[var(--ap-border)] rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-semibold text-[var(--ap-text)] flex items-center gap-2">
+                  <Pencil className="w-4 h-4 text-blue-400" /> Edit Listing
+                </h3>
+                <button onClick={() => setEditListing(null)} className="text-[var(--ap-text-3)] hover:text-[var(--ap-text)]"><X className="w-5 h-5" /></button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-mono text-[var(--ap-text-2)] mb-1.5">Title</label>
+                  <input
+                    value={editForm.title}
+                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                    className="w-full px-3 py-2 bg-[var(--ap-surface-alt)] border border-[var(--ap-border)] rounded-xl text-[var(--ap-text)] text-sm focus:outline-none focus:border-blue-500 placeholder-[var(--ap-text-3)]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-mono text-[var(--ap-text-2)] mb-1.5">Price (USD)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={editForm.price}
+                      onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
+                      className="w-full px-3 py-2 bg-[var(--ap-surface-alt)] border border-[var(--ap-border)] rounded-xl text-[var(--ap-text)] text-sm focus:outline-none focus:border-blue-500 placeholder-[var(--ap-text-3)]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-mono text-[var(--ap-text-2)] mb-1.5">Category</label>
+                    <input
+                      value={editForm.category}
+                      onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                      className="w-full px-3 py-2 bg-[var(--ap-surface-alt)] border border-[var(--ap-border)] rounded-xl text-[var(--ap-text)] text-sm focus:outline-none focus:border-blue-500 placeholder-[var(--ap-text-3)]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-mono text-[var(--ap-text-2)] mb-1.5">Type</label>
+                    <select
+                      value={editForm.type}
+                      onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}
+                      className="w-full px-3 py-2 bg-[var(--ap-surface-alt)] border border-[var(--ap-border)] rounded-xl text-[var(--ap-text)] text-sm focus:outline-none focus:border-blue-500"
+                    >
+                      {TYPE_OPTIONS.map((t) => <option key={t} value={t}>{TYPE_LABELS[t] ?? t}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-mono text-[var(--ap-text-2)] mb-1.5">Status</label>
+                    <select
+                      value={editForm.status}
+                      onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                      className="w-full px-3 py-2 bg-[var(--ap-surface-alt)] border border-[var(--ap-border)] rounded-xl text-[var(--ap-text)] text-sm focus:outline-none focus:border-blue-500"
+                    >
+                      {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono text-[var(--ap-text-2)] mb-1.5">Description</label>
+                  <textarea
+                    rows={4}
+                    value={editForm.description}
+                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                    className="w-full px-3 py-2 bg-[var(--ap-surface-alt)] border border-[var(--ap-border)] rounded-xl text-[var(--ap-text)] text-sm focus:outline-none focus:border-blue-500 resize-none placeholder-[var(--ap-text-3)]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button onClick={() => setEditListing(null)} className="flex-1 py-2 rounded-xl bg-[var(--ap-surface-alt)] text-[var(--ap-text-2)] text-sm hover:bg-[var(--ap-hover)] transition-colors">Cancel</button>
+                <button onClick={handleEditSave} disabled={mutating} className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-60">
+                  {mutating ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
+                  Save Changes
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete confirm modal */}
+      <AnimatePresence>
+        {deleteListing && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[var(--ap-surface)] border border-[var(--ap-border)] rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
+                  <Trash2 className="w-5 h-5 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-[var(--ap-text)]">Delete Listing</h3>
+                  <p className="text-xs text-[var(--ap-text-3)]">This action cannot be undone</p>
+                </div>
+              </div>
+              <p className="text-sm text-[var(--ap-text-2)] mb-6">
+                Permanently delete <span className="font-semibold text-[var(--ap-text)]">{deleteListing.title}</span> and its media files?
+              </p>
+              <div className="flex gap-3">
+                <button onClick={() => setDeleteListing(null)} className="flex-1 py-2 rounded-xl bg-[var(--ap-surface-alt)] text-[var(--ap-text-2)] text-sm hover:bg-[var(--ap-hover)] transition-colors">Cancel</button>
+                <button onClick={handleDelete} disabled={mutating} className="flex-1 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-60">
+                  {mutating ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  Delete
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

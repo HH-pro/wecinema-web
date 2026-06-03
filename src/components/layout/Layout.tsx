@@ -11,6 +11,7 @@ import { RiMovie2Line } from "react-icons/ri";
 import { MdChatBubbleOutline, MdMenu } from "react-icons/md";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
+import { SiteFooter } from "@/features/home/components/SiteFooter";
 import { SIDEBAR_COLLAPSED_W, SIDEBAR_EXPANDED_W } from "@/lib/constants";
 
 const BOTTOM_NAV_H = 58;
@@ -127,25 +128,7 @@ export default function Layout({ children, hasHeader = true }: LayoutProps) {
         >
           <div>{children}</div>
 
-          <footer
-            className="w-full text-center py-4 text-xs tracking-wide"
-            style={{
-              backgroundColor: "var(--color-nav-bg)",
-              borderTop: "1px solid var(--color-divider)",
-              color: "var(--color-text-tertiary)",
-            }}
-          >
-            © {new Date().getFullYear()} All rights reserved by{" "}
-            <a
-              href="https://wecinema.co"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold hover:underline underline-offset-2"
-              style={{ color: "var(--color-accent-primary)" }}
-            >
-              wecinema.co
-            </a>
-          </footer>
+          <SiteFooter />
         </motion.main>
       </div>
 

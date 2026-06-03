@@ -99,6 +99,8 @@ export interface GenericAdminResponse {
 export interface MarketplaceListing {
   _id: string;
   title: string;
+  description?: string;
+  category?: string;
   type: "for_sale" | "licensing" | "adaptation_rights" | "commission";
   status: "draft" | "active" | "sold" | "inactive" | "pending_review";
   price?: number;
