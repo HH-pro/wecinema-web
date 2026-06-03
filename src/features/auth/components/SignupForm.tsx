@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertCircle, CheckCircle, ChevronRight, Loader2, Mail } from "lucide-react";
+import { AlertCircle, CheckCircle, ChevronRight, Loader2, Mail, X } from "lucide-react";
 import { FaCalendarAlt, FaLock, FaUser } from "react-icons/fa";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -40,6 +40,14 @@ function Panel({ children }: { children: React.ReactNode }) {
         overflowY: "auto",
       }}
     >
+      <Link
+        href="/"
+        aria-label="Close and go home"
+        className="absolute top-3 right-3 z-20 w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:!text-[var(--color-text-primary)]"
+        style={{ color: "var(--color-text-tertiary)", background: "var(--color-bg-tertiary)" }}
+      >
+        <X size={16} />
+      </Link>
       {children}
     </motion.div>
   );

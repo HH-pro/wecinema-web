@@ -10,6 +10,7 @@ import {
   Mail,
   AlertCircle,
   Loader2,
+  X,
 } from "lucide-react";
 import { FaCalendarAlt, FaLock } from "react-icons/fa";
 
@@ -51,6 +52,14 @@ function Panel({ children }: { children: React.ReactNode }) {
         overflowY: "auto",
       }}
     >
+      <Link
+        href="/"
+        aria-label="Close and go home"
+        className="absolute top-3 right-3 z-20 w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:!text-[var(--color-text-primary)]"
+        style={{ color: "var(--color-text-tertiary)", background: "var(--color-bg-tertiary)" }}
+      >
+        <X size={16} />
+      </Link>
       {children}
     </motion.div>
   );

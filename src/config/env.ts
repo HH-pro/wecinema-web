@@ -10,6 +10,13 @@ import { z } from "zod";
 const ServerEnv = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   BACKEND_URL: z.string().url().describe("Origin the /api/* rewrite proxies to"),
+  INTERNAL_API_KEY: z
+    .string()
+    .optional()
+    .describe(
+      "Shared secret sent as `x-internal-key` so SSR fetches bypass the backend's " +
+        "IP-keyed rate limiter. MUST equal the backend's INTERNAL_API_KEY.",
+    ),
 });
 
 /**
@@ -43,6 +50,7 @@ function parseServer() {
   const parsed = ServerEnv.safeParse({
     NODE_ENV: process.env.NODE_ENV,
     BACKEND_URL: process.env.BACKEND_URL,
+    INTERNAL_API_KEY: process.env.INTERNAL_API_KEY,
   });
   if (!parsed.success) {
     throw new Error(`Invalid server environment:\n${format(parsed.error)}`);

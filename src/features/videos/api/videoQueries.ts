@@ -94,24 +94,34 @@ export async function getHypemodeVideos(): Promise<Video[]> {
 }
 
 export async function getVideoBySlug(slug: string): Promise<Video | null> {
+  const url = `${serverEnv.BACKEND_URL}/video/${encodeURIComponent(slug)}`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8_000);
   try {
-    const url = `${serverEnv.BACKEND_URL}/video/${encodeURIComponent(slug)}`;
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8_000);
-    try {
-      const res = await fetch(url, {
-        cache: "no-store",
-        signal: controller.signal,
-        headers: { Accept: "application/json" },
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      return (data.video ?? data) as Video;
-    } finally {
-      clearTimeout(timer);
+    const res = await fetch(url, {
+      cache: "no-store",
+      signal: controller.signal,
+      headers: {
+        Accept: "application/json",
+        // Trusted SSR caller — bypass the backend's IP-keyed rate limiter.
+        ...(serverEnv.INTERNAL_API_KEY ? { "x-internal-key": serverEnv.INTERNAL_API_KEY } : {}),
+      },
+    });
+
+    // A genuine 404 means the video doesn't exist → caller renders notFound().
+    if (res.status === 404) return null;
+
+    // Any OTHER non-OK (429 rate-limit, 5xx, etc.) is a TRANSIENT backend
+    // failure, NOT a missing page. Throwing surfaces a real error instead of a
+    // misleading "Page not found" for a video that actually exists.
+    if (!res.ok) {
+      throw new Error(`getVideoBySlug ${slug}: backend responded ${res.status}`);
     }
-  } catch {
-    return null;
+
+    const data = await res.json();
+    return (data.video ?? data) as Video;
+  } finally {
+    clearTimeout(timer);
   }
 }
 

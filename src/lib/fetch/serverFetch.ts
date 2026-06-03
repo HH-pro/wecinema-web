@@ -63,6 +63,9 @@ export async function apiFetch<T>(
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
+        // Identify as the trusted SSR server so we bypass the backend's
+        // IP-keyed rate limiter (all SSR traffic shares one server IP).
+        ...(serverEnv.INTERNAL_API_KEY ? { "x-internal-key": serverEnv.INTERNAL_API_KEY } : {}),
         ...headers,
       },
     });
