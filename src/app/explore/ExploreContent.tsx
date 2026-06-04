@@ -333,7 +333,7 @@ export function ExploreContent({ appUrl: _appUrl }: { appUrl: string }) {
   if (phase === "already_premium") {
     return (
       <div style={{ minHeight: "100vh", backgroundColor: "var(--color-bg-tertiary)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 24px", textAlign: "center" }}>
-        <div style={{ width: 80, height: 80, borderRadius: "50%", marginBottom: 20, background: "linear-gradient(135deg,#FFBB00,#FF6B00)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 32px rgba(255,187,0,0.35)" }}>
+        <div style={{ width: 80, height: 80, borderRadius: "50%", marginBottom: 20, background: "linear-gradient(135deg,#FFBB00,#E6A800)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 32px rgba(255,187,0,0.35)" }}>
           <FaCrown size={32} color="#fff" />
         </div>
         <h2 style={{ margin: "0 0 10px", fontSize: 28, fontWeight: 900, fontFamily: "var(--font-heading)", color: "var(--color-text-primary)" }}>
@@ -348,7 +348,7 @@ export function ExploreContent({ appUrl: _appUrl }: { appUrl: string }) {
         <button
           type="button"
           onClick={() => router.push("/hypemode")}
-          style={{ padding: "12px 32px", borderRadius: 14, border: "none", background: "linear-gradient(135deg,#FFBB00,#FF6B00)", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 16px rgba(255,187,0,0.3)" }}
+          style={{ padding: "12px 32px", borderRadius: 14, border: "none", background: "linear-gradient(135deg,#FFBB00,#E6A800)", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 16px rgba(255,187,0,0.3)" }}
         >
           Go to HypeMode Content
         </button>
@@ -405,7 +405,7 @@ export function ExploreContent({ appUrl: _appUrl }: { appUrl: string }) {
       {/* Hero */}
       <div style={{ position: "relative", overflow: "hidden", padding: "64px 24px 56px", textAlign: "center", borderBottom: "1px solid var(--color-divider)" }}>
         <div aria-hidden style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(255,187,0,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
-        <div style={{ width: 64, height: 64, borderRadius: 18, background: "linear-gradient(135deg,#FFBB00,#FF8C00)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", boxShadow: "0 8px 32px rgba(255,187,0,0.35)" }}>
+        <div style={{ width: 64, height: 64, borderRadius: 18, background: "linear-gradient(135deg,#FFBB00,#E6A800)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", boxShadow: "0 8px 32px rgba(255,187,0,0.35)" }}>
           <FaCrown size={28} color="#fff" aria-hidden />
         </div>
         <h1 style={{ margin: "0 0 12px", fontSize: "clamp(2rem,6vw,3.5rem)", fontWeight: 900, fontFamily: "var(--font-heading)", lineHeight: 1.1, color: "var(--color-text-primary)" }}>

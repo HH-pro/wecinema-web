@@ -66,7 +66,7 @@ export default async function ThemePage({ params }: { params: Promise<Params> })
 
       <div
         style={{
-          background: "linear-gradient(135deg, var(--color-accent-primary,#FF6B00)15, var(--color-bg-elevated))",
+          background: "linear-gradient(135deg, var(--color-accent-primary,#FFBB00)15, var(--color-bg-elevated))",
           borderBottom: "1px solid var(--color-divider)",
           padding: "36px 24px 28px",
         }}

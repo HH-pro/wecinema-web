@@ -127,7 +127,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               width: 52,
               height: 52,
               borderRadius: 14,
-              background: "linear-gradient(135deg, #FFBB00 0%, #FF8533 100%)",
+              background: "linear-gradient(135deg, #FFBB00 0%, #E6A800 100%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

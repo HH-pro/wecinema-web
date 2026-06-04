@@ -32,7 +32,7 @@ const primaryBtn: React.CSSProperties = {
   gap: 8,
   padding: "12px 24px",
   borderRadius: 12,
-  background: "var(--color-accent-primary,#FF6B00)",
+  background: "var(--color-accent-primary,#FFBB00)",
   color: "#fff",
   fontWeight: 600,
   fontSize: 14,
@@ -148,7 +148,7 @@ export function FeaturedFilmSlide({ film }: { film: HeroFeatured }) {
       />
       <div style={{ position: "relative", maxWidth: 640, display: "flex", flexDirection: "column", gap: 14, zIndex: 2 }}>
         {film.redCarpet && (
-          <span className="hero-rise hero-rise-1" style={{ ...eyebrow("linear-gradient(135deg,#E11D48,#FF6B00)", "#fff") }}>
+          <span className="hero-rise hero-rise-1" style={{ ...eyebrow("linear-gradient(135deg,#E11D48,#FFBB00)", "#fff") }}>
             <Sparkles size={12} /> Red Carpet Premiere
           </span>
         )}
@@ -280,7 +280,7 @@ export function CreatorSlide({ posters = [] }: { posters?: string[] }) {
         tint="linear-gradient(90deg, rgba(18,13,10,0.95) 0%, rgba(42,29,16,0.78) 45%, rgba(58,42,18,0.5) 100%)"
       />
       <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: 16, maxWidth: 640 }}>
-        <span style={eyebrow("rgba(255,107,0,0.2)", "var(--color-accent-primary,#FF6B00)")}>
+        <span style={eyebrow("rgba(255,107,0,0.2)", "var(--color-accent-primary,#FFBB00)")}>
           <Upload size={12} /> For Creators
         </span>
         <h2

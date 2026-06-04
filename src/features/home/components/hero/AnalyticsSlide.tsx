@@ -91,7 +91,7 @@ export function AnalyticsSlide({ active, graphs }: { active: boolean; graphs: An
           }}
         >
           What&apos;s Trending on WeCinema
-          <TrendingUp size={22} color="var(--color-accent-primary,#FF6B00)" aria-hidden />
+          <TrendingUp size={22} color="var(--color-accent-primary,#FFBB00)" aria-hidden />
         </h2>
         <p style={{ margin: 0, fontSize: "clamp(0.82rem, 1.8vw, 0.95rem)", color: "rgba(255,255,255,0.7)" }}>
           Live genre, theme &amp; ratings analytics across the platform.

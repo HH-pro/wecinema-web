@@ -63,12 +63,12 @@ function defaultDateRange(): GraphDateParams {
 // ─── Color palettes ───────────────────────────────────────────────────────────
 
 const LINE_COLORS = [
-  "#FF6B00", "#3B82F6", "#22C55E", "#8B5CF6",
+  "#FFBB00", "#3B82F6", "#22C55E", "#8B5CF6",
   "#F59E0B", "#EF4444", "#06B6D4", "#EC4899",
 ];
 
 const DONUT_COLORS = [
-  "#FF6B00", "#22C55E", "#3B82F6", "#E6B450",
+  "#FFBB00", "#22C55E", "#3B82F6", "#E6B450",
   "#8B5CF6", "#EF4444", "#06B6D4", "#F472B6",
 ];
 
@@ -448,7 +448,7 @@ const S = {
     border: "none",
     cursor: "pointer",
     transition: "all 0.2s",
-    background: a ? "var(--color-accent-primary,#FF6B00)" : "var(--color-border-primary,#D4D4D4)",
+    background: a ? "var(--color-accent-primary,#FFBB00)" : "var(--color-border-primary,#D4D4D4)",
   }),
   error: {
     display: "flex",
@@ -724,7 +724,7 @@ const Charts: React.FC<ChartsProps> = ({ isMobile = false, dateRange, preloaded 
         <LineCard
           title="Genre Trends"
           icon="🎬"
-          accentColor="#FF6B00"
+          accentColor="#FFBB00"
           subtitle="Views over time by genre"
           data={genreData}
           isMobile={false}
@@ -759,7 +759,7 @@ const Charts: React.FC<ChartsProps> = ({ isMobile = false, dateRange, preloaded 
       key="genre"
       title="Genre Trends"
       icon="🎬"
-      accentColor="#FF6B00"
+      accentColor="#FFBB00"
       subtitle="Views by genre"
       data={genreData}
       isMobile

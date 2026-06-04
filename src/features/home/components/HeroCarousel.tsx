@@ -184,7 +184,7 @@ export function HeroCarousel({ featured, graphs, posters = [] }: HeroCarouselPro
                     width: i === index ? 26 : 8,
                     height: 8,
                     borderRadius: 9999,
-                    background: i === index ? "var(--color-accent-primary,#FF6B00)" : "rgba(255,255,255,0.7)",
+                    background: i === index ? "var(--color-accent-primary,#FFBB00)" : "rgba(255,255,255,0.7)",
                   }}
                 />
               </button>

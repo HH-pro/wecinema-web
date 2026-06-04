@@ -327,14 +327,14 @@ const ProfilePopup = ({ isOpen, onClose, anchorRef, userMode, onModeChange }: Pr
             overflow: "hidden",
           }}
         >
-          <div style={{ height: 3, background: "linear-gradient(90deg,#FFBB00,#FF6B00)" }} />
+          <div style={{ height: 3, background: "linear-gradient(90deg,#FFBB00,#E6A800)" }} />
 
           {/* User info */}
           <div style={{ padding: "14px 14px 12px", display: "flex", alignItems: "center", gap: 10, borderBottom: "1px solid var(--color-divider)" }}>
             <div style={{ position: "relative", flexShrink: 0 }}>
               <div style={{
                 width: 40, height: 40, borderRadius: 9999,
-                background: "linear-gradient(135deg,#FFBB00,#FF6B00)",
+                background: "linear-gradient(135deg,#FFBB00,#E6A800)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 color: "#fff", fontSize: "0.9rem", fontWeight: 700, overflow: "hidden",
                 boxShadow: "0 2px 8px rgba(255,107,0,0.3)",
@@ -348,7 +348,7 @@ const ProfilePopup = ({ isOpen, onClose, anchorRef, userMode, onModeChange }: Pr
                 <span style={{
                   position: "absolute", top: -1, right: -1,
                   width: 16, height: 16, borderRadius: 9999,
-                  background: "linear-gradient(135deg,#FFBB00,#FF6B00)",
+                  background: "linear-gradient(135deg,#FFBB00,#E6A800)",
                   border: "2px solid var(--color-bg-elevated)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
@@ -360,7 +360,7 @@ const ProfilePopup = ({ isOpen, onClose, anchorRef, userMode, onModeChange }: Pr
               <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {authUser.username}
               </p>
-              <p style={{ margin: 0, fontSize: 11, color: hasPaid ? "#FF6B00" : "var(--color-text-tertiary)" }}>
+              <p style={{ margin: 0, fontSize: 11, color: hasPaid ? "#FFBB00" : "var(--color-text-tertiary)" }}>
                 {hasPaid ? "✦ Premium Member" : "Free Plan"}
               </p>
             </div>
@@ -392,7 +392,7 @@ const ProfilePopup = ({ isOpen, onClose, anchorRef, userMode, onModeChange }: Pr
                 <div style={{ display: "flex", borderRadius: 12, padding: 3, gap: 3, background: "var(--color-bg-tertiary)" }}>
                   {(["buyer", "seller"] as const).map(m => {
                     const isActive = userMode === m;
-                    const c = m === "seller" ? "#a78bfa" : "#FF6B00";
+                    const c = m === "seller" ? "#a78bfa" : "#FFBB00";
                     return (
                       <button
                         key={m}
@@ -438,7 +438,7 @@ const ProfilePopup = ({ isOpen, onClose, anchorRef, userMode, onModeChange }: Pr
                         padding: "7px 0", borderRadius: 9, border: "none", cursor: "pointer",
                         fontSize: 11, fontWeight: 700, fontFamily: "inherit", transition: "all 0.15s",
                         ...(isActive
-                          ? { background: "var(--color-bg-elevated)", color: "#FF6B00", boxShadow: "0 1px 4px rgba(0,0,0,0.09)" }
+                          ? { background: "var(--color-bg-elevated)", color: "#FFBB00", boxShadow: "0 1px 4px rgba(0,0,0,0.09)" }
                           : { background: "transparent", color: "var(--color-text-tertiary)" }),
                       }}
                     >
@@ -569,7 +569,7 @@ export default function Sidebar({ expand, onClose }: SidebarProps) {
                   <span className="relative inline-flex items-center justify-center">
                     <RiMovie2Line />
                     {hasPaid && (
-                      <FaCrown className="absolute -top-2 -right-1.5 drop-shadow-sm" size={8} style={{ color: "#FF6B00" }} />
+                      <FaCrown className="absolute -top-2 -right-1.5 drop-shadow-sm" size={8} style={{ color: "#FFBB00" }} />
                     )}
                   </span>
                 }
@@ -578,7 +578,7 @@ export default function Sidebar({ expand, onClose }: SidebarProps) {
                 active={isActive("/explore") || isActive("/hypemode")}
                 gold={hasPaid}
                 badge={hasPaid
-                  ? <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 9999, backgroundColor: "rgba(255,187,0,0.1)", color: "#FF6B00", border: "1px solid rgba(255,187,0,0.2)" }}>PRO</span>
+                  ? <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 9999, backgroundColor: "rgba(255,187,0,0.1)", color: "#FFBB00", border: "1px solid rgba(255,187,0,0.2)" }}>PRO</span>
                   : undefined}
               />
               <NavItem href="/video-editor" icon={<TbVideoPlus />}        label="Video Editor" expand={expand} active={isActive("/video-editor")} />
@@ -627,7 +627,7 @@ export default function Sidebar({ expand, onClose }: SidebarProps) {
                 >
                   <div style={{
                     width: 32, height: 32, borderRadius: 9999, overflow: "hidden",
-                    background: "linear-gradient(135deg,#FFBB00,#FF6B00)",
+                    background: "linear-gradient(135deg,#FFBB00,#E6A800)",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0,
                   }}>
@@ -654,7 +654,7 @@ export default function Sidebar({ expand, onClose }: SidebarProps) {
               >
                 <div style={{
                   width: 32, height: 32, borderRadius: 9999, overflow: "hidden", flexShrink: 0,
-                  background: "linear-gradient(135deg,#FFBB00,#FF6B00)",
+                  background: "linear-gradient(135deg,#FFBB00,#E6A800)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 13, fontWeight: 700, color: "#fff",
                 }}>

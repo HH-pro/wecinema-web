@@ -43,7 +43,7 @@ const S = {
     width: "36px",
     height: "36px",
     borderRadius: "10px",
-    background: "linear-gradient(135deg, var(--color-accent-primary, #FF6B00), #E6B450)",
+    background: "linear-gradient(135deg, var(--color-accent-primary, #FFBB00), #E6B450)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -68,9 +68,9 @@ const S = {
     gap: "6px",
     padding: "8px 16px",
     borderRadius: "10px",
-    border: "1px solid var(--color-accent-primary, #FF6B00)",
+    border: "1px solid var(--color-accent-primary, #FFBB00)",
     backgroundColor: "transparent",
-    color: "var(--color-accent-primary, #FF6B00)",
+    color: "var(--color-accent-primary, #FFBB00)",
     fontSize: "0.8125rem",
     fontWeight: 600,
     cursor: "pointer",
@@ -87,7 +87,7 @@ const S = {
     width: "36px",
     height: "36px",
     borderRadius: "10px",
-    background: "linear-gradient(135deg, var(--color-accent-primary, #FF6B00), #E6B450)",
+    background: "linear-gradient(135deg, var(--color-accent-primary, #FFBB00), #E6B450)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -123,7 +123,7 @@ const S = {
     height: "2px",
     margin: "8px 20px 0",
     borderRadius: "1px",
-    background: "linear-gradient(90deg, var(--color-accent-primary, #FF6B00), #E6B450, transparent)",
+    background: "linear-gradient(90deg, var(--color-accent-primary, #FFBB00), #E6B450, transparent)",
   } as React.CSSProperties,
   footer: {
     display: "flex",
@@ -244,9 +244,9 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({ title = "Analytics 
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span style={S.footerLabel}>{isMobile ? "Live" : "Live Data"}</span>
           <div style={S.footerDots}>
-            <span style={S.footerDot("var(--color-accent-primary, #FF6B00)")} />
+            <span style={S.footerDot("var(--color-accent-primary, #FFBB00)")} />
             <span style={S.footerDot("#E6B450")} />
-            <span style={S.footerDot("var(--color-accent-active, #CC5500)")} />
+            <span style={S.footerDot("var(--color-accent-active, #CC9900)")} />
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
