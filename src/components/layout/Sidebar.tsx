@@ -515,9 +515,11 @@ export default function Sidebar({ expand, onClose }: SidebarProps) {
   }, [authUser?._id, userMode, refreshUser]);
 
   const isActive = (p: string) => pathname === p;
-  const showMarketplace = isAuthenticated && (userMode === "buyer" || userMode === "seller");
-
   const hasPaid = authUser?.hasPaid ?? false;
+  // Marketplace is a subscription feature — hide its tabs once the sub expires
+  // (the cron flips hasPaid to false on expiry). Backend also blocks writes.
+  const showMarketplace =
+    isAuthenticated && hasPaid && (userMode === "buyer" || userMode === "seller");
 
   const handleHypeModeClick = useCallback((e: MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
     if (hasPaid) {
