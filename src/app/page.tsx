@@ -8,6 +8,7 @@ import { getFeaturedListings } from "@/features/home/api/marketplaceHome";
 import { getAnalyticsGraphs } from "@/features/home/api/analyticsGraphs";
 import { getLatestScripts } from "@/features/scripts/api/scriptsQueries";
 import { HeroCarousel } from "@/features/home/components/HeroCarousel";
+import { ThemePills } from "@/features/videos";
 import { ContinueWatchingRow } from "@/features/home/components/ContinueWatchingRow";
 import { TrendingRow } from "@/features/home/components/TrendingRow";
 import { GenreRows } from "@/features/home/components/GenreRows";
@@ -146,6 +147,9 @@ export default async function HomePage() {
 
       {/* Section 1 — Hero carousel (featured film, marketplace, creator, analytics) */}
       <HeroCarousel featured={heroFeatured} graphs={graphs} posters={heroPosters} />
+
+      {/* Browse-by-theme bar, directly under the hero */}
+      <ThemePills />
 
       <main id="main-content">
         {/* Continue watching — auth-only, hides when empty. Stays bare (no

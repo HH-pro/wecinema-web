@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
-  FeaturedFilmSlide,
   MarketplaceSlide,
   CreatorSlide,
   type HeroFeatured,
@@ -22,13 +21,12 @@ interface HeroCarouselProps {
 }
 
 export function HeroCarousel({ featured, graphs, posters = [] }: HeroCarouselProps) {
-  // Build slide list. Featured film slide only when we actually have a film.
-  // Order: Red Carpet film → Analytics graphs (right after, per request) →
-  // Marketplace → Creator.
+  // Build slide list. The lead slide shows the featured film (video/text) by
+  // default and has a toggle that reveals the platform graphs in-place — so the
+  // film and the analytics live on slide 1. Then Marketplace → Creator.
   const film = featured[0];
   const slides: { key: string; node: React.ReactNode }[] = [];
-  if (film) slides.push({ key: "featured", node: <FeaturedFilmSlide film={film} /> });
-  const analyticsIndex = slides.length;
+  const analyticsIndex = 0;
   slides.push({ key: "analytics", node: null }); // rendered with `active` flag below
   slides.push({ key: "marketplace", node: <MarketplaceSlide posters={posters} /> });
   slides.push({ key: "creator", node: <CreatorSlide posters={posters} /> });
@@ -41,12 +39,9 @@ export function HeroCarousel({ featured, graphs, posters = [] }: HeroCarouselPro
 
   useEffect(() => {
     if (paused || count <= 1) return;
-    // Linger on the analytics/charts slide so the graphs are readable, but keep
-    // cycling afterward.
-    const dwell = index === analyticsIndex ? ROTATE_MS * 2.4 : ROTATE_MS;
-    const id = setTimeout(() => setIndex((i) => (i + 1) % count), dwell);
+    const id = setTimeout(() => setIndex((i) => (i + 1) % count), ROTATE_MS);
     return () => clearTimeout(id);
-  }, [paused, count, index, analyticsIndex]);
+  }, [paused, count, index]);
 
   // Pause rotation when the tab is hidden.
   useEffect(() => {
@@ -128,7 +123,7 @@ export function HeroCarousel({ featured, graphs, posters = [] }: HeroCarouselPro
           aria-label={`Slide ${index + 1} of ${count}`}
         >
           {index === analyticsIndex ? (
-            <AnalyticsSlide active graphs={graphs} />
+            <AnalyticsSlide active graphs={graphs} film={film} />
           ) : (
             current.node
           )}
