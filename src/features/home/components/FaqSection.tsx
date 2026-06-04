@@ -1,4 +1,6 @@
 import { Plus } from "lucide-react";
+import { Section } from "@/components/ui/Section";
+import { SectionHeader } from "@/components/ui/SectionHeader";
 
 const FAQS = [
   {
@@ -25,40 +27,16 @@ const FAQS = [
 
 export function FaqSection() {
   return (
-    <section
-      style={{ padding: "44px 24px 48px", borderTop: "1px solid var(--color-divider)" }}
-      aria-labelledby="faq-heading"
-    >
-      <div style={{ maxWidth: 760, margin: "0 auto" }}>
-        <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <span
-            style={{
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "var(--color-accent-primary)",
-            }}
-          >
-            FAQ
-          </span>
-          <h2
-            id="faq-heading"
-            style={{
-              margin: "8px 0 0",
-              fontSize: "clamp(1.5rem, 3.2vw, 2.1rem)",
-              fontWeight: 800,
-              fontFamily: "var(--font-heading)",
-              color: "var(--color-text-primary)",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Frequently asked questions
-          </h2>
-        </div>
+    <Section maxWidth="prose" divider ariaLabelledby="faq-heading">
+      <SectionHeader
+        align="center"
+        eyebrow="FAQ"
+        title="Frequently asked questions"
+        titleId="faq-heading"
+      />
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {FAQS.map((f) => (
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {FAQS.map((f) => (
             <details
               key={f.q}
               className="group/faq"
@@ -104,8 +82,7 @@ export function FaqSection() {
               </p>
             </details>
           ))}
-        </div>
       </div>
-    </section>
+    </Section>
   );
 }

@@ -22,17 +22,26 @@
   --color-text-inverse: #FFFFFF;
   --color-text-link: #CC5500;
 
-  /* Brand / Accent */
-  --color-accent-primary: #FFBB00;
-  --color-accent-secondary: #FFBB00;
-  --color-accent-tertiary: #FFBB00;
-  --color-accent-hover: #E5A800;
-  --color-accent-active: #CC9600;
+  /* Brand / Accent — unified on orange */
+  --color-accent-primary: #FF6B00;
+  --color-accent-secondary: #FF6B00;
+  --color-accent-tertiary: #FF6B00;
+  --color-accent-hover: #E55F00;
+  --color-accent-active: #CC5500;
+  /* Translucent accent surfaces (faint fill + ring) for editorial panels */
+  --accent-soft: color-mix(in srgb, var(--color-accent-primary) 12%, transparent);
+  --accent-ring: color-mix(in srgb, var(--color-accent-primary) 30%, transparent);
+
+  /* Editorial layout rhythm */
+  --space-section-y: clamp(40px, 6vw, 72px);
+  --space-section-x: 24px;
+  --max-content: 1280px;
+  --max-prose: 760px;
 
   /* Borders */
   --color-border-primary: #D0D0D2;
   --color-border-secondary: #E2E2E4;
-  --color-border-focus: #FFBB00;
+  --color-border-focus: #FF6B00;
 
   /* Semantic */
   --color-success: #16A34A;
@@ -101,17 +110,17 @@
   /* #686868 on black was 4.0:1 (fails WCAG AA). #7A7A7A is ~4.9:1. */
   --color-text-tertiary: #7A7A7A;
   --color-text-inverse: #0F0F0F;
-  --color-text-link: #FFBB00;
+  --color-text-link: #FF8A3D;
 
-  --color-accent-primary: #FFBB00;
-  --color-accent-secondary: #FFBB00;
-  --color-accent-tertiary: #FFEE00;
-  --color-accent-hover: #E5A800;
-  --color-accent-active: #CC9600;
+  --color-accent-primary: #FF6B00;
+  --color-accent-secondary: #FF6B00;
+  --color-accent-tertiary: #FF8A3D;
+  --color-accent-hover: #FF8A3D;
+  --color-accent-active: #E55F00;
 
   --color-border-primary: #2C2C2C;
   --color-border-secondary: #222222;
-  --color-border-focus: #FFBB00;
+  --color-border-focus: #FF6B00;
 
   --color-success: #22C55E;
   --color-success-bg: rgba(34, 197, 94, 0.12);
@@ -840,20 +849,9 @@ h3, .text-h3 { font-family: var(--font-heading); font-size: 1.125rem; font-weigh
 .hero-rise-3 { animation-delay: 0.26s; }
 .hero-rise-4 { animation-delay: 0.36s; }
 
-/* Floating featured-film poster card */
-@keyframes heroFloat {
-  0%, 100% { transform: translateY(0) rotate(-2deg); }
-  50%      { transform: translateY(-14px) rotate(2deg); }
-}
-.hero-poster-float {
-  animation: heroFloat 7s ease-in-out infinite;
-  will-change: transform;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .hero-kenburns { animation: none; }
   .hero-rise { opacity: 1; animation: none; }
-  .hero-poster-float { animation: none; }
 }
 
 /* FAQ <details> — hide the native disclosure marker */

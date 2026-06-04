@@ -1,6 +1,8 @@
 import Link from "next/link";
-import { FileText, ChevronRight } from "lucide-react";
+import { FileText } from "lucide-react";
 import { getLatestScripts } from "@/features/scripts/api/scriptsQueries";
+import { Section } from "@/components/ui/Section";
+import { SectionHeader } from "@/components/ui/SectionHeader";
 import type { Script } from "@/types";
 
 function formatDateAgo(dateStr: string): string {
@@ -45,14 +47,14 @@ function ScriptCard({ script }: { script: Script }) {
             width: 36,
             height: 36,
             borderRadius: 8,
-            backgroundColor: "var(--color-accent-primary,#FF6B00)1a",
+            backgroundColor: "var(--accent-soft)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
           }}
         >
-          <FileText size={18} color="var(--color-accent-primary,#FF6B00)" aria-hidden />
+          <FileText size={18} color="var(--color-accent-primary)" aria-hidden />
         </div>
         <div style={{ minWidth: 0, flex: 1 }}>
           <p
@@ -114,53 +116,14 @@ export async function ScriptsSection({ scripts: provided }: { scripts?: Script[]
   if (scripts.length === 0) return null;
 
   return (
-    <section
-      style={{ padding: "24px 24px 32px", contentVisibility: "auto", containIntrinsicSize: "1px 320px" } as React.CSSProperties}
-      aria-labelledby="scripts-heading"
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 16,
-          paddingBottom: 12,
-          borderBottom: "1px solid var(--color-divider)",
-        }}
-      >
-        <h2
-          id="scripts-heading"
-          style={{
-            margin: 0,
-            fontSize: 18,
-            fontWeight: 700,
-            fontFamily: "var(--font-poppins)",
-            color: "var(--color-text-primary)",
-            letterSpacing: "-0.015em",
-          }}
-        >
-          Latest Scripts
-        </h2>
-        <Link
-          href="/scripts"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 4,
-            fontSize: 13,
-            fontWeight: 500,
-            color: "var(--color-accent-primary)",
-            border: "1px solid var(--color-accent-primary)",
-            borderRadius: 12,
-            padding: "6px 14px",
-            textDecoration: "none",
-            whiteSpace: "nowrap",
-          }}
-          aria-label="View all scripts"
-        >
-          View all <ChevronRight size={13} aria-hidden />
-        </Link>
-      </div>
+    <Section spacing="compact" maxWidth="content" ariaLabelledby="scripts-heading">
+      <SectionHeader
+        as="h2"
+        align="between"
+        title="Latest scripts"
+        titleId="scripts-heading"
+        link={{ href: "/scripts", label: "View all" }}
+      />
 
       <div
         style={{
@@ -173,6 +136,6 @@ export async function ScriptsSection({ scripts: provided }: { scripts?: Script[]
           <ScriptCard key={script._id} script={script} />
         ))}
       </div>
-    </section>
+    </Section>
   );
 }

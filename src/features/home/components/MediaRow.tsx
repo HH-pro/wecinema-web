@@ -2,7 +2,7 @@
 
 import { Children, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 
 interface MediaRowProps {
   title: string;
@@ -117,17 +117,14 @@ export function MediaRow({ title, viewAllHref, itemWidth = 240, children, icon }
               alignItems: "center",
               gap: 4,
               fontSize: 13,
-              fontWeight: 500,
+              fontWeight: 600,
               color: "var(--color-accent-primary)",
-              border: "1px solid var(--color-accent-primary)",
-              borderRadius: 12,
-              padding: "6px 14px",
               whiteSpace: "nowrap",
               textDecoration: "none",
             }}
-            className="hover:!bg-[var(--color-accent-primary)] hover:!text-white transition-colors"
+            className="hover:underline"
           >
-            View all <ChevronRight size={13} aria-hidden />
+            View all <ArrowRight size={14} aria-hidden />
           </Link>
         )}
       </div>

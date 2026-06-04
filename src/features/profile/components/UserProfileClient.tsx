@@ -1046,12 +1046,14 @@ export function UserProfileClient({ userId }: UserProfileClientProps) {
                   <span style={{ opacity: 0.55 }}>Username</span>
                   <span style={{ fontWeight: 600 }}>{user.username}</span>
                 </p>
-                <p style={sideInfoRowStyle}>
-                  <span style={{ opacity: 0.55 }}>Email</span>
-                  <span style={{ fontWeight: 600, wordBreak: "break-all" }}>
-                    {user.email}
-                  </span>
-                </p>
+                {user.email && (
+                  <p style={sideInfoRowStyle}>
+                    <span style={{ opacity: 0.55 }}>Email</span>
+                    <span style={{ fontWeight: 600, wordBreak: "break-all" }}>
+                      {user.email}
+                    </span>
+                  </p>
+                )}
               </div>
 
               {/* Profile tags */}
@@ -1696,7 +1698,7 @@ export function UserProfileClient({ userId }: UserProfileClientProps) {
                 <div style={{ padding: "16px 18px" }}>
                   <h4 style={cardTitleStyle}>Profile Details</h4>
                   <AboutRow label="Joined" value={formatDate(user.createdAt)} />
-                  <AboutRow label="Email" value={user.email} />
+                  {user.email && <AboutRow label="Email" value={user.email} />}
                   {user.dob && (
                     <AboutRow
                       label="Date of Birth"

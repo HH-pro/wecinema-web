@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { Play, Clapperboard, ShoppingBag, Upload, Sparkles, Star, Eye } from "lucide-react";
-import { resolveThumb } from "@/features/home/lib/posterFallback";
-
 /**
  * Fixed cinematic backdrop for the first hero slide. Swap this path for your own
  * photo (e.g. "/hero-bg.webp") — any image file under /public works as-is.
@@ -121,7 +119,6 @@ function PosterCollage({ images, tint }: { images: string[]; tint: string }) {
 // ── Slide 1: Featured Red Carpet Film ─────────────────────────
 export function FeaturedFilmSlide({ film }: { film: HeroFeatured }) {
   const views = formatViews(film.views);
-  const poster = resolveThumb(film.image);
   return (
     <div style={{ ...slideBase, justifyContent: "flex-end" }}>
       {/* Fixed cinematic backdrop with slow Ken Burns zoom. Rendered as a CSS
@@ -149,76 +146,6 @@ export function FeaturedFilmSlide({ film }: { film: HeroFeatured }) {
             "linear-gradient(90deg, rgba(8,6,5,0.94) 0%, rgba(8,6,5,0.74) 38%, rgba(8,6,5,0.12) 100%), linear-gradient(0deg, rgba(8,6,5,0.9) 0%, transparent 58%)",
         }}
       />
-      {/* Warm accent glow behind the title for depth */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          left: "-5%",
-          top: "26%",
-          width: 420,
-          height: 420,
-          borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(255,107,0,0.30) 0%, rgba(255,107,0,0) 68%)",
-          filter: "blur(18px)",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Floating featured-film poster card (desktop) */}
-      <div
-        aria-hidden
-        className="max-lg:hidden"
-        style={{ position: "absolute", right: "clamp(48px, 6vw, 104px)", top: "50%", transform: "translateY(-50%)", zIndex: 1 }}
-      >
-        {/* glow halo */}
-        <div
-          style={{
-            position: "absolute",
-            inset: -26,
-            borderRadius: 28,
-            background: "radial-gradient(circle at 50% 40%, rgba(255,107,0,0.45), rgba(255,107,0,0) 70%)",
-            filter: "blur(10px)",
-          }}
-        />
-        <div
-          className="hero-poster-float"
-          style={{
-            position: "relative",
-            width: "clamp(190px, 16vw, 240px)",
-            aspectRatio: "2/3",
-            borderRadius: 18,
-            overflow: "hidden",
-            backgroundColor: "#1a120c",
-            backgroundImage: `url(${poster})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            boxShadow: "0 30px 70px rgba(0,0,0,0.62), inset 0 0 0 1px rgba(255,255,255,0.12)",
-          }}
-        >
-          {/* sheen + play badge */}
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, rgba(255,255,255,0.16) 0%, transparent 36%, transparent 70%, rgba(0,0,0,0.45) 100%)" }} />
-          <div
-            style={{
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              transform: "translate(-50%,-50%)",
-              width: 56,
-              height: 56,
-              borderRadius: "50%",
-              background: "rgba(255,107,0,0.92)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 8px 24px rgba(255,107,0,0.5)",
-            }}
-          >
-            <Play size={22} fill="#fff" color="#fff" />
-          </div>
-        </div>
-      </div>
-
       <div style={{ position: "relative", maxWidth: 640, display: "flex", flexDirection: "column", gap: 14, zIndex: 2 }}>
         {film.redCarpet && (
           <span className="hero-rise hero-rise-1" style={{ ...eyebrow("linear-gradient(135deg,#E11D48,#FF6B00)", "#fff") }}>
@@ -229,7 +156,7 @@ export function FeaturedFilmSlide({ film }: { film: HeroFeatured }) {
           className="hero-rise hero-rise-2"
           style={{
             margin: 0,
-            fontSize: "clamp(2rem, 5.5vw, 3.6rem)",
+            fontSize: "clamp(1.9rem, 4.8vw, 3rem)",
             fontWeight: 800,
             lineHeight: 1.04,
             color: "#fff",

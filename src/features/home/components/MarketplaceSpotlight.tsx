@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ShoppingBag, Tag } from "lucide-react";
 import { MediaRow } from "@/features/home/components/MediaRow";
+import { Section } from "@/components/ui/Section";
+import { SectionHeader } from "@/components/ui/SectionHeader";
 import { POSTER_FALLBACK } from "@/features/home/lib/posterFallback";
 import type { Listing } from "@/types/marketplace.types";
 
@@ -88,71 +90,38 @@ const cta: React.CSSProperties = {
 
 export function MarketplaceSpotlight({ listings }: { listings: Listing[] }) {
   return (
-    <section style={{ padding: "16px 24px 32px" }} aria-labelledby="mp-spotlight-heading">
+    <Section maxWidth="content" ariaLabelledby="mp-spotlight-heading">
       <div
         style={{
           borderRadius: 20,
-          padding: "clamp(22px, 4vw, 36px)",
+          padding: "clamp(24px, 4vw, 40px)",
           background:
-            "radial-gradient(110% 130% at 100% 0%, rgba(255,107,0,0.14) 0%, transparent 60%), var(--color-bg-elevated)",
+            "radial-gradient(120% 140% at 100% 0%, var(--accent-soft) 0%, transparent 62%), var(--color-bg-elevated)",
           border: "1px solid var(--color-border-secondary)",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 16,
-            marginBottom: listings.length > 0 ? 24 : 0,
-          }}
-        >
-          <div style={{ maxWidth: 560 }}>
-            <span
-              style={{
-                fontSize: 12,
-                fontWeight: 700,
-                letterSpacing: "0.07em",
-                textTransform: "uppercase",
-                color: "var(--color-accent-primary)",
-              }}
-            >
-              Marketplace
-            </span>
-            <h2
-              id="mp-spotlight-heading"
-              style={{
-                margin: "6px 0 8px",
-                fontSize: "clamp(1.4rem, 3vw, 1.9rem)",
-                fontWeight: 800,
-                fontFamily: "var(--font-heading)",
-                color: "var(--color-text-primary)",
-                letterSpacing: "-0.02em",
-              }}
-            >
-              Sell Your Film on WeCinema
-            </h2>
-            <p style={{ margin: 0, fontSize: 14, color: "var(--color-text-secondary)", lineHeight: 1.55 }}>
-              Upload your film, set your price, and earn directly from buyers worldwide.
-            </p>
-          </div>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <Link
-              href="/marketplace/browse"
-              style={{ ...cta, background: "var(--color-bg-tertiary)", color: "var(--color-text-primary)", border: "1px solid var(--color-border-secondary)" }}
-              className="hover:!brightness-105"
-            >
-              <ShoppingBag size={16} /> Browse Marketplace
-            </Link>
-            <Link
-              href="/marketplace/listings/new"
-              style={{ ...cta, background: "var(--color-accent-primary)", color: "#fff", boxShadow: "0 6px 18px rgba(255,107,0,0.3)" }}
-              className="hover:!brightness-110"
-            >
-              Sell My Film
-            </Link>
-          </div>
+        <SectionHeader
+          eyebrow="Marketplace"
+          title="Sell your film on WeCinema"
+          titleId="mp-spotlight-heading"
+          subtitle="Upload your film, set your price, and earn directly from buyers worldwide — with escrow-protected payments."
+        />
+
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: listings.length > 0 ? 28 : 0 }}>
+          <Link
+            href="/marketplace/listings/new"
+            style={{ ...cta, background: "var(--color-accent-primary)", color: "#fff", boxShadow: "0 6px 18px var(--accent-ring)" }}
+            className="hover:!brightness-110"
+          >
+            Sell My Film
+          </Link>
+          <Link
+            href="/marketplace/browse"
+            style={{ ...cta, background: "var(--color-bg-tertiary)", color: "var(--color-text-primary)", border: "1px solid var(--color-border-secondary)" }}
+            className="hover:!brightness-105"
+          >
+            <ShoppingBag size={16} /> Browse Marketplace
+          </Link>
         </div>
 
         {listings.length > 0 && (
@@ -165,6 +134,6 @@ export function MarketplaceSpotlight({ listings }: { listings: Listing[] }) {
           </div>
         )}
       </div>
-    </section>
+    </Section>
   );
 }

@@ -12,9 +12,7 @@ import { ContinueWatchingRow } from "@/features/home/components/ContinueWatching
 import { TrendingRow } from "@/features/home/components/TrendingRow";
 import { GenreRows } from "@/features/home/components/GenreRows";
 import { MarketplaceSpotlight } from "@/features/home/components/MarketplaceSpotlight";
-import { CreatorBanner } from "@/features/home/components/CreatorBanner";
-import { HowItWorks } from "@/features/home/components/HowItWorks";
-import { WhyWeCinema } from "@/features/home/components/WhyWeCinema";
+import { ForCreators } from "@/features/home/components/ForCreators";
 import { FaqSection } from "@/features/home/components/FaqSection";
 import { ScriptsSection } from "@/features/scripts/components/ScriptsSection";
 import { resolveThumb } from "@/features/home/lib/posterFallback";
@@ -150,33 +148,24 @@ export default async function HomePage() {
       <HeroCarousel featured={heroFeatured} graphs={graphs} posters={heroPosters} />
 
       <main id="main-content">
-        {/* Section 3 — Continue watching (auth-only, hides when empty) */}
+        {/* Continue watching — auth-only, hides when empty. Stays bare (no
+            divider Section) so it never leaves an empty hairline. */}
         <ContinueWatchingRow />
 
-        {/* Section 2 — Trending / Recommended */}
+        {/* Content first — discovery before pitch (premium / industry-scale) */}
         <TrendingRow videos={home.trending} />
-
-        {/* Section 4 — Genre rows (only non-empty genres) */}
         <GenreRows buckets={home.byGenre} />
 
-        {/* Section 5 — Marketplace spotlight */}
+        {/* Commerce you can act on */}
         <MarketplaceSpotlight listings={marketplace.listings} />
-
-        {/* About the platform — value props + marketplace models */}
-        <WhyWeCinema />
-
-        {/* Section 6 — Latest scripts */}
         <Suspense fallback={<RowSkeleton />}>
           <ScriptsSection scripts={scripts} />
         </Suspense>
 
-        {/* Section 7 — Creator acquisition banner */}
-        <CreatorBanner />
+        {/* One merged explain + convert block (Why + How it works + Creator CTA) */}
+        <ForCreators />
 
-        {/* Section 8 — How WeCinema works */}
-        <HowItWorks />
-
-        {/* About the platform — frequently asked questions */}
+        {/* FAQ */}
         <FaqSection />
       </main>
     </Layout>
