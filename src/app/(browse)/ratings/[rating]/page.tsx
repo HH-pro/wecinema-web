@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { VideoGrid } from "@/features/videos/components/VideoGrid";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { getVideosByRating } from "@/features/videos/api/videoQueries";
 import { RATINGS, RATING_META } from "@/lib/constants";
+import { getRatingCopy } from "@/lib/collectionSeo";
 import { clientEnv } from "@/config/env";
 import { OG } from "@/lib/seo";
 
@@ -18,18 +21,18 @@ export function generateStaticParams(): Params[] {
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { rating } = await params;
   const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
-  const meta = RATING_META[rating];
-  const label = meta?.label ?? rating;
+  const copy = getRatingCopy(rating);
 
   return {
-    title: `Rated ${rating} Films`,
-    description: `Watch ${rating}-rated films (${label}) on WeCinema. Discover independent cinema with ${rating} content rating from filmmakers worldwide.`,
+    title: `Rated ${rating} Films — Watch ${rating} Movies Online`,
+    description: copy.description,
+    keywords: copy.keywords,
     alternates: { canonical: `/ratings/${rating}` },
     openGraph: {
       type: "website",
       siteName: "WeCinema",
       title: `Rated ${rating} Films | WeCinema`,
-      description: `Watch ${rating}-rated independent films on WeCinema.`,
+      description: copy.description,
       url: `${SITE}/ratings/${rating}`,
       images: [{ url: OG.default, width: 1200, height: 630, alt: `Rated ${rating} films` }],
     },
@@ -50,7 +53,9 @@ export default async function RatingPage({ params }: { params: Promise<Params> }
 
   const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
   const meta = RATING_META[rating];
+  const copy = getRatingCopy(rating);
   const videos = await getVideosByRating(rating);
+  const others = (RATINGS as readonly string[]).filter((r) => r !== rating);
 
   return (
     <>
@@ -59,14 +64,17 @@ export default async function RatingPage({ params }: { params: Promise<Params> }
           "@context": "https://schema.org",
           "@type": "CollectionPage",
           name: `Rated ${rating} Films`,
-          description: `${rating}-rated independent films on WeCinema.`,
+          description: copy.description,
           url: `${SITE}/ratings/${rating}`,
           isPartOf: { "@type": "WebSite", name: "WeCinema", url: SITE },
         }}
       />
 
       <div style={{ padding: "32px 24px" }}>
-        <div style={{ marginBottom: 28, display: "flex", alignItems: "flex-start", gap: 16 }}>
+        <div style={{ marginBottom: 16 }}>
+          <Breadcrumbs items={[{ name: "Ratings", href: "/explore" }, { name: `Rated ${rating}` }]} />
+        </div>
+        <div style={{ marginBottom: 16, display: "flex", alignItems: "flex-start", gap: 16 }}>
           <div
             style={{
               flexShrink: 0,
@@ -133,7 +141,45 @@ export default async function RatingPage({ params }: { params: Promise<Params> }
           </div>
         </div>
 
+        <p
+          style={{
+            margin: "0 0 24px",
+            maxWidth: 760,
+            fontSize: 15,
+            lineHeight: 1.65,
+            color: "var(--color-text-secondary)",
+          }}
+        >
+          {copy.intro}
+        </p>
+
         <VideoGrid videos={videos} emptyMessage={`No ${rating}-rated films yet.`} />
+
+        <nav aria-label="Browse other content ratings" style={{ marginTop: 40 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 12px", color: "var(--color-text-primary)" }}>
+            Browse by content rating
+          </h2>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+            {others.map((r) => (
+              <Link
+                key={r}
+                href={`/ratings/${r}`}
+                style={{
+                  padding: "7px 14px",
+                  borderRadius: 9999,
+                  border: "1px solid var(--color-divider)",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "var(--color-text-secondary)",
+                  textDecoration: "none",
+                }}
+                className="hover:!border-[var(--color-accent-primary)]"
+              >
+                Rated {r}
+              </Link>
+            ))}
+          </div>
+        </nav>
       </div>
     </>
   );

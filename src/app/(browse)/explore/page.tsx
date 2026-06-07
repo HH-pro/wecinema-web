@@ -59,6 +59,7 @@ export default function ExplorePage() {
           isPartOf: { "@type": "WebSite", name: "WeCinema", url: `${SITE}/` },
         }}
       />
+      <h1 className="sr-only">Explore Independent Films, Creators &amp; Scripts on WeCinema</h1>
       <ExploreContent appUrl={clientEnv.NEXT_PUBLIC_APP_URL} />
     </>
   );

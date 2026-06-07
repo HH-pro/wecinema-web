@@ -126,8 +126,7 @@ export default async function BlogPostPage({
             <div className="blog-post-meta">
               <div className="blog-post-author">
                 {avatar ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={avatar}
                     alt={author}
                     width={44}
@@ -233,8 +232,7 @@ export default async function BlogPostPage({
           {/* Author card */}
           <aside className="blog-post-author-card">
             {avatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={avatar}
                 alt={author}
                 width={64}

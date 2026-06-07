@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Play, Clapperboard, ShoppingBag, Upload, Sparkles, Star, Eye } from "lucide-react";
 /**
  * Fixed cinematic backdrop for the first hero slide. Swap this path for your own
@@ -12,6 +13,8 @@ export interface HeroFeatured {
   tagline?: string;
   href: string;
   image: string;
+  /** Playable (signed) video URL shown as a preview on the right of the hero. */
+  video?: string;
   redCarpet: boolean;
   genre?: string;
   rating?: string;
@@ -120,9 +123,8 @@ function PosterCollage({ images, tint }: { images: string[]; tint: string }) {
 export function FeaturedFilmSlide({ film }: { film: HeroFeatured }) {
   const views = formatViews(film.views);
   return (
-    <div style={{ ...slideBase, justifyContent: "flex-end" }}>
-      {/* Fixed cinematic backdrop with slow Ken Burns zoom. Rendered as a CSS
-          background so the image file type is irrelevant (SVG now, .webp later). */}
+    <div style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
+      {/* Base cinematic ambiance backdrop (also the fallback when no video). */}
       <div aria-hidden style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
         <div
           className="hero-kenburns"
@@ -136,35 +138,85 @@ export function FeaturedFilmSlide({ film }: { film: HeroFeatured }) {
           }}
         />
       </div>
-      {/* Legibility gradient */}
+
+      {/* Mobile / tablet: an OPTIMIZED poster image (next/image, priority) as the
+          full-bleed backdrop — deliberately NOT an autoplay video, so we protect
+          LCP and don't burn mobile data on a video the user may never watch. */}
+      {film.image && (
+        <div aria-hidden className="absolute inset-0 overflow-hidden lg:hidden">
+          <Image
+            src={film.image}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            style={{ objectFit: "cover" }}
+          />
+          <span
+            aria-hidden
+            style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg, rgba(0,0,0,0.32) 0%, transparent 44%)" }}
+          />
+        </div>
+      )}
+
+      {/* Desktop (lg+): the live film as a floating rounded card on the right.
+          Autoplay video is reserved for larger screens where bandwidth and the
+          layout both allow it; the poster shows until the first frame is ready. */}
+      {film.video && (
+        <div
+          aria-hidden
+          className="absolute overflow-hidden hidden lg:block lg:inset-y-8 lg:left-auto lg:right-[clamp(20px,4vw,56px)] lg:w-[44%] lg:rounded-2xl lg:border lg:border-white/15 lg:shadow-[0_24px_70px_rgba(0,0,0,0.6)]"
+        >
+          <video
+            src={film.video}
+            poster={film.image}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="none"
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          />
+          <span
+            aria-hidden
+            style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg, rgba(0,0,0,0.32) 0%, transparent 44%)" }}
+          />
+        </div>
+      )}
+
+      {/* Legibility overlays — mobile darkens the bottom over the full-bleed
+          video; desktop paints a dark left panel fading toward the video card. */}
       <div
         aria-hidden
+        className="lg:hidden"
         style={{
           position: "absolute",
           inset: 0,
           background:
-            "linear-gradient(90deg, rgba(8,6,5,0.94) 0%, rgba(8,6,5,0.74) 38%, rgba(8,6,5,0.12) 100%), linear-gradient(0deg, rgba(8,6,5,0.9) 0%, transparent 58%)",
+            "linear-gradient(0deg, rgba(8,6,5,0.95) 0%, rgba(8,6,5,0.62) 44%, rgba(8,6,5,0.28) 100%)",
         }}
       />
-      <div style={{ position: "relative", maxWidth: 640, display: "flex", flexDirection: "column", gap: 14, zIndex: 2 }}>
+      <div
+        aria-hidden
+        className="hidden lg:block"
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "linear-gradient(90deg, rgba(8,6,5,0.96) 0%, rgba(8,6,5,0.86) 38%, rgba(8,6,5,0.45) 52%, transparent 66%)",
+        }}
+      />
+
+      <div
+        className="relative z-[2] flex h-full flex-col justify-end lg:justify-center max-w-[640px] lg:max-w-[50%]"
+        style={{ gap: 14, padding: "32px clamp(20px, 5vw, 64px)" }}
+      >
         {film.redCarpet && (
           <span className="hero-rise hero-rise-1" style={{ ...eyebrow("linear-gradient(135deg,#E11D48,#FFBB00)", "#fff") }}>
             <Sparkles size={12} /> Red Carpet Premiere
           </span>
         )}
-        <h2
-          className="hero-rise hero-rise-2"
-          style={{
-            margin: 0,
-            fontSize: "clamp(1.9rem, 4.8vw, 3rem)",
-            fontWeight: 800,
-            lineHeight: 1.04,
-            color: "#fff",
-            fontFamily: "var(--font-heading)",
-            letterSpacing: "-0.03em",
-            textShadow: "0 2px 24px rgba(0,0,0,0.55)",
-          }}
-        >
+        <h2 className="hero-rise hero-rise-2" style={slideHeading}>
           {film.title}
         </h2>
 
@@ -188,10 +240,7 @@ export function FeaturedFilmSlide({ film }: { film: HeroFeatured }) {
         )}
 
         {film.tagline && (
-          <p
-            className="line-clamp-2 hero-rise hero-rise-3"
-            style={{ margin: 0, fontSize: "clamp(0.92rem, 2vw, 1.08rem)", color: "rgba(255,255,255,0.84)", maxWidth: 560, lineHeight: 1.55 }}
-          >
+          <p className="line-clamp-2 hero-rise hero-rise-3" style={slideSubtext}>
             {film.tagline}
           </p>
         )}
@@ -219,6 +268,28 @@ const metaChip: React.CSSProperties = {
   backdropFilter: "blur(4px)",
 };
 
+// ── Shared slide typography so all three slides align identically ──
+const slideHeading: React.CSSProperties = {
+  margin: 0,
+  fontSize: "clamp(1.9rem, 4.8vw, 3rem)",
+  fontWeight: 800,
+  lineHeight: 1.05,
+  color: "#fff",
+  fontFamily: "var(--font-heading)",
+  letterSpacing: "-0.03em",
+  textShadow: "0 2px 24px rgba(0,0,0,0.45)",
+};
+const slideSubtext: React.CSSProperties = {
+  margin: 0,
+  fontSize: "clamp(0.92rem, 2vw, 1.08rem)",
+  color: "rgba(255,255,255,0.84)",
+  maxWidth: 540,
+  lineHeight: 1.55,
+};
+/** Shared content column: same width, alignment & vertical centering on every slide. */
+const slideContentClass =
+  "relative z-[2] flex h-full flex-col justify-center gap-3.5 max-w-[640px] lg:max-w-[600px]";
+
 // ── Slide 2: Marketplace promotion ────────────────────────────
 export function MarketplaceSlide({ posters = [] }: { posters?: string[] }) {
   return (
@@ -232,28 +303,18 @@ export function MarketplaceSlide({ posters = [] }: { posters?: string[] }) {
         images={posters}
         tint="linear-gradient(90deg, rgba(12,17,24,0.95) 0%, rgba(18,32,51,0.78) 45%, rgba(20,48,74,0.55) 100%)"
       />
-      <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: 16, maxWidth: 640 }}>
-        <span style={eyebrow("rgba(56,189,248,0.18)", "#7dd3fc")}>
+      <div className={slideContentClass}>
+        <span className="hero-rise hero-rise-1" style={eyebrow("rgba(56,189,248,0.18)", "#7dd3fc")}>
           <ShoppingBag size={12} /> Marketplace
         </span>
-        <h2
-          style={{
-            margin: 0,
-            fontSize: "clamp(1.9rem, 5vw, 3rem)",
-            fontWeight: 800,
-            lineHeight: 1.06,
-            color: "#fff",
-            fontFamily: "var(--font-heading)",
-            letterSpacing: "-0.025em",
-          }}
-        >
+        <h2 className="hero-rise hero-rise-2" style={slideHeading}>
           Sell Your Film &amp; Get Paid
         </h2>
-        <p style={{ margin: 0, fontSize: "clamp(0.92rem, 2vw, 1.08rem)", color: "rgba(255,255,255,0.82)", maxWidth: 540, lineHeight: 1.55 }}>
+        <p className="hero-rise hero-rise-3" style={slideSubtext}>
           List finished films, license rights, or take commissions. Stripe escrow releases funds
           only on confirmed delivery — keep more of every sale.
         </p>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 4 }}>
+        <div className="hero-rise hero-rise-4" style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 4 }}>
           <Link href="/marketplace/listings/new" style={primaryBtn} className="hover:!brightness-110">
             <ShoppingBag size={16} /> List Your Film
           </Link>
@@ -279,28 +340,18 @@ export function CreatorSlide({ posters = [] }: { posters?: string[] }) {
         images={posters}
         tint="linear-gradient(90deg, rgba(18,13,10,0.95) 0%, rgba(42,29,16,0.78) 45%, rgba(58,42,18,0.5) 100%)"
       />
-      <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: 16, maxWidth: 640 }}>
-        <span style={eyebrow("rgba(255,107,0,0.2)", "var(--color-accent-primary,#FFBB00)")}>
+      <div className={slideContentClass}>
+        <span className="hero-rise hero-rise-1" style={eyebrow("rgba(255,107,0,0.2)", "var(--color-accent-primary,#FFBB00)")}>
           <Upload size={12} /> For Creators
         </span>
-        <h2
-          style={{
-            margin: 0,
-            fontSize: "clamp(1.9rem, 5vw, 3rem)",
-            fontWeight: 800,
-            lineHeight: 1.06,
-            color: "#fff",
-            fontFamily: "var(--font-heading)",
-            letterSpacing: "-0.025em",
-          }}
-        >
+        <h2 className="hero-rise hero-rise-2" style={slideHeading}>
           Upload Original Films &amp; Scripts
         </h2>
-        <p style={{ margin: 0, fontSize: "clamp(0.92rem, 2vw, 1.08rem)", color: "rgba(255,255,255,0.82)", maxWidth: 540, lineHeight: 1.55 }}>
+        <p className="hero-rise hero-rise-3" style={slideSubtext}>
           Publish your work, build an audience, and turn creativity into currency through streaming
           and marketplace sales.
         </p>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 4 }}>
+        <div className="hero-rise hero-rise-4" style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 4 }}>
           <Link href="/upload/video" style={primaryBtn} className="hover:!brightness-110">
             <Upload size={16} /> Start Earning
           </Link>

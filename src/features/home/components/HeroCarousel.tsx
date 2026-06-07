@@ -21,9 +21,9 @@ interface HeroCarouselProps {
 }
 
 export function HeroCarousel({ featured, graphs, posters = [] }: HeroCarouselProps) {
-  // Build slide list. The lead slide shows the featured film (video/text) by
-  // default and has a toggle that reveals the platform graphs in-place — so the
-  // film and the analytics live on slide 1. Then Marketplace → Creator.
+  // Lead slide shows the featured film (video + text) with a toggle that reveals
+  // the platform graphs in-place. Then the Marketplace and Creator promo slides
+  // round out the carousel.
   const film = featured[0];
   const slides: { key: string; node: React.ReactNode }[] = [];
   const analyticsIndex = 0;

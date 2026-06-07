@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { OG, SITE_ORIGIN } from "@/lib/seo";
+import { OG, SITE_ORIGIN, SOCIAL_PROFILES } from "@/lib/seo";
 import WelcomeLanding from "./WelcomeLanding";
 
 const TITLE = "WeCinema — Buy, Sell & Stream Independent Films";
@@ -58,7 +58,7 @@ export default function WelcomePage() {
           name: "WeCinema",
           url: SITE_ORIGIN,
           logo: `${SITE_ORIGIN}/wecinema.webp`,
-          sameAs: ["https://wecinema.co", "https://twitter.com/wecinema"],
+          sameAs: [...SOCIAL_PROFILES],
         }}
       />
       <JsonLd

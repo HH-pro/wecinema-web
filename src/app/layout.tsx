@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins, Roboto } from "next/font/google";
 import { Providers } from "@/components/layout/Providers";
+import { Analytics } from "@/components/analytics/Analytics";
 import { clientEnv } from "@/config/env";
 import { OG } from "@/lib/seo";
 import "./globals.css";
@@ -124,6 +125,7 @@ export default function RootLayout({
     >
       <body>
         <Providers>{children}</Providers>
+        <Analytics />
       </body>
     </html>
   );

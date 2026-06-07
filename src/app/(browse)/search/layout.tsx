@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   title: { absolute: TITLE },
   description: DESCRIPTION,
   alternates: { canonical: "/search" },
+  // Search-result pages (/search/[query]) are infinite & low-value — keep them
+  // out of the index to protect crawl budget and avoid thin/duplicate URLs.
+  robots: { index: false, follow: true },
   openGraph: {
     type: "website",
     siteName: "Wecinema",

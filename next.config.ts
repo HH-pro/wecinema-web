@@ -79,6 +79,9 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "*.wecinema.co" },
       { protocol: "https", hostname: "secure.gravatar.com" },
       { protocol: "https", hostname: "*.gravatar.com" },
+      // Google-auth profile photos (avatars from "Sign in with Google").
+      { protocol: "https", hostname: "lh3.googleusercontent.com" },
+      { protocol: "https", hostname: "*.googleusercontent.com" },
     ],
   },
 };

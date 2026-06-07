@@ -7,6 +7,19 @@
  */
 export const SITE_ORIGIN = "https://wecinema.co";
 
+/**
+ * Official WeCinema social profiles — the canonical `sameAs` set for
+ * Organization structured data. Keeping these in one place lets search engines
+ * and AI answer engines resolve "WeCinema" as a single, verified entity across
+ * the web. Mirrors the links shown in the site footer.
+ */
+export const SOCIAL_PROFILES = [
+  "https://twitter.com/wecinema",
+  "https://instagram.com/wecinema",
+  "https://youtube.com/@wecinema",
+  "https://facebook.com/wecinema",
+] as const;
+
 export const OG = {
   default: `${SITE_ORIGIN}/seo/WeCinema.webp`,
   blog:    `${SITE_ORIGIN}/seo/Wecinema-Blog.webp`,

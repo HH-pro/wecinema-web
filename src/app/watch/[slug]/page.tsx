@@ -4,11 +4,29 @@ import Layout from "@/components/layout/Layout";
 import { getVideoBySlug } from "@/features/videos/api/videoQueries";
 import { clientEnv } from "@/config/env";
 import { OG } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { WatchClient } from "@/features/watch/components/WatchClient";
 
 export const revalidate = 0;
 
 const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+
+/**
+ * Convert a duration into an ISO 8601 string (e.g. `PT2M30S`) as required by
+ * schema.org VideoObject. Numeric values (or numeric strings) are treated as
+ * seconds; an already-formatted `PT…` string is passed through; anything else
+ * is dropped so we never emit an invalid duration.
+ */
+function toISO8601Duration(d: string | number | undefined): string | undefined {
+  if (d == null) return undefined;
+  if (typeof d === "string" && /^PT/i.test(d)) return d.toUpperCase();
+  const totalSeconds = Math.floor(Number(d));
+  if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) return undefined;
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  return `PT${h ? `${h}H` : ""}${m ? `${m}M` : ""}${s ? `${s}S` : ""}`;
+}
 
 const WATCH_FALLBACK_TITLE = "Watch Independent Films | WeCinema";
 const WATCH_FALLBACK_DESCRIPTION =
@@ -65,8 +83,45 @@ export default async function WatchPage({
 
   if (!video) notFound();
 
+  const authorName =
+    typeof video.author === "string" ? undefined : video.author?.username;
+  const duration = toISO8601Duration(video.duration);
+  const genres = Array.isArray(video.genre) ? video.genre : video.genre ? [video.genre] : [];
+
+  // schema.org VideoObject — lets Google Video and AI answer engines extract and
+  // cite this film directly. Optional fields are omitted (not null) when absent.
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name: video.title,
+    description: video.description ?? WATCH_FALLBACK_DESCRIPTION,
+    thumbnailUrl: [video.thumbnail ?? OG.video],
+    uploadDate: video.createdAt,
+    contentUrl: video.file,
+    embedUrl: `${SITE}/watch/${slug}`,
+    url: `${SITE}/watch/${slug}`,
+    ...(duration ? { duration } : {}),
+    ...(genres.length ? { genre: genres } : {}),
+    ...(authorName ? { author: { "@type": "Person", name: authorName } } : {}),
+    ...(typeof video.views === "number"
+      ? {
+          interactionStatistic: {
+            "@type": "InteractionCounter",
+            interactionType: { "@type": "WatchAction" },
+            userInteractionCount: video.views,
+          },
+        }
+      : {}),
+    publisher: {
+      "@type": "Organization",
+      name: "WeCinema",
+      url: SITE,
+    },
+  };
+
   return (
     <Layout>
+      <JsonLd data={jsonLd} />
       <WatchClient video={video} />
     </Layout>
   );

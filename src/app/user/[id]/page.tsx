@@ -4,6 +4,7 @@ import { apiFetch } from "@/lib/fetch/serverFetch";
 import type { FullUser } from "@/types";
 import { clientEnv } from "@/config/env";
 import { OG } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { UserProfileClient } from "@/features/profile/components/UserProfileClient";
 
 const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
@@ -68,8 +69,31 @@ export default async function UserProfilePage({
 }) {
   const { id } = await params;
 
+  let user: FullUser | null = null;
+  try {
+    user = await apiFetch<FullUser>(`/user/${id}`, { revalidate: 60 });
+  } catch {
+    // Profile renders client-side regardless; schema is best-effort.
+  }
+
   return (
     <Layout>
+      {user && (
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "ProfilePage",
+            mainEntity: {
+              "@type": "Person",
+              name: user.username,
+              url: `${SITE}/user/${id}`,
+              ...(user.bio ? { description: user.bio.slice(0, 300) } : {}),
+              ...(user.avatar ? { image: user.avatar } : {}),
+              worksFor: { "@type": "Organization", name: "WeCinema", url: SITE },
+            },
+          }}
+        />
+      )}
       <UserProfileClient userId={id} />
     </Layout>
   );

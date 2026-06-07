@@ -12,7 +12,7 @@ import {
 import Layout from "@/components/layout/Layout";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { clientEnv } from "@/config/env";
-import { OG } from "@/lib/seo";
+import { OG, SOCIAL_PROFILES } from "@/lib/seo";
 
 interface WebsiteFeature { icon: React.ReactNode; title: string; description: string; details: string[] }
 interface Feature { icon: React.ReactNode; title: string; description: string; category: string }
@@ -113,6 +113,8 @@ export default function AboutPage() {
           "@type": "Organization",
           name: "Wecinema",
           url: `${SITE}/`,
+          logo: `${SITE}/wecinema.webp`,
+          sameAs: [...SOCIAL_PROFILES],
           member: [
             { "@type": "Person", name: "Scott", jobTitle: "Founder & Creator" },
             { "@type": "Person", name: "Hamza Manzoor", jobTitle: "Full Stack Developer", sameAs: "https://github.com/HH-pro" },

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getHypemodeVideos } from "@/features/videos/api/videoQueries";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { clientEnv } from "@/config/env";
 import { OG } from "@/lib/seo";
 import { HypemodeContent } from "@/app/hypemode/HypemodeContent";
@@ -35,5 +36,23 @@ export const revalidate = 300;
 export default async function HypemodePage() {
   const videos = await getHypemodeVideos();
 
-  return <HypemodeContent videos={videos} appUrl={clientEnv.NEXT_PUBLIC_APP_URL} />;
+  return (
+    <>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "Service",
+          name: "WeCinema Hype Mode",
+          serviceType: "Film & creator discovery",
+          description: DESCRIPTION,
+          url: `${SITE}/hypemode`,
+          provider: { "@type": "Organization", name: "WeCinema", url: SITE },
+          areaServed: "Worldwide",
+          audience: { "@type": "Audience", audienceType: "Filmmakers and content creators" },
+        }}
+      />
+      <h1 className="sr-only">WeCinema Hype Mode — Get Your Films Discovered</h1>
+      <HypemodeContent videos={videos} appUrl={clientEnv.NEXT_PUBLIC_APP_URL} />
+    </>
+  );
 }

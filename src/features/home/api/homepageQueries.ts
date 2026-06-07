@@ -20,6 +20,12 @@ interface VideoListResponse {
 
 const CACHE_TTL = 300; // 5 min — matches page-level `revalidate`
 
+/**
+ * Video pinned to the hero's lead slide by request:
+ * "The Golden One And The Scattered Neighbors".
+ */
+const HERO_PINNED_VIDEO_ID = "6a2095df68610b8504ec2569";
+
 export interface HomepageStats {
   totalFilms: number;
   totalCreators: number;
@@ -100,7 +106,14 @@ export async function getHomepageData(): Promise<HomepageData> {
     recommended.length > 0
       ? recommended
       : all.filter((v) => v.red_carpet).sort(trendingSort);
-  const featured = (featuredPool.length > 0 ? featuredPool : [...all].sort(trendingSort)).slice(0, 5);
+  const featuredBase = (featuredPool.length > 0 ? featuredPool : [...all].sort(trendingSort)).slice(0, 5);
+
+  // Pin the requested video to the lead hero slide. If it's present and
+  // publishable, force it to position 0; otherwise the normal order stands.
+  const pinned = all.find((v) => v._id === HERO_PINNED_VIDEO_ID);
+  const featured = pinned
+    ? [pinned, ...featuredBase.filter((v) => v._id !== pinned._id)]
+    : featuredBase;
 
   // ── Trending: recommended OR red_carpet, sorted, deduped ──
   const trending = all

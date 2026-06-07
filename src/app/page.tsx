@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Layout from "@/components/layout/Layout";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { OG, SITE_ORIGIN } from "@/lib/seo";
+import { OG, SITE_ORIGIN, SOCIAL_PROFILES } from "@/lib/seo";
 import { getHomepageData } from "@/features/home/api/homepageQueries";
 import { getFeaturedListings } from "@/features/home/api/marketplaceHome";
 import { getAnalyticsGraphs } from "@/features/home/api/analyticsGraphs";
@@ -56,6 +56,7 @@ function toHeroFeatured(v: Video): HeroFeatured {
     tagline: v.description,
     href: `/watch/${v.slug ?? v._id}`,
     image: resolveThumb(v.thumbnail ?? v.thumbnailSmall),
+    video: v.file,
     redCarpet: Boolean(v.red_carpet),
     genre: genre || undefined,
     rating: v.rating || undefined,
@@ -137,7 +138,7 @@ export default async function HomePage() {
           name: "WeCinema",
           url: SITE,
           logo: `${SITE}/wecinema.webp`,
-          sameAs: ["https://wecinema.co"],
+          sameAs: [...SOCIAL_PROFILES],
         }}
       />
 
