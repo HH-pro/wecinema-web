@@ -4,14 +4,14 @@ import Script from "next/script";
 import { useReportWebVitals } from "next/web-vitals";
 
 /**
- * Google Analytics 4 + Core Web Vitals RUM — fully gated.
+ * Google Analytics 4 + Core Web Vitals RUM.
  *
- * Set NEXT_PUBLIC_GA_ID (e.g. "G-XXXXXXXXXX") in the environment to activate.
- * Until then this renders nothing and adds zero script weight, so it's safe to
- * ship now and switch on later. Web Vitals (LCP/CLS/INP/FCP/TTFB) are forwarded
- * to GA4 as events via next/web-vitals — no extra dependency required.
+ * Defaults to the live WeCinema GA4 property; override per-environment by
+ * setting NEXT_PUBLIC_GA_ID. A GA Measurement ID is public (it ships in the
+ * page source), so it's safe to keep here. Web Vitals (LCP/CLS/INP/FCP/TTFB)
+ * are forwarded to GA4 via next/web-vitals — no extra dependency required.
  */
-const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? "G-5F9XF5QE3Z";
 
 export function Analytics() {
   // Hook must run unconditionally; it no-ops until gtag exists.
