@@ -2,19 +2,20 @@
 
 import {
   useState, useRef, useEffect, useLayoutEffect, useCallback, memo,
-  type FC, type FormEvent,
+  type FC,
 } from "react";
 
 const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
-import { MdMenu, MdMic, MdMicOff } from "react-icons/md";
+import { MdMenu } from "react-icons/md";
 import { Search, X, Sun, Moon, ChevronDown, LogOut, User, Settings, Upload, FileText } from "lucide-react";
 import { CATEGORIES, RATINGS, RATING_META } from "@/lib/constants";
 import { useTheme } from "@/components/layout/ThemeProvider";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { Avatar } from "@/components/ui/Avatar";
+import SearchBar from "@/features/search/SearchBar";
 
 interface HeaderProps {
   toggleSidebar?: () => void;
@@ -117,12 +118,9 @@ const Header: FC<HeaderProps> = ({ toggleSidebar, isMobile: isMobileProp }) => {
   const [genreOpen, setGenreOpen] = useState(false);
   const [ratingOpen, setRatingOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [term, setTerm] = useState("");
-  const [listening, setListening] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [screenW, setScreenW] = useState(1280);
 
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const genreRef = useRef<HTMLDivElement>(null);
   const ratingRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -155,42 +153,7 @@ const Header: FC<HeaderProps> = ({ toggleSidebar, isMobile: isMobileProp }) => {
     return () => document.removeEventListener("mousedown", fn);
   }, []);
 
-  useEffect(() => { if (searchOpen) searchInputRef.current?.focus(); }, [searchOpen]);
-
-  const closeSearch = useCallback(() => { setSearchOpen(false); setTerm(""); }, []);
-
-  const submit = useCallback((e: FormEvent) => {
-    e.preventDefault();
-    const q = term.trim();
-    if (q) { router.push(`/search/${q}`); closeSearch(); }
-  }, [term, router, closeSearch]);
-
-  const voice = useCallback(() => {
-    interface MinimalRecognition {
-      lang: string;
-      interimResults: boolean;
-      onstart: (() => void) | null;
-      onend: (() => void) | null;
-      onresult: ((ev: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
-      start: () => void;
-    }
-    const SR = (window as unknown as { webkitSpeechRecognition?: new () => MinimalRecognition })
-      .webkitSpeechRecognition;
-    if (!SR) return;
-    const r = new SR();
-    r.lang = "en-US";
-    r.interimResults = false;
-    r.onstart = () => setListening(true);
-    r.onend = () => setListening(false);
-    r.onresult = (ev) => {
-      const t = ev.results[0]?.[0]?.transcript;
-      if (!t) return;
-      setTerm(t);
-      router.push(`/search/${t}`);
-      closeSearch();
-    };
-    r.start();
-  }, [router, closeSearch]);
+  const closeSearch = useCallback(() => { setSearchOpen(false); }, []);
 
   const isActive = (href: string, exact: boolean) =>
     exact ? pathname === href : pathname.startsWith(href);
@@ -270,28 +233,9 @@ const Header: FC<HeaderProps> = ({ toggleSidebar, isMobile: isMobileProp }) => {
 
           {searchOpen ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8, animation: "hdrExpand 0.2s ease-out", flex: isMobile ? "1" : "0 1 400px", minWidth: 0 }}>
-              <form onSubmit={submit} style={{ flex: 1 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, height: 40, padding: "0 12px", borderRadius: 9999, border: "1.5px solid var(--color-accent-primary)", backgroundColor: "var(--color-input-bg)" }}>
-                  <Search size={16} style={{ color: "var(--color-accent-primary)", flexShrink: 0 }} />
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    placeholder="Search movies, shows, actors…"
-                    value={term}
-                    onChange={(e) => setTerm(e.target.value)}
-                    style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontSize: "0.875rem", color: "var(--color-text-primary)", fontFamily: "var(--font-body)" }}
-                    aria-label="Search"
-                  />
-                  {term && (
-                    <button type="button" onClick={() => setTerm("")} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, border: "none", borderRadius: 9999, background: "var(--color-bg-tertiary)", color: "var(--color-text-secondary)", cursor: "pointer", flexShrink: 0 }} aria-label="Clear search">
-                      <X size={13} />
-                    </button>
-                  )}
-                  <button type="button" onClick={voice} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, border: "none", background: "transparent", cursor: "pointer", flexShrink: 0, color: listening ? "#EF4444" : "var(--color-text-tertiary)" }} aria-label="Voice search">
-                    {listening ? <MdMicOff size={18} /> : <MdMic size={18} />}
-                  </button>
-                </div>
-              </form>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <SearchBar onClose={closeSearch} autoFocus />
+              </div>
               <button className="hdr-icon" onClick={closeSearch} aria-label="Close search">
                 <X size={18} />
               </button>
