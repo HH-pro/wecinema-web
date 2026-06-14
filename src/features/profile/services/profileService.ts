@@ -74,6 +74,17 @@ export function changeUserType(id: string, userType: UserType): Promise<void> {
   return api.put<void>(`/user/change-type/${id}`, { userType });
 }
 
+export function checkUsernameAvailable(
+  username: string,
+  excludeId?: string,
+): Promise<{ available: boolean; reason?: string }> {
+  const params = new URLSearchParams({ username });
+  if (excludeId) params.set("excludeId", excludeId);
+  return api.get<{ available: boolean; reason?: string }>(
+    `/user/check-username?${params.toString()}`,
+  );
+}
+
 // ─── Videos ──────────────────────────────────────────────────
 
 export function getVideosByAuthor(authorId: string): Promise<ProfileVideo[]> {

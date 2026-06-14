@@ -9,6 +9,7 @@ import {
   getUserById,
   editProfile,
   changeUserType,
+  checkUsernameAvailable,
   getVideosByAuthor,
   deleteVideo,
   editVideo,
@@ -303,6 +304,12 @@ export function UserProfileClient({ userId }: UserProfileClientProps) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
+  // Live username-availability state for the edit form.
+  const [usernameStatus, setUsernameStatus] = useState<
+    "idle" | "checking" | "available" | "unavailable"
+  >("idle");
+  const [usernameMsg, setUsernameMsg] = useState("");
+
   const [refreshing, setRefreshing] = useState(false);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -333,6 +340,50 @@ export function UserProfileClient({ userId }: UserProfileClientProps) {
   useEffect(() => {
     loadUser();
   }, [loadUser]);
+
+  // ── Live username availability (debounced) ─────────────────
+  useEffect(() => {
+    if (!editMode) return;
+    const candidate = formData.username.trim();
+    const current = (user?.username ?? "").trim();
+
+    // Unchanged or same as current → nothing to flag.
+    if (candidate.toLowerCase() === current.toLowerCase()) {
+      setUsernameStatus("idle");
+      setUsernameMsg("");
+      return;
+    }
+    if (candidate.length < 2 || candidate.length > 30) {
+      setUsernameStatus("unavailable");
+      setUsernameMsg("Username must be between 2 and 30 characters");
+      return;
+    }
+
+    setUsernameStatus("checking");
+    setUsernameMsg("");
+    let cancelled = false;
+    const t = setTimeout(() => {
+      checkUsernameAvailable(candidate, id)
+        .then((r) => {
+          if (cancelled) return;
+          setUsernameStatus(r.available ? "available" : "unavailable");
+          setUsernameMsg(
+            r.available ? "Username is available" : (r.reason ?? "Username is already taken"),
+          );
+        })
+        .catch(() => {
+          if (cancelled) return;
+          // Don't block saving on a check failure; backend re-validates.
+          setUsernameStatus("idle");
+          setUsernameMsg("");
+        });
+    }, 450);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [formData.username, editMode, user?.username, id]);
 
   // ── Load tab content ───────────────────────────────────────
   useEffect(() => {
@@ -922,9 +973,37 @@ export function UserProfileClient({ userId }: UserProfileClientProps) {
                   onChange={(e) =>
                     setFormData((p) => ({ ...p, username: e.target.value }))
                   }
-                  style={inputStyle}
+                  style={{
+                    ...inputStyle,
+                    borderColor:
+                      usernameStatus === "unavailable"
+                        ? "#ef4444"
+                        : usernameStatus === "available"
+                          ? "#22c55e"
+                          : (inputStyle.borderColor as string | undefined),
+                  }}
                   required
+                  aria-invalid={usernameStatus === "unavailable"}
                 />
+                {usernameStatus !== "idle" && (
+                  <p
+                    style={{
+                      margin: "5px 2px 0",
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color:
+                        usernameStatus === "unavailable"
+                          ? "#ef4444"
+                          : usernameStatus === "available"
+                            ? "#22c55e"
+                            : "var(--color-text-secondary)",
+                    }}
+                  >
+                    {usernameStatus === "checking"
+                      ? "Checking availability…"
+                      : usernameMsg}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -998,8 +1077,20 @@ export function UserProfileClient({ userId }: UserProfileClientProps) {
               <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
                 <button
                   type="submit"
-                  disabled={saving}
-                  style={{ ...saveBtnStyle, flex: 1 }}
+                  disabled={
+                    saving ||
+                    usernameStatus === "unavailable" ||
+                    usernameStatus === "checking"
+                  }
+                  style={{
+                    ...saveBtnStyle,
+                    flex: 1,
+                    ...(saving ||
+                    usernameStatus === "unavailable" ||
+                    usernameStatus === "checking"
+                      ? { opacity: 0.6, cursor: "not-allowed" }
+                      : {}),
+                  }}
                 >
                   {saving ? "Saving…" : "Save Changes"}
                 </button>
