@@ -53,10 +53,38 @@ export interface HistoryEntry {
   watchedAt: string;
 }
 
+export interface Channel {
+  _id: string;
+  username: string;
+  avatar?: string | null;
+  bio?: string;
+  profileTags?: string[];
+  isVerified?: boolean;
+  userType?: string | null;
+  followersCount?: number;
+}
+
+interface ChannelSearchResponse {
+  channels?: Channel[];
+  total?: number;
+  hasMore?: boolean;
+}
+
 // ─── User ─────────────────────────────────────────────────────
 
 export function getUserById(id: string): Promise<FullUser> {
   return api.get<FullUser>(`/user/${id}`);
+}
+
+/** Search channels (users) by name for the YouTube-style channel search. */
+export function searchChannels(
+  query: string,
+  opts: { page?: number; limit?: number } = {},
+): Promise<ChannelSearchResponse> {
+  const params = new URLSearchParams({ q: query });
+  if (opts.page) params.set("page", String(opts.page));
+  if (opts.limit) params.set("limit", String(opts.limit));
+  return api.get<ChannelSearchResponse>(`/user/search?${params.toString()}`);
 }
 
 export function getPaymentStatus(id: string): Promise<{ hasPaid: boolean }> {

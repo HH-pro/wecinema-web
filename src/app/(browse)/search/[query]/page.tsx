@@ -2,10 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Search, SearchX, SlidersHorizontal } from "lucide-react";
+import Link from "next/link";
+import { BadgeCheck, Search, SearchX, SlidersHorizontal } from "lucide-react";
 import { api } from "@/features/auth/services/apiClient";
 import type { Video } from "@/types";
 import { VideoCard } from "@/features/videos/components/VideoCard";
+import { Avatar } from "@/components/ui/Avatar";
+import { searchChannels, type Channel } from "@/features/profile/services/profileService";
 import { CATEGORIES, RATINGS } from "@/lib/constants";
 
 type Sort = "relevance" | "newest" | "views";
@@ -29,6 +32,7 @@ export default function SearchResultsPage() {
   const decoded = decodeURIComponent(query ?? "");
 
   const [videos, setVideos] = useState<Video[]>([]);
+  const [channels, setChannels] = useState<Channel[]>([]);
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(1);
@@ -79,6 +83,24 @@ export default function SearchResultsPage() {
   useEffect(() => {
     fetchPage(1, false);
   }, [fetchPage]);
+
+  // Channel matches are independent of the video filters/sort — refetch only
+  // when the search term changes. Cap at a small set shown above the videos.
+  // State is only updated inside the async callback (the backend returns an
+  // empty list for a blank query), mirroring the video fetch effect.
+  useEffect(() => {
+    let cancelled = false;
+    searchChannels(decoded, { limit: 6 })
+      .then((res) => {
+        if (!cancelled) setChannels(res.channels ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setChannels([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [decoded]);
 
   const toggle = (current: string, value: string, set: (v: string) => void) => {
     setLoading(true);
@@ -163,6 +185,21 @@ export default function SearchResultsPage() {
         </div>
       )}
 
+      {/* Channels */}
+      {channels.length > 0 && (
+        <div style={{ marginBottom: 28 }}>
+          <h2 style={{ margin: "0 0 12px", fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)" }}>
+            Channels
+          </h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {channels.map((c) => (
+              <ChannelRow key={c._id} channel={c} />
+            ))}
+          </div>
+          <div style={{ height: 1, background: "var(--color-divider)", margin: "20px 0 0" }} />
+        </div>
+      )}
+
       {/* Skeletons */}
       {loading && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
@@ -188,8 +225,8 @@ export default function SearchResultsPage() {
         </div>
       )}
 
-      {/* Empty */}
-      {!loading && !error && videos.length === 0 && (
+      {/* Empty — only when neither videos nor channels matched */}
+      {!loading && !error && videos.length === 0 && channels.length === 0 && (
         <div style={{ textAlign: "center", padding: "80px 0" }}>
           <SearchX style={{ width: 48, height: 48, color: "var(--color-text-tertiary)", margin: "0 auto 12px", opacity: 0.4 }} />
           <p style={{ color: "var(--color-text-secondary)", fontWeight: 500 }}>
@@ -228,6 +265,50 @@ export default function SearchResultsPage() {
         </>
       )}
     </div>
+  );
+}
+
+function ChannelRow({ channel }: { channel: Channel }) {
+  const followers = channel.followersCount ?? 0;
+  return (
+    <Link
+      href={`/user/${channel._id}`}
+      style={{
+        display: "flex", alignItems: "center", gap: 14, padding: "10px 12px",
+        borderRadius: 12, textDecoration: "none", transition: "background-color 0.12s",
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-bg-elevated)")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+    >
+      <Avatar src={channel.avatar ?? undefined} username={channel.username} size={56} style={{ borderRadius: "50%", flexShrink: 0 }} />
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          <span style={{ fontSize: 15, fontWeight: 600, color: "var(--color-text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {channel.username}
+          </span>
+          {channel.isVerified && (
+            <BadgeCheck size={15} style={{ color: "var(--color-accent-primary)", flexShrink: 0 }} aria-label="Verified" />
+          )}
+        </div>
+        <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--color-text-tertiary)" }}>
+          {followers} follower{followers !== 1 ? "s" : ""}
+        </p>
+        {channel.bio && (
+          <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--color-text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {channel.bio}
+          </p>
+        )}
+      </div>
+      <span
+        style={{
+          flexShrink: 0, height: 34, padding: "0 16px", display: "inline-flex", alignItems: "center",
+          borderRadius: 9999, border: "1px solid var(--color-border-secondary)",
+          fontSize: 13, fontWeight: 600, color: "var(--color-text-primary)",
+        }}
+      >
+        View
+      </span>
+    </Link>
   );
 }
 
