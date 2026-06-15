@@ -311,6 +311,7 @@ export function UserProfileClient({ userId }: UserProfileClientProps) {
   const [usernameMsg, setUsernameMsg] = useState("");
 
   const [refreshing, setRefreshing] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -424,6 +425,35 @@ export function UserProfileClient({ userId }: UserProfileClientProps) {
     setRefreshing(true);
     await loadUser();
     setRefreshing(false);
+  }
+
+  // ── Share profile ──────────────────────────────────────────
+  // Uses the native share sheet on supporting devices; otherwise copies the
+  // profile link to the clipboard and flashes a "Copied" confirmation.
+  async function handleShare() {
+    if (typeof window === "undefined") return;
+    const url = `${window.location.origin}/user/${id}`;
+    const shareData = {
+      title: user ? `${user.username} on WeCinema` : "WeCinema profile",
+      text: user ? `Check out ${user.username}'s channel on WeCinema` : undefined,
+      url,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+    } catch {
+      // user cancelled the native sheet, or it failed — fall through to copy
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch {
+      // Clipboard blocked — last resort: prompt so the user can copy manually.
+      window.prompt("Copy this profile link:", url);
+    }
   }
 
   // ── Marketplace mode toggle ────────────────────────────────
@@ -875,6 +905,24 @@ export function UserProfileClient({ userId }: UserProfileClientProps) {
             alignItems: "center",
           }}
         >
+          <button
+            onClick={handleShare}
+            style={{
+              ...cancelBtnStyle,
+              padding: "6px 12px",
+              fontSize: 13,
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              ...(shareCopied
+                ? { color: "#22c55e", border: "1px solid rgba(34,197,94,0.4)" }
+                : {}),
+            }}
+            title="Share this profile"
+          >
+            {shareCopied ? "✓ Copied" : "🔗 Share"}
+          </button>
+
           <button
             onClick={handleRefresh}
             disabled={refreshing}
