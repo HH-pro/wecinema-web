@@ -35,6 +35,10 @@ export const OG = {
   scripts:      `${SITE_ORIGIN}/seo/script.webp`,
   scriptUpload: `${SITE_ORIGIN}/seo/script-upload.webp`,
   search:       `${SITE_ORIGIN}/seo/search.webp`,
+  videoUpload:  `${SITE_ORIGIN}/seo/upload-video.webp`,
+  marketplace:          `${SITE_ORIGIN}/seo/marketplace.webp`,
+  marketplaceBrowse:    `${SITE_ORIGIN}/seo/marketplace-browse.webp`,
+  marketplaceResources: `${SITE_ORIGIN}/seo/marketplace-resources.webp`,
 } as const;
 
 export type OGKey = keyof typeof OG;
