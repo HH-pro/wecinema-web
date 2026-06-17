@@ -4,7 +4,7 @@ import { clientEnv } from "@/config/env";
 import { OG } from "@/lib/seo";
 
 const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
-const EFFECTIVE_DATE = "May 17, 2026";
+const EFFECTIVE_DATE = "June 17, 2026";
 
 const TERMS_DESCRIPTION =
   "Review the terms, policies, and creator guidelines for using WeCinema.";
@@ -121,7 +121,7 @@ export default function TermsPage() {
             <div className="flex justify-center gap-3 flex-wrap">
               {[
                 { label: "Effective Date", val: EFFECTIVE_DATE },
-                { label: "Version",        val: "3.0" },
+                { label: "Version",        val: "3.1" },
                 { label: "Jurisdiction",   val: "United States" },
               ].map((item) => (
                 <span key={item.label} className="px-3.5 py-1.5 rounded-lg text-[12px] bg-bg-elevated text-text-tertiary border border-border-secondary">
@@ -192,9 +192,40 @@ export default function TermsPage() {
 
             {/* ── 3 ── */}
             <Section id="aup" title="3. Acceptable Use Policy">
-              <P>You agree NOT to use WeCinema to:</P>
+              <Sub>3.1 Prohibited Content &amp; Services</Sub>
+              <P>
+                WeCinema does not permit, and you may not upload, post, store, distribute, sell, promote, advertise, or otherwise make available through the platform — including in uploaded video, marketplace listings, profiles, thumbnails, or chat — any of the following prohibited content or services:
+              </P>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+                {[
+                  {
+                    title: "Adult content or services",
+                    desc: "Pornography, sexually explicit or sexually suggestive material, nudity intended to be sexually gratifying, escort or other adult-entertainment services, and any related goods or services.",
+                  },
+                  {
+                    title: "Copyright-infringing content",
+                    desc: "Any material that infringes the copyright, trademark, or other intellectual-property rights of a third party, including pirated, ripped, or unlicensed films, music, scripts, or media.",
+                  },
+                  {
+                    title: "Violent extremism",
+                    desc: "Content that promotes, supports, glorifies, funds, or incites terrorism or violent extremism, or that encourages or threatens violence against any individual or group.",
+                  },
+                ].map((r) => (
+                  <div key={r.title} className="p-4 rounded-xl border" style={{ borderColor: "var(--color-danger)", backgroundColor: "var(--color-danger-bg)" }}>
+                    <h5 className="text-[13px] font-semibold mb-1.5" style={{ color: "var(--color-danger)" }}>{r.title}</h5>
+                    <p className="text-[12.5px] text-text-secondary leading-relaxed">{r.desc}</p>
+                  </div>
+                ))}
+              </div>
+              <P>
+                The categories above are prohibited in addition to the conduct restrictions in Section 3.2. Any content or service falling within these categories may be removed without notice, and the responsible account may be suspended or terminated under Section 11.
+              </P>
+
+              <Sub>3.2 Prohibited Conduct</Sub>
+              <P>You also agree NOT to use WeCinema to:</P>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3">
                 {[
+                  "Upload, distribute, sell, promote, or advertise adult content or services, including pornography or sexually explicit material.",
                   "Upload, distribute, or sell content that infringes copyright, trademark, or other intellectual property rights.",
                   "Post or transmit content that is illegal, defamatory, obscene, or threatening.",
                   "Upload malware, viruses, ransomware, or any malicious code.",
@@ -205,7 +236,8 @@ export default function TermsPage() {
                   "Attempt to bypass payment processing or conduct transactions outside the platform.",
                   "Engage in fraudulent chargebacks, fake reviews, or manipulation of analytics.",
                   "Distribute content involving the sexual exploitation of minors (CSAM) — zero tolerance; immediately reported to authorities.",
-                  "Promote terrorism, hate speech, or incite violence against individuals or groups.",
+                  "Promote, support, or glorify terrorism or violent extremism, or incite or threaten violence against individuals or groups.",
+                  "Promote hate speech or discrimination against individuals or protected groups.",
                   "Violate any applicable local, national, or international law or regulation.",
                 ].map((item) => (
                   <div key={item} className="flex gap-2 p-3 rounded-xl bg-bg-secondary border border-border-secondary">
@@ -215,7 +247,7 @@ export default function TermsPage() {
                 ))}
               </div>
               <InfoBox variant="danger">
-                <strong>Zero-Tolerance Violations:</strong> CSAM, terrorism content, and platform hacking result in immediate permanent bans and reports to law enforcement — no warnings issued.
+                <strong>Zero-Tolerance Violations:</strong> CSAM, terrorism or violent-extremism content, and platform hacking result in immediate permanent bans and reports to law enforcement — no warnings issued.
               </InfoBox>
             </Section>
 
@@ -470,6 +502,7 @@ export default function TermsPage() {
               <Ul>
                 {[
                   "Violation of these Terms or our Acceptable Use Policy.",
+                  "Posting, selling, or promoting prohibited content or services (Section 3.1), including adult content, copyright-infringing content, or violent extremism.",
                   "Fraudulent activity, including fake orders or chargebacks.",
                   "Copyright infringement (especially repeat offences).",
                   "Providing false information during registration or Stripe verification.",
@@ -555,7 +588,7 @@ export default function TermsPage() {
               <h3 className="text-[15px] font-semibold text-text-primary mb-2">Acceptance of Terms</h3>
               <P>By creating an account or using WeCinema.co, you confirm that you have read, understood, and agree to be bound by these Terms & Conditions and our Privacy Policy.</P>
               <p className="text-[12px] text-text-tertiary mt-3">
-                Effective {EFFECTIVE_DATE} · Version 3.0 · WeCinema Video Platform
+                Effective {EFFECTIVE_DATE} · Version 3.1 · WeCinema Video Platform
               </p>
             </div>
 
