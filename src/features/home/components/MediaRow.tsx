@@ -81,7 +81,7 @@ export function MediaRow({ title, viewAllHref, itemWidth = 240, children, icon }
       // row height, so rows jumped as the browser resolved on/off-screen state —
       // a major CLS source (homepage CLS was ~0.4). Rows are cheap to render, so
       // we render them normally and keep layout stable instead.
-      style={{ padding: "20px 24px 28px" }}
+      style={{ padding: "20px var(--space-section-x) 28px" }}
       aria-label={title}
     >
       <div
@@ -98,11 +98,11 @@ export function MediaRow({ title, viewAllHref, itemWidth = 240, children, icon }
             display: "inline-flex",
             alignItems: "center",
             gap: 8,
-            fontSize: 18,
+            fontSize: "clamp(1.15rem, 2.2vw, 1.45rem)",
             fontWeight: 700,
             fontFamily: "var(--font-heading)",
             color: "var(--color-text-primary)",
-            letterSpacing: "-0.015em",
+            letterSpacing: "-0.02em",
           }}
         >
           {icon}

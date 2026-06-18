@@ -110,7 +110,7 @@ export function MarketplaceSpotlight({ listings }: { listings: Listing[] }) {
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: listings.length > 0 ? 28 : 0 }}>
           <Link
             href="/marketplace/listings/new"
-            style={{ ...cta, background: "var(--color-accent-primary)", color: "#fff", boxShadow: "0 6px 18px var(--accent-ring)" }}
+            style={{ ...cta, background: "var(--color-accent-primary)", color: "var(--color-btn-primary-text,#000)", boxShadow: "0 6px 18px var(--accent-ring)" }}
             className="hover:!brightness-110"
           >
             Sell My Film

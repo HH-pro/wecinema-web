@@ -230,7 +230,7 @@ export function ForCreators() {
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
           <Link
             href="/upload/video"
-            style={{ ...ctaBtn, background: "var(--color-accent-primary)", color: "#fff", boxShadow: "0 6px 18px var(--accent-ring)" }}
+            style={{ ...ctaBtn, background: "var(--color-accent-primary)", color: "var(--color-btn-primary-text,#000)", boxShadow: "0 6px 18px var(--accent-ring)" }}
             className="hover:!brightness-110"
           >
             <Film size={17} /> Upload Film

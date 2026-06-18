@@ -10,7 +10,7 @@ export function ThemePills() {
         display: "flex",
         gap: 8,
         overflowX: "auto",
-        padding: "12px 16px",
+        padding: "12px var(--space-section-x)",
         backgroundColor: "var(--color-nav-bg)",
         borderBottom: "1px solid var(--color-divider)",
       }}
@@ -32,7 +32,7 @@ export function ThemePills() {
             textDecoration: "none",
             transition: "all 0.15s",
           }}
-          className="hover:!bg-[var(--color-accent-primary)] hover:!text-white hover:!border-transparent"
+          className="hover:!bg-[var(--color-accent-primary)] hover:!text-black hover:!border-transparent"
         >
           {t}
         </Link>

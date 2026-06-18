@@ -7,7 +7,7 @@ import { getHomepageData } from "@/features/home/api/homepageQueries";
 import { getFeaturedListings } from "@/features/home/api/marketplaceHome";
 import { getAnalyticsGraphs } from "@/features/home/api/analyticsGraphs";
 import { getLatestScripts } from "@/features/scripts/api/scriptsQueries";
-import { HeroCarousel } from "@/features/home/components/HeroCarousel";
+import { HeroSplit, type HeroFeatured } from "@/features/home/components/HeroSplit";
 import { ThemePills } from "@/features/videos";
 import { ContinueWatchingRow } from "@/features/home/components/ContinueWatchingRow";
 import { TrendingRow } from "@/features/home/components/TrendingRow";
@@ -17,7 +17,6 @@ import { ForCreators } from "@/features/home/components/ForCreators";
 import { FaqSection } from "@/features/home/components/FaqSection";
 import { ScriptsSection } from "@/features/scripts/components/ScriptsSection";
 import { resolveThumb } from "@/features/home/lib/posterFallback";
-import type { HeroFeatured } from "@/features/home/components/hero/PromoSlides";
 import type { Video } from "@/types";
 
 const HOME_TITLE = "WeCinema – Buy, Sell & Stream Independent Films";
@@ -64,23 +63,6 @@ function toHeroFeatured(v: Video): HeroFeatured {
   };
 }
 
-/** Collect real film thumbnails for the hero collage backdrops. */
-function collectPosters(...lists: Video[][]): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const list of lists) {
-    for (const v of list) {
-      const thumb = v.thumbnail ?? v.thumbnailSmall;
-      if (thumb && !seen.has(thumb)) {
-        seen.add(thumb);
-        out.push(thumb);
-        if (out.length >= 12) return out;
-      }
-    }
-  }
-  return out;
-}
-
 function RowSkeleton() {
   return (
     <div style={{ padding: "20px 24px 28px" }}>
@@ -114,7 +96,6 @@ export default async function HomePage() {
   ]);
 
   const heroFeatured = home.featured.map(toHeroFeatured);
-  const heroPosters = collectPosters(home.trending, ...home.byGenre.map((b) => b.videos), home.featured);
 
   return (
     <Layout>
@@ -142,12 +123,9 @@ export default async function HomePage() {
         }}
       />
 
-      <h1 className="sr-only">
-        WeCinema — Watch, Buy, Sell, and Stream Independent Films and Scripts
-      </h1>
-
-      {/* Section 1 — Hero carousel (featured film, marketplace, creator, analytics) */}
-      <HeroCarousel featured={heroFeatured} graphs={graphs} posters={heroPosters} />
+      {/* Section 1 — Split hero: featured film + always-on live platform graph.
+          The hero renders the page's visible <h1>. */}
+      <HeroSplit featured={heroFeatured} graphs={graphs} />
 
       {/* Browse-by-theme bar, directly under the hero */}
       <ThemePills />
