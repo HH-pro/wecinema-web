@@ -849,6 +849,15 @@ h3, .text-h3 { font-family: var(--font-heading); font-size: 1.125rem; font-weigh
 .hero-rise-3 { animation-delay: 0.26s; }
 .hero-rise-4 { animation-delay: 0.36s; }
 
+/* Crossfade-in for the hero backdrop image on each slide change */
+@keyframes heroBackdropFade {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+.hero-backdrop-fade {
+  animation: heroBackdropFade 600ms ease forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-kenburns { animation: none; }
   .hero-rise { opacity: 1; animation: none; }
