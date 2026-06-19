@@ -11,8 +11,7 @@ import {
 } from "react-icons/fa";
 import Layout from "@/components/layout/Layout";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { clientEnv } from "@/config/env";
-import { OG, SOCIAL_PROFILES } from "@/lib/seo";
+import { OG, SOCIAL_PROFILES, SITE_ORIGIN } from "@/lib/seo";
 
 interface WebsiteFeature { icon: React.ReactNode; title: string; description: string; details: string[] }
 interface Feature { icon: React.ReactNode; title: string; description: string; category: string }
@@ -62,7 +61,7 @@ const WORKFLOW = [
   { title: "Community & Engagement", desc: "Reviews, ratings, and HypeMode events for engagement.", features: [{ icon: <FaStar />, t: "Rate" }, { icon: <FaBolt />, t: "HypeMode" }, { icon: <FaRobot />, t: "AI Support" }] },
 ];
 
-const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+const SITE = SITE_ORIGIN;
 const TITLE = "About WeCinema";
 const DESCRIPTION = "Learn about WeCinema's mission to help independent filmmakers buy, sell, stream, and network.";
 

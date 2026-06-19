@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import Layout from "@/components/layout/Layout";
-import { clientEnv } from "@/config/env";
-import { OG } from "@/lib/seo";
+import { OG, SITE_ORIGIN } from "@/lib/seo";
 
-const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+const SITE = SITE_ORIGIN;
 const EFFECTIVE_DATE = "June 17, 2026";
 
 const TERMS_DESCRIPTION =

@@ -7,8 +7,7 @@ import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { getVideosByRating } from "@/features/videos/api/videoQueries";
 import { RATINGS, RATING_META } from "@/lib/constants";
 import { getRatingCopy } from "@/lib/collectionSeo";
-import { clientEnv } from "@/config/env";
-import { OG } from "@/lib/seo";
+import { OG, SITE_ORIGIN } from "@/lib/seo";
 
 export const revalidate = 300;
 
@@ -20,7 +19,7 @@ export function generateStaticParams(): Params[] {
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { rating } = await params;
-  const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+  const SITE = SITE_ORIGIN;
   const copy = getRatingCopy(rating);
 
   return {
@@ -51,7 +50,7 @@ export default async function RatingPage({ params }: { params: Promise<Params> }
   const isKnown = (RATINGS as readonly string[]).includes(rating);
   if (!isKnown) notFound();
 
-  const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+  const SITE = SITE_ORIGIN;
   const meta = RATING_META[rating];
   const copy = getRatingCopy(rating);
   const videos = await getVideosByRating(rating);

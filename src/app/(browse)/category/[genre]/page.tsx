@@ -7,8 +7,7 @@ import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { getVideosByCategory } from "@/features/videos/api/videoQueries";
 import { CATEGORIES } from "@/lib/constants";
 import { getGenreCopy } from "@/lib/collectionSeo";
-import { clientEnv } from "@/config/env";
-import { OG } from "@/lib/seo";
+import { OG, SITE_ORIGIN } from "@/lib/seo";
 
 export const revalidate = 300;
 
@@ -21,7 +20,7 @@ export function generateStaticParams(): Params[] {
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { genre } = await params;
   const label = genre.charAt(0).toUpperCase() + genre.slice(1);
-  const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+  const SITE = SITE_ORIGIN;
   const copy = getGenreCopy(genre);
 
   return {
@@ -52,7 +51,7 @@ export default async function CategoryPage({ params }: { params: Promise<Params>
   if (!genre || genre.length > 60 || !/^[a-z0-9-]+$/i.test(genre)) notFound();
 
   const label = genre.charAt(0).toUpperCase() + genre.slice(1);
-  const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+  const SITE = SITE_ORIGIN;
   const copy = getGenreCopy(genre);
   const videos = await getVideosByCategory(label, 100);
   const others = CATEGORIES.filter((c) => c.toLowerCase() !== genre.toLowerCase());

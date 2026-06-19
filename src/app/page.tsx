@@ -14,7 +14,7 @@ import { TrendingRow } from "@/features/home/components/TrendingRow";
 import { GenreRows } from "@/features/home/components/GenreRows";
 import { MarketplaceSpotlight } from "@/features/home/components/MarketplaceSpotlight";
 import { ForCreators } from "@/features/home/components/ForCreators";
-import { FaqSection } from "@/features/home/components/FaqSection";
+import { FaqSection, FAQS } from "@/features/home/components/FaqSection";
 import { ScriptsSection } from "@/features/scripts/components/ScriptsSection";
 import { resolveThumb } from "@/features/home/lib/posterFallback";
 import type { Video } from "@/types";
@@ -120,6 +120,17 @@ export default async function HomePage() {
           url: SITE,
           logo: `${SITE}/wecinema.webp`,
           sameAs: [...SOCIAL_PROFILES],
+        }}
+      />
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: FAQS.map((f) => ({
+            "@type": "Question",
+            name: f.q,
+            acceptedAnswer: { "@type": "Answer", text: f.a },
+          })),
         }}
       />
 

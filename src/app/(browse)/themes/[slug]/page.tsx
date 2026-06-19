@@ -7,8 +7,7 @@ import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { getVideosByTheme } from "@/features/videos/api/videoQueries";
 import { THEMES } from "@/lib/constants";
 import { getThemeCopy } from "@/lib/collectionSeo";
-import { clientEnv } from "@/config/env";
-import { OG } from "@/lib/seo";
+import { OG, SITE_ORIGIN } from "@/lib/seo";
 
 export const revalidate = 300;
 
@@ -21,7 +20,7 @@ export function generateStaticParams(): Params[] {
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { slug } = await params;
   const label = slug.charAt(0).toUpperCase() + slug.slice(1);
-  const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+  const SITE = SITE_ORIGIN;
   const copy = getThemeCopy(slug);
 
   return {
@@ -53,7 +52,7 @@ export default async function ThemePage({ params }: { params: Promise<Params> })
   if (!isKnown) notFound();
 
   const label = slug.charAt(0).toUpperCase() + slug.slice(1);
-  const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+  const SITE = SITE_ORIGIN;
   const copy = getThemeCopy(slug);
   const videos = await getVideosByTheme(label);
   const others = THEMES.filter((t) => t.toLowerCase() !== slug.toLowerCase()).slice(0, 11);

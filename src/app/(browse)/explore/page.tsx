@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { clientEnv } from "@/config/env";
-import { OG } from "@/lib/seo";
+import { OG, SITE_ORIGIN } from "@/lib/seo";
 import { ExploreContent } from "@/app/explore/ExploreContent";
 
-const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+const SITE = SITE_ORIGIN;
 const TITLE = "Explore Independent Films & Creators | WeCinema";
 const DESCRIPTION =
   "Discover indie films, creators, scripts, and rising filmmaking talent on WeCinema.";

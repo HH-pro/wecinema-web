@@ -32,7 +32,11 @@ const roboto = Roboto({
 });
 
 const SITE_NAME = "WeCinema";
-const SITE_URL = (clientEnv.NEXT_PUBLIC_SITE_URL ?? "https://wecinema.co").replace(/\/$/, "");
+// NEXT_PUBLIC_* is inlined at build time — if the build env had a stale/dev
+// value baked in, fall back to production rather than shipping a localhost
+// canonical/metadataBase to every page. Mirrors the guard in robots.ts/sitemap.ts.
+const rawSiteUrl = clientEnv.NEXT_PUBLIC_SITE_URL ?? "";
+const SITE_URL = (/localhost/i.test(rawSiteUrl) ? "https://wecinema.co" : rawSiteUrl || "https://wecinema.co").replace(/\/$/, "");
 const DESCRIPTION =
   "WeCinema is the home of independent film. Watch movies, upload your own, browse scripts, and sell your work to a global audience.";
 

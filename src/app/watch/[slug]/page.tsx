@@ -2,14 +2,13 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Layout from "@/components/layout/Layout";
 import { getVideoBySlug } from "@/features/videos/api/videoQueries";
-import { clientEnv } from "@/config/env";
-import { OG } from "@/lib/seo";
+import { OG, SITE_ORIGIN } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { WatchClient } from "@/features/watch/components/WatchClient";
 
 export const revalidate = 0;
 
-const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+const SITE = SITE_ORIGIN;
 
 /**
  * Convert a duration into an ISO 8601 string (e.g. `PT2M30S`) as required by

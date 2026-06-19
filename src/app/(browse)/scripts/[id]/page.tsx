@@ -3,13 +3,12 @@ import { notFound } from "next/navigation";
 import { apiFetch } from "@/lib/fetch/serverFetch";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { SITE_ORIGIN, OG } from "@/lib/seo";
-import { clientEnv } from "@/config/env";
 import { ScriptDetailClient } from "./ScriptDetailClient";
 import type { ScriptDetail } from "./types";
 
 export const revalidate = 300;
 
-const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+const SITE = SITE_ORIGIN;
 
 /** Server-side fetch — powers both metadata and render (deduped by fetch cache). */
 async function getScript(id: string): Promise<ScriptDetail | null> {

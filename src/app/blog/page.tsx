@@ -2,15 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Layout from "@/components/layout/Layout";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { clientEnv } from "@/config/env";
-import { OG } from "@/lib/seo";
+import { OG, SITE_ORIGIN } from "@/lib/seo";
 import { getBlogPosts, getBlogCategories } from "@/features/blog/api/blogQueries";
 import { decodeHtmlEntities } from "@/features/blog/types";
 import BlogList from "@/features/blog/components/BlogList";
 
 const INITIAL_PAGE_SIZE = 13;
 
-const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+const SITE = SITE_ORIGIN;
 
 const BLOG_TITLE = "WeCinema Blog – Film News & Creator Tips";
 const BLOG_DESCRIPTION =

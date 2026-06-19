@@ -2,7 +2,7 @@ import { Plus } from "lucide-react";
 import { Section } from "@/components/ui/Section";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 
-const FAQS = [
+export const FAQS = [
   {
     q: "Is WeCinema free to join?",
     a: "Yes. Creating an account, browsing the marketplace, watching free films, and listing your work is completely free. Sellers only pay a platform fee when a sale actually completes.",

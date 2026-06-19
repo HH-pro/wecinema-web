@@ -2,12 +2,11 @@ import type { Metadata } from "next";
 import Layout from "@/components/layout/Layout";
 import { apiFetch } from "@/lib/fetch/serverFetch";
 import type { FullUser } from "@/types";
-import { clientEnv } from "@/config/env";
-import { OG } from "@/lib/seo";
+import { OG, SITE_ORIGIN } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { UserProfileClient } from "@/features/profile/components/UserProfileClient";
 
-const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+const SITE = SITE_ORIGIN;
 
 const PROFILE_FALLBACK_TITLE = "Creator Profile | WeCinema";
 const PROFILE_FALLBACK_DESCRIPTION =

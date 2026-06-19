@@ -91,7 +91,11 @@ export function HeroSplit({
     ...featured.slice(0, 5).map((film): Slide => ({ type: "film", id: film.id, film })),
   ];
 
-  const [slideIndex, setSlideIndex] = useState(0);
+  // Default to the first film slide (not the graphs slide) when one exists —
+  // its <h1> carries the page's primary keywords ("Watch, buy & sell
+  // independent films"), and this is the only <h1> a crawler or no-JS client
+  // sees before the slider's interval advances it.
+  const [slideIndex, setSlideIndex] = useState(slides.length > 1 ? 1 : 0);
   const [visible, setVisible] = useState(true);
   const slideIndexRef = useRef(slideIndex);
   const fadeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);

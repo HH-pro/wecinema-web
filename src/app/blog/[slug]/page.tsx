@@ -5,12 +5,11 @@ import { notFound } from "next/navigation";
 import Layout from "@/components/layout/Layout";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { SafeHtml } from "@/components/ui/SafeHtml";
-import { clientEnv } from "@/config/env";
-import { OG } from "@/lib/seo";
+import { OG, SITE_ORIGIN } from "@/lib/seo";
 import { getBlogPost, getBlogPosts, resolveAuthorName, resolveAuthorAvatar } from "@/features/blog/api/blogQueries";
 import type { BlogPost } from "@/features/blog/api/blogQueries";
 
-const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+const SITE = SITE_ORIGIN;
 
 export const revalidate = 120;
 

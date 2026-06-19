@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import Layout from "@/components/layout/Layout";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { clientEnv } from "@/config/env";
-import { OG } from "@/lib/seo";
+import { OG, SITE_ORIGIN } from "@/lib/seo";
 import SupportContent from "./SupportContent";
 import { FAQS } from "./data";
 
-const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+const SITE = SITE_ORIGIN;
 const TITLE = "WeCinema Support Center";
 const DESCRIPTION = "Get help with your account, uploads, marketplace tools, and creator features on WeCinema.";
 

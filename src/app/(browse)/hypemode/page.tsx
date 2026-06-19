@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { getHypemodeVideos } from "@/features/videos/api/videoQueries";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { clientEnv } from "@/config/env";
-import { OG } from "@/lib/seo";
+import { OG, SITE_ORIGIN } from "@/lib/seo";
 import { HypemodeContent } from "@/app/hypemode/HypemodeContent";
 
-const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+const SITE = SITE_ORIGIN;
 const TITLE = "Hype Mode – Creator Discovery Feed | WeCinema";
 const DESCRIPTION =
   "Get discovered through WeCinema Hype Mode and connect your films with audiences and industry professionals.";

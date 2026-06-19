@@ -6,10 +6,9 @@ import {
   FaSearch, FaBolt,
 } from "react-icons/fa";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { clientEnv } from "@/config/env";
-import { OG } from "@/lib/seo";
+import { OG, SITE_ORIGIN } from "@/lib/seo";
 
-const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+const SITE = SITE_ORIGIN;
 const TITLE = "Film Marketplace | WeCinema";
 const DESCRIPTION =
   "Buy, sell, license, and discover independent film projects, scripts, and creative services.";

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { clientEnv } from "@/config/env";
-import { OG } from "@/lib/seo";
+import { OG, SITE_ORIGIN } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getListingById } from "@/features/marketplace/api/listingQueries";
 import ListingDetailClient from "@/features/marketplace/components/ListingDetailClient";
@@ -8,7 +7,7 @@ import ListingDetailClient from "@/features/marketplace/components/ListingDetail
 // Listings change (price, status) — keep metadata fresh on every request.
 export const revalidate = 0;
 
-const SITE = clientEnv.NEXT_PUBLIC_SITE_URL;
+const SITE = SITE_ORIGIN;
 
 const FALLBACK_TITLE = "Marketplace Listing | WeCinema";
 const FALLBACK_DESCRIPTION =
