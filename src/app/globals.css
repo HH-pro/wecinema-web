@@ -303,6 +303,47 @@ h3, .text-h3 { font-family: var(--font-heading); font-size: 1.125rem; font-weigh
 .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* ===========================================================================
+   App shell (Layout.tsx) — sidebar/bottom-nav visibility is CSS-only.
+   Deliberately NOT driven by a JS innerWidth check: that approach defaults to
+   desktop on first render and only corrects itself once an effect/resize event
+   fires, so mobile briefly (or until a scroll-triggered resize) showed the
+   desktop sidebar instead of the bottom nav. CSS media queries are correct on
+   the very first paint, with no JS race and no hydration mismatch.
+   =========================================================================== */
+.layout-main {
+  margin-left: 0;
+  width: 100%;
+  padding-bottom: var(--bottom-nav-h, 58px);
+  transition: margin-left 0.2s cubic-bezier(0.4, 0, 0.2, 1), width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@media (min-width: 1121px) {
+  .layout-main {
+    margin-left: var(--sidebar-w, 68px);
+    width: calc(100% - var(--sidebar-w, 68px));
+    padding-bottom: 0;
+  }
+}
+
+.layout-sidebar { transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+
+.layout-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  display: flex;
+  align-items: stretch;
+  background-color: var(--color-nav-bg);
+  border-top: 1px solid var(--color-divider);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+@media (min-width: 769px) {
+  .layout-bottom-nav { display: none; }
+}
+
+/* ===========================================================================
    Blog post — magazine-style article layout
    =========================================================================== */
 .blog-post-page {

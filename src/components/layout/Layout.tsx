@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
-
-const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
@@ -43,61 +41,33 @@ function BottomNavItem({
 export default function Layout({ children, hasHeader = true }: LayoutProps) {
   const pathname = usePathname();
   const [expanded, setExpanded] = useState(false);
-  // Track only the breakpoint booleans (not the raw width) so resizing doesn't
-  // re-render the whole tree + Framer Motion on every pixel — only when a
-  // threshold is actually crossed. Defaults to desktop to match SSR output.
-  const [bp, setBp] = useState({ tabletOrMobile: false, mobile: false });
-
-  useIsomorphicLayoutEffect(() => {
-    const compute = () => {
-      const w = window.innerWidth;
-      const next = { tabletOrMobile: w <= 1120, mobile: w <= 768 };
-      setBp((prev) =>
-        prev.tabletOrMobile === next.tabletOrMobile && prev.mobile === next.mobile
-          ? prev
-          : next,
-      );
-    };
-    compute();
-    window.addEventListener("resize", compute);
-    return () => window.removeEventListener("resize", compute);
-  }, []);
 
   // Close drawer whenever the user navigates
   useEffect(() => { setExpanded(false); }, [pathname]);
 
-  const isTabletOrMobile = bp.tabletOrMobile;
-  const isMobile = bp.mobile;
-
-  const sidebarPx = useMemo(() => {
-    if (isTabletOrMobile) return 0;
-    return expanded ? SIDEBAR_EXPANDED_W : SIDEBAR_COLLAPSED_W;
-  }, [isTabletOrMobile, expanded]);
+  const sidebarPx = expanded ? SIDEBAR_EXPANDED_W : SIDEBAR_COLLAPSED_W;
 
   return (
     <div style={{ color: "var(--color-text-primary)" }}>
-      {hasHeader && (
-        <Header
-          isMobile={isMobile}
-          toggleSidebar={() => setExpanded((p) => !p)}
-        />
-      )}
+      {hasHeader && <Header toggleSidebar={() => setExpanded((p) => !p)} />}
 
-      {/* Mobile / tablet drawer */}
-      {expanded && isTabletOrMobile && (
+      {/* Mobile / tablet drawer — CSS-hidden at desktop widths (min-[1121px]),
+          so visibility is correct on the very first paint and never depends
+          on a JS viewport check or a resize event firing. */}
+      {expanded && (
         <>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm min-[1121px]:hidden"
             onClick={() => setExpanded(false)}
           />
           <motion.div
             initial={{ x: -SIDEBAR_EXPANDED_W }}
             animate={{ x: 0 }}
             transition={{ type: "spring", stiffness: 340, damping: 36 }}
-            className="fixed inset-y-0 left-0 z-50"
+            className="fixed inset-y-0 left-0 z-50 min-[1121px]:hidden"
             style={{ width: SIDEBAR_EXPANDED_W }}
           >
             <Sidebar expand={true} onClose={() => setExpanded(false)} />
@@ -106,65 +76,53 @@ export default function Layout({ children, hasHeader = true }: LayoutProps) {
       )}
 
       <div className="flex">
-        {!isTabletOrMobile && (
-          <motion.div
-            animate={{ width: sidebarPx }}
-            transition={{ type: "tween", duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-            className={`fixed top-0 left-0 h-full z-30 flex-shrink-0 ${hasHeader ? "pt-[60px]" : ""}`}
-          >
-            <Sidebar expand={expanded} />
-          </motion.div>
-        )}
+        {/* Persistent desktop sidebar — CSS-gated (>=1121px); width is a plain
+            CSS transition so it never animates on initial load, only when the
+            user toggles expand/collapse. */}
+        <div
+          className={`hidden min-[1121px]:block layout-sidebar fixed top-0 left-0 h-full z-30 flex-shrink-0 ${hasHeader ? "pt-[60px]" : ""}`}
+          style={{ width: sidebarPx }}
+        >
+          <Sidebar expand={expanded} />
+        </div>
 
-        <motion.main
-          animate={{ marginLeft: sidebarPx, width: `calc(100% - ${sidebarPx}px)` }}
-          transition={{ type: "tween", duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-          className="flex flex-col"
+        <main
+          className="layout-main flex flex-col"
           style={{
             backgroundColor: "var(--color-bg-primary)",
             color: "var(--color-text-primary)",
-            paddingBottom: isMobile ? BOTTOM_NAV_H : 0,
-          }}
+            "--sidebar-w": `${sidebarPx}px`,
+            "--bottom-nav-h": `${BOTTOM_NAV_H}px`,
+          } as React.CSSProperties}
         >
           <div>{children}</div>
 
           <SiteFooter />
-        </motion.main>
+        </main>
       </div>
 
-      {/* Mobile bottom navigation bar */}
-      {isMobile && (
-        <nav
+      {/* Mobile bottom navigation — CSS-gated (<=768px), always in the DOM so
+          it's correct on the very first paint, no JS/resize race. */}
+      <nav className="layout-bottom-nav" style={{ height: BOTTOM_NAV_H }}>
+        <BottomNavItem href="/"        icon={<IoMdHome size={22} />}            label="Home"    active={pathname === "/"} />
+        <BottomNavItem href="/explore" icon={<RiMovie2Line size={22} />}         label="Explore" active={pathname.startsWith("/explore") || pathname.startsWith("/hypemode")} />
+        <BottomNavItem href="/chatbot" icon={<MdChatBubbleOutline size={22} />} label="AI Chat" active={pathname === "/chatbot"} />
+        <button
+          type="button"
+          onClick={() => setExpanded((p) => !p)}
+          aria-label="Open menu"
           style={{
-            position: "fixed", bottom: 0, left: 0, right: 0,
-            height: BOTTOM_NAV_H, zIndex: 60,
-            backgroundColor: "var(--color-nav-bg)",
-            borderTop: "1px solid var(--color-divider)",
-            display: "flex", alignItems: "stretch",
-            backdropFilter: "blur(14px)",
-            WebkitBackdropFilter: "blur(14px)",
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            gap: 3, flex: 1, padding: "6px 4px", border: "none", background: "transparent",
+            cursor: "pointer",
+            color: expanded ? "var(--color-accent-primary)" : "var(--color-text-tertiary)",
+            transition: "color 0.15s",
           }}
         >
-          <BottomNavItem href="/"        icon={<IoMdHome size={22} />}            label="Home"    active={pathname === "/"} />
-          <BottomNavItem href="/explore" icon={<RiMovie2Line size={22} />}         label="Explore" active={pathname.startsWith("/explore") || pathname.startsWith("/hypemode")} />
-          <BottomNavItem href="/chatbot" icon={<MdChatBubbleOutline size={22} />} label="AI Chat" active={pathname === "/chatbot"} />
-          <button
-            type="button"
-            onClick={() => setExpanded((p) => !p)}
-            aria-label="Open menu"
-            style={{
-              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-              gap: 3, flex: 1, padding: "6px 4px", border: "none", background: "transparent",
-              cursor: "pointer",
-              color: expanded ? "var(--color-accent-primary)" : "var(--color-text-tertiary)",
-              transition: "color 0.15s",
-            }}
-          >
-            <MdMenu size={22} />
-            <span style={{ fontSize: 10, fontWeight: 600, lineHeight: 1 }}>Menu</span>
-          </button>
-        </nav>
-      )}
+          <MdMenu size={22} />
+          <span style={{ fontSize: 10, fontWeight: 600, lineHeight: 1 }}>Menu</span>
+        </button>
+      </nav>
     </div>
   );
 }
