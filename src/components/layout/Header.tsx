@@ -1,11 +1,9 @@
 "use client";
 
 import {
-  useState, useRef, useEffect, useLayoutEffect, useCallback, memo,
+  useState, useRef, useEffect, useCallback, memo,
   type FC,
 } from "react";
-
-const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
@@ -19,7 +17,6 @@ import SearchBar from "@/features/search/SearchBar";
 
 interface HeaderProps {
   toggleSidebar?: () => void;
-  isMobile?: boolean;
 }
 
 const NAV_LINKS = [
@@ -56,6 +53,38 @@ const STYLES = `
   .hdr-row:hover { background-color:var(--color-bg-tertiary); }
   .hdr-user-btn { border-color:var(--color-border-secondary) !important; }
   .hdr-user-btn:hover, .hdr-user-btn.open { border-color:var(--color-accent-primary) !important; }
+
+  /* Responsive chrome — CSS-only (no JS innerWidth check). A JS-driven
+     screenW state defaults to desktop on first render and only corrects
+     itself once an effect/resize event fires, so mobile would briefly (or
+     until a scroll-triggered resize) show desktop nav links instead of the
+     mobile pills. CSS media queries are correct on the very first paint. */
+  .hdr-logo-text { display:none; }
+  @media (min-width:901px) { .hdr-logo-text { display:inline; } }
+
+  .hdr-nav-links { display:none; }
+  @media (min-width:881px) { .hdr-nav-links { display:flex; } }
+
+  .hdr-mobile-pills { display:flex; }
+  @media (max-width:480px), (min-width:881px) { .hdr-mobile-pills { display:none; } }
+
+  .hdr-filters { display:none; }
+  @media (min-width:1061px) { .hdr-filters { display:flex; } }
+
+  .hdr-username { display:none; }
+  @media (min-width:501px) { .hdr-username { display:inline; } }
+
+  .hdr-signin { display:none; }
+  @media (min-width:401px) { .hdr-signin { display:inline-flex; } }
+
+  .hdr-logo { display:flex; }
+  .hdr-spacer { flex:1; }
+  .hdr-search-wrap { flex:0 1 400px; min-width:0; }
+  @media (max-width:768px) {
+    header.hdr-search-open .hdr-logo { display:none; }
+    header.hdr-search-open .hdr-spacer { flex:0; }
+    header.hdr-search-open .hdr-search-wrap { flex:1; }
+  }
 `;
 
 const Chevron = ({ open, size = 13 }: { open: boolean; size?: number }) => (
@@ -108,7 +137,7 @@ const RatingDropdown = memo<{ open: boolean; onSelect: (r: string) => void }>(({
 });
 RatingDropdown.displayName = "RatingDropdown";
 
-const Header: FC<HeaderProps> = ({ toggleSidebar, isMobile: isMobileProp }) => {
+const Header: FC<HeaderProps> = ({ toggleSidebar }) => {
   const router = useRouter();
   const pathname = usePathname();
   const { isDark, toggleTheme } = useTheme();
@@ -119,22 +148,10 @@ const Header: FC<HeaderProps> = ({ toggleSidebar, isMobile: isMobileProp }) => {
   const [ratingOpen, setRatingOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [screenW, setScreenW] = useState(1280);
 
   const genreRef = useRef<HTMLDivElement>(null);
   const ratingRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
-
-  const isMobile = isMobileProp || screenW <= 768;
-  const showNavLinks = screenW > 880;
-  const showFilters = screenW > 1060;
-
-  useIsomorphicLayoutEffect(() => {
-    setScreenW(window.innerWidth);
-    const onResize = () => setScreenW(window.innerWidth);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -164,7 +181,7 @@ const Header: FC<HeaderProps> = ({ toggleSidebar, isMobile: isMobileProp }) => {
   return (
     <>
       <style>{STYLES}</style>
-      <header style={{
+      <header className={searchOpen ? "hdr-search-open" : ""} style={{
         position: "sticky", top: 0, zIndex: 100, width: "100%",
         backgroundColor: "var(--color-nav-bg)",
         borderBottom: `1px solid ${(scrolled || genreOpen || ratingOpen) ? "var(--color-divider)" : "transparent"}`,
@@ -179,60 +196,52 @@ const Header: FC<HeaderProps> = ({ toggleSidebar, isMobile: isMobileProp }) => {
             <MdMenu size={22} />
           </button>
 
-          {!(searchOpen && isMobile) && (
-            <Link href="/" aria-label="Home" style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none", marginLeft: 2, flexShrink: 0, textDecoration: "none" }}>
-              <Image src="/wecinema.webp" alt="WeCinema" width={32} height={28} priority style={{ objectFit: "contain" }} />
-              {screenW > 900 && (
-                <span style={{ fontSize: "1.0625rem", fontWeight: 800, fontFamily: "var(--font-heading)", color: "var(--color-text-primary)", letterSpacing: "-0.02em" }}>
-                  WeCinema
-                </span>
-              )}
-            </Link>
-          )}
+          <Link href="/" aria-label="Home" className="hdr-logo" style={{ alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none", marginLeft: 2, flexShrink: 0, textDecoration: "none" }}>
+            <Image src="/wecinema.webp" alt="WeCinema" width={32} height={28} priority style={{ objectFit: "contain" }} />
+            <span className="hdr-logo-text" style={{ fontSize: "1.0625rem", fontWeight: 800, fontFamily: "var(--font-heading)", color: "var(--color-text-primary)", letterSpacing: "-0.02em" }}>
+              WeCinema
+            </span>
+          </Link>
 
-          {showNavLinks ? (
-            <nav style={{ display: "flex", alignItems: "center", gap: 22, marginLeft: 18, flexShrink: 0 }}>
-              {NAV_LINKS.map(({ label, href, exact }) => (
-                <Link key={href} href={href} className={`hdr-nav-link ${isActive(href, exact) ? "active" : ""}`}>
-                  {label}
-                </Link>
-              ))}
+          <nav className="hdr-nav-links" style={{ alignItems: "center", gap: 22, marginLeft: 18, flexShrink: 0 }}>
+            {NAV_LINKS.map(({ label, href, exact }) => (
+              <Link key={href} href={href} className={`hdr-nav-link ${isActive(href, exact) ? "active" : ""}`}>
+                {label}
+              </Link>
+            ))}
 
-              {showFilters && (
-                <>
-                  <div style={{ position: "relative" }} ref={genreRef}>
-                    <button className={`hdr-dd-trigger ${genreOpen ? "open" : ""}`} onClick={() => { setGenreOpen((p) => !p); setRatingOpen(false); }} aria-expanded={genreOpen}>
-                      Genre <Chevron open={genreOpen} />
-                    </button>
-                    <GenreDropdown open={genreOpen} onSelect={handleGenreSelect} />
-                  </div>
-
-                  <div style={{ position: "relative" }} ref={ratingRef}>
-                    <button className={`hdr-dd-trigger ${ratingOpen ? "open" : ""}`} onClick={() => { setRatingOpen((p) => !p); setGenreOpen(false); }} aria-expanded={ratingOpen}>
-                      Rating <Chevron open={ratingOpen} />
-                    </button>
-                    <RatingDropdown open={ratingOpen} onSelect={handleRatingSelect} />
-                  </div>
-                </>
-              )}
-            </nav>
-          ) : (
-            !searchOpen && screenW > 480 && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: 8, flexShrink: 0 }}>
-                <button className={`hdr-mob-pill ${genreOpen ? "open" : ""}`} onClick={() => { setGenreOpen((p) => !p); setRatingOpen(false); }}>
-                  Genre <Chevron open={genreOpen} size={12} />
+            <div className="hdr-filters" style={{ alignItems: "center", gap: 22 }}>
+              <div style={{ position: "relative" }} ref={genreRef}>
+                <button className={`hdr-dd-trigger ${genreOpen ? "open" : ""}`} onClick={() => { setGenreOpen((p) => !p); setRatingOpen(false); }} aria-expanded={genreOpen}>
+                  Genre <Chevron open={genreOpen} />
                 </button>
-                <button className={`hdr-mob-pill ${ratingOpen ? "open" : ""}`} onClick={() => { setRatingOpen((p) => !p); setGenreOpen(false); }}>
-                  Rating <Chevron open={ratingOpen} size={12} />
-                </button>
+                <GenreDropdown open={genreOpen} onSelect={handleGenreSelect} />
               </div>
-            )
+
+              <div style={{ position: "relative" }} ref={ratingRef}>
+                <button className={`hdr-dd-trigger ${ratingOpen ? "open" : ""}`} onClick={() => { setRatingOpen((p) => !p); setGenreOpen(false); }} aria-expanded={ratingOpen}>
+                  Rating <Chevron open={ratingOpen} />
+                </button>
+                <RatingDropdown open={ratingOpen} onSelect={handleRatingSelect} />
+              </div>
+            </div>
+          </nav>
+
+          {!searchOpen && (
+            <div className="hdr-mobile-pills" style={{ alignItems: "center", gap: 6, marginLeft: 8, flexShrink: 0 }}>
+              <button className={`hdr-mob-pill ${genreOpen ? "open" : ""}`} onClick={() => { setGenreOpen((p) => !p); setRatingOpen(false); }}>
+                Genre <Chevron open={genreOpen} size={12} />
+              </button>
+              <button className={`hdr-mob-pill ${ratingOpen ? "open" : ""}`} onClick={() => { setRatingOpen((p) => !p); setGenreOpen(false); }}>
+                Rating <Chevron open={ratingOpen} size={12} />
+              </button>
+            </div>
           )}
 
-          <div style={{ flex: searchOpen && isMobile ? 0 : 1 }} />
+          <div className="hdr-spacer" />
 
           {searchOpen ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, animation: "hdrExpand 0.2s ease-out", flex: isMobile ? "1" : "0 1 400px", minWidth: 0 }}>
+            <div className="hdr-search-wrap" style={{ display: "flex", alignItems: "center", gap: 8, animation: "hdrExpand 0.2s ease-out" }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <SearchBar onClose={closeSearch} autoFocus />
               </div>
@@ -267,11 +276,9 @@ const Header: FC<HeaderProps> = ({ toggleSidebar, isMobile: isMobileProp }) => {
                     aria-label="User menu"
                   >
                     <Avatar src={authUser.avatar} username={authUser.username} size={30} />
-                    {screenW > 500 && (
-                      <span style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-text-primary)", maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {authUser.username}
-                      </span>
-                    )}
+                    <span className="hdr-username" style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-text-primary)", maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {authUser.username}
+                    </span>
                     <Chevron open={userMenuOpen} size={13} />
                   </button>
 
@@ -319,11 +326,9 @@ const Header: FC<HeaderProps> = ({ toggleSidebar, isMobile: isMobileProp }) => {
                 </div>
               ) : (
                 <>
-                  {screenW > 400 && (
-                    <Link href="/login" style={{ height: 36, padding: "0 16px", borderRadius: 9999, border: "1.5px solid var(--color-border-secondary)", background: "transparent", color: "var(--color-text-secondary)", fontSize: "0.8125rem", fontWeight: 600, whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", textDecoration: "none" }}>
-                      Sign In
-                    </Link>
-                  )}
+                  <Link href="/login" className="hdr-signin" style={{ height: 36, padding: "0 16px", borderRadius: 9999, border: "1.5px solid var(--color-border-secondary)", background: "transparent", color: "var(--color-text-secondary)", fontSize: "0.8125rem", fontWeight: 600, whiteSpace: "nowrap", alignItems: "center", textDecoration: "none" }}>
+                    Sign In
+                  </Link>
                   <Link href="/signup" style={{ height: 36, padding: "0 16px", borderRadius: 9999, border: "none", background: "var(--color-accent-primary)", color: "#fff", fontSize: "0.8125rem", fontWeight: 700, whiteSpace: "nowrap", boxShadow: "0 2px 12px rgba(255,187,0,0.28)", display: "inline-flex", alignItems: "center", textDecoration: "none" }}>
                     Sign Up
                   </Link>
