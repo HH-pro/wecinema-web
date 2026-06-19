@@ -33,6 +33,13 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
   compress: true,
 
+  // Both ship as barrel files — without this, importing one icon pulls in
+  // every icon subpackage (react-icons/fa, /md, /io, /ri, ...) into the bundle.
+  // Next.js rewrites these imports to per-icon modules at build time.
+  experimental: {
+    optimizePackageImports: ["lucide-react", "react-icons"],
+  },
+
   turbopack: {
     root: path.join(__dirname),
   },

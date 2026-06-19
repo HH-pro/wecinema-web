@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import type { Metadata } from "next";
 import Layout from "@/components/layout/Layout";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -61,26 +60,6 @@ function toHeroFeatured(v: Video): HeroFeatured {
     rating: v.rating || undefined,
     views: v.views,
   };
-}
-
-function RowSkeleton() {
-  return (
-    <div style={{ padding: "20px 24px 28px" }}>
-      <div
-        style={{ height: 22, width: 160, marginBottom: 16, borderRadius: 6, backgroundColor: "var(--color-skeleton-base)" }}
-        className="animate-pulse"
-      />
-      <div style={{ display: "flex", gap: 16, overflow: "hidden" }}>
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div
-            key={i}
-            style={{ width: 240, flex: "0 0 auto", aspectRatio: "16/9", borderRadius: 12, backgroundColor: "var(--color-skeleton-base)" }}
-            className="animate-pulse"
-          />
-        ))}
-      </div>
-    </div>
-  );
 }
 
 export default async function HomePage() {
@@ -152,9 +131,7 @@ export default async function HomePage() {
 
         {/* Commerce you can act on */}
         <MarketplaceSpotlight listings={marketplace.listings} />
-        <Suspense fallback={<RowSkeleton />}>
-          <ScriptsSection scripts={scripts} />
-        </Suspense>
+        <ScriptsSection scripts={scripts} />
 
         {/* One merged explain + convert block (Why + How it works + Creator CTA) */}
         <ForCreators />
