@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { History } from "lucide-react";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { getWatchHistory, type HistoryEntry } from "@/features/profile/services/profileService";
 import { MediaRow } from "@/features/home/components/MediaRow";
@@ -80,10 +79,7 @@ export function ContinueWatchingRow() {
   if (!isAuthenticated || entries.length === 0) return null;
 
   return (
-    <MediaRow
-      title="Jump back in"
-      icon={<History size={18} color="var(--color-accent-primary)" aria-hidden />}
-    >
+    <MediaRow>
       {entries.map((e) => (
         <HistoryCard key={e._id} entry={e} />
       ))}

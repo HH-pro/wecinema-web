@@ -11,11 +11,7 @@ export function GenreRows({ buckets }: { buckets: GenreBucket[] }) {
   return (
     <>
       {buckets.map((bucket) => (
-        <MediaRow
-          key={bucket.genre}
-          title={bucket.genre}
-          viewAllHref={`/category/${bucket.slug}`}
-        >
+        <MediaRow key={bucket.genre}>
           {bucket.videos.map((v) => (
             <VideoCard key={v._id} video={v} />
           ))}

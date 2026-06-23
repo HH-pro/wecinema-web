@@ -153,7 +153,6 @@ export function HeroSplit({
     width: 38,
     height: 38,
     borderRadius: 9999,
-    display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
     background: "rgba(20,16,12,0.55)",
@@ -178,7 +177,7 @@ export function HeroSplit({
             type="button"
             aria-label="Previous slide"
             onClick={() => goToSlide((slideIndex - 1 + slides.length) % slides.length)}
-            className="left-3 min-[1120px]:left-5 hover:!bg-white/20 hover:scale-110 active:scale-95"
+            className="hidden md:inline-flex left-3 min-[1120px]:left-5 hover:!bg-white/20 hover:scale-110 active:scale-95"
             style={arrowBtnStyle}
           >
             <ChevronLeft size={18} aria-hidden />
@@ -187,7 +186,7 @@ export function HeroSplit({
             type="button"
             aria-label="Next slide"
             onClick={() => goToSlide((slideIndex + 1) % slides.length)}
-            className="right-3 min-[1120px]:right-5 hover:!bg-white/20 hover:scale-110 active:scale-95"
+            className="hidden md:inline-flex right-3 min-[1120px]:right-5 hover:!bg-white/20 hover:scale-110 active:scale-95"
             style={arrowBtnStyle}
           >
             <ChevronRight size={18} aria-hidden />

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { VideoGrid } from "@/features/videos/components/VideoGrid";
+import { ThemePills } from "@/features/videos/components/ThemePills";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { getVideosByTheme } from "@/features/videos/api/videoQueries";
@@ -55,10 +55,11 @@ export default async function ThemePage({ params }: { params: Promise<Params> })
   const SITE = SITE_ORIGIN;
   const copy = getThemeCopy(slug);
   const videos = await getVideosByTheme(label);
-  const others = THEMES.filter((t) => t.toLowerCase() !== slug.toLowerCase()).slice(0, 11);
 
   return (
     <>
+      <ThemePills active={label} />
+
       <JsonLd
         data={{
           "@context": "https://schema.org",
@@ -125,32 +126,6 @@ export default async function ThemePage({ params }: { params: Promise<Params> })
 
       <div style={{ padding: "28px 24px" }}>
         <VideoGrid videos={videos} emptyMessage={`No films with theme "${label}" yet.`} />
-
-        <nav aria-label="Browse other themes" style={{ marginTop: 40 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 12px", color: "var(--color-text-primary)" }}>
-            Explore other themes
-          </h2>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-            {others.map((t) => (
-              <Link
-                key={t}
-                href={`/themes/${t.toLowerCase()}`}
-                style={{
-                  padding: "7px 14px",
-                  borderRadius: 9999,
-                  border: "1px solid var(--color-divider)",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "var(--color-text-secondary)",
-                  textDecoration: "none",
-                }}
-                className="hover:!border-[var(--color-accent-primary)]"
-              >
-                {t}
-              </Link>
-            ))}
-          </div>
-        </nav>
       </div>
     </>
   );

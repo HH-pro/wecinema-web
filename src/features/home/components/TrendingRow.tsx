@@ -8,7 +8,6 @@ export function TrendingRow({ videos }: { videos: Video[] }) {
   return (
     <MediaRow
       title="Trending Now"
-      viewAllHref="/explore"
       icon={<Flame size={18} color="var(--color-accent-primary)" aria-hidden />}
     >
       {videos.map((v, i) => (

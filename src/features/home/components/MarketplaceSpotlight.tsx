@@ -126,7 +126,7 @@ export function MarketplaceSpotlight({ listings }: { listings: Listing[] }) {
 
         {listings.length > 0 && (
           <div style={{ margin: "0 -12px" }}>
-            <MediaRow title="Featured listings" itemWidth={220}>
+            <MediaRow>
               {listings.map((l) => (
                 <SpotlightCard key={l._id} listing={l} />
               ))}
