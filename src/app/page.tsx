@@ -10,6 +10,7 @@ import { HeroSplit, type HeroFeatured } from "@/features/home/components/HeroSpl
 import { ThemePills } from "@/features/videos";
 import { ContinueWatchingRow } from "@/features/home/components/ContinueWatchingRow";
 import { TrendingRow } from "@/features/home/components/TrendingRow";
+import { ShortsRow } from "@/features/home/components/ShortsRow";
 import { GenreRows } from "@/features/home/components/GenreRows";
 import { MarketplaceSpotlight } from "@/features/home/components/MarketplaceSpotlight";
 import { ForCreators } from "@/features/home/components/ForCreators";
@@ -127,6 +128,7 @@ export default async function HomePage() {
 
         {/* Content first — discovery before pitch (premium / industry-scale) */}
         <TrendingRow videos={home.trending} />
+        <ShortsRow videos={home.shorts} />
         <GenreRows buckets={home.byGenre} />
 
         {/* Commerce you can act on */}

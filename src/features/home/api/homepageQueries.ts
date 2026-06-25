@@ -41,6 +41,7 @@ export interface GenreBucket {
 export interface HomepageData {
   featured: Video[];
   trending: Video[];
+  shorts: Video[];
   byGenre: GenreBucket[];
   stats: HomepageStats;
 }
@@ -48,6 +49,7 @@ export interface HomepageData {
 const EMPTY: HomepageData = {
   featured: [],
   trending: [],
+  shorts: [],
   byGenre: [],
   stats: { totalFilms: 0, totalCreators: 0 },
 };
@@ -122,6 +124,12 @@ export async function getHomepageData(): Promise<HomepageData> {
     .slice(0, 12);
   const trendingResolved = trending.length > 0 ? trending : [...all].sort(trendingSort).slice(0, 12);
 
+  // ── Shorts: short-form vertical videos ──
+  const shorts = all
+    .filter((v) => v.isShort)
+    .sort(trendingSort)
+    .slice(0, 12);
+
   // ── Genre rows: only genres that actually contain videos ──
   const byGenre: GenreBucket[] = [];
   for (const genre of CATEGORIES) {
@@ -145,6 +153,7 @@ export async function getHomepageData(): Promise<HomepageData> {
   return {
     featured,
     trending: trendingResolved,
+    shorts,
     byGenre,
     stats: { totalFilms: all.length, totalCreators: creators.size },
   };

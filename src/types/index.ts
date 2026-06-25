@@ -46,6 +46,7 @@ export interface Video {
   recommended?: boolean;
   published?: boolean;
   duration?: string | number;
+  isShort?: boolean;
 }
 
 export interface AuthUser {

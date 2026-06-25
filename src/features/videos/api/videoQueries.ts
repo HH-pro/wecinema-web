@@ -75,6 +75,23 @@ export async function getVideosByRating(rating: string): Promise<Video[]> {
   }
 }
 
+export async function getShortsVideos(limit = 50): Promise<Video[]> {
+  try {
+    const data = await apiFetch<VideoListResponse | Video[]>(
+      `/video/shorts?limit=${limit}`,
+      { revalidate: CACHE_TTL, tags: ["videos:shorts"] },
+    );
+    return extractList(data);
+  } catch (err) {
+    if (err instanceof ApiError) {
+      console.warn(`[videos] shorts ${err.status} ${err.statusText}`);
+    } else {
+      console.error("[videos] shorts", err);
+    }
+    return [];
+  }
+}
+
 export async function getHypemodeVideos(): Promise<Video[]> {
   try {
     const data = await apiFetch<VideoListResponse | Video[]>("/video/all", {
