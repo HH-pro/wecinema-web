@@ -11,7 +11,7 @@ Next.js 16 frontend for [WeCinema](https://wecinema.co) — the migration target
 ```bash
 cp .env.example .env.local   # then edit
 npm install
-npm run dev                  # → http://localhost:3001
+npm run dev                  # → http://localhost:5173
 ```
 
 The backend is expected at `BACKEND_URL`. Defaults point at production (`https://wecinema.co/api`); swap to `http://localhost:3000` to develop against a local backend.
@@ -20,7 +20,7 @@ The backend is expected at `BACKEND_URL`. Defaults point at production (`https:/
 
 | Script | What it does |
 |---|---|
-| `dev` | Dev server on port 3001 with Turbopack + HMR |
+| `dev` | Dev server on port 5173 with Turbopack + HMR |
 | `build` | Production build |
 | `start` | Run the production build |
 | `lint` / `lint:fix` | ESLint |
@@ -104,9 +104,5 @@ const data = await apiFetch<MyResponse>("/some/endpoint", { revalidate: 60 });
 
 ## What's not done yet
 
-- Auth (login/signup/profile)
-- Marketplace pages
-- Video detail (`/watch/[slug]`)
-- Search results
 - CSP middleware
 - Tests (Vitest + Playwright)
