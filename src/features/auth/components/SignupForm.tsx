@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, CheckCircle, ChevronRight, Loader2, Mail, X } from "lucide-react";
@@ -18,8 +18,12 @@ import {
   EmailBadge,
   ShimmerStyle,
   FaEnvelope,
+  GoogleSignInButton,
+  OrDivider,
+  FullScreenSpinner,
 } from "@/components/auth/shared";
 import { OtpInput } from "@/features/auth/components/OtpInput";
+import { safeRedirect } from "@/lib/utils/safeRedirect";
 
 // ─── Panel wrapper ────────────────────────────────────────────
 
@@ -282,8 +286,9 @@ type View = "register" | "verify" | "duplicate";
 
 interface VerifyData { email: string; username: string; }
 
-function RegisterForm() {
+function RegisterForm({ redirect }: { redirect: string }) {
   const router = useRouter();
+  const { applyLogin } = useAuth();
   const [view, setView] = useState<View>("register");
   const [verifyData, setVerifyData] = useState<VerifyData | null>(null);
   const [duplicateEmail, setDuplicateEmail] = useState<string | null>(null);
@@ -293,7 +298,24 @@ function RegisterForm() {
   const [password, setPassword] = useState("");
   const [dob, setDob] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handleGoogleSignIn = async () => {
+    setErrors({});
+    setGoogleLoading(true);
+    try {
+      const res = await authService.loginWithGoogle();
+      applyLogin(res);
+      router.push(redirect);
+    } catch (err) {
+      const code = (err as { code?: string })?.code ?? "";
+      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") return;
+      setErrors({ general: err instanceof AppError ? err.message : "Google sign-in failed. Please try again." });
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -345,7 +367,7 @@ function RegisterForm() {
           key="verify"
           email={verifyData.email}
           username={verifyData.username}
-          onVerified={() => router.push("/login")}
+          onVerified={() => router.push(`/login?redirect=${encodeURIComponent(redirect)}`)}
           onBack={() => { setView("register"); setVerifyData(null); }}
         />
       )}
@@ -353,7 +375,7 @@ function RegisterForm() {
         <DuplicateEmailAlert
           key="duplicate"
           email={duplicateEmail}
-          onLogin={() => router.push("/login")}
+          onLogin={() => router.push(`/login?redirect=${encodeURIComponent(redirect)}`)}
           onBack={() => { setView("register"); setDuplicateEmail(null); setEmail(""); setErrors({}); }}
         />
       )}
@@ -372,6 +394,8 @@ function RegisterForm() {
                 <AlertCircle size={14} className="flex-shrink-0" />{errors.general}
               </div>
             )}
+            <GoogleSignInButton loading={googleLoading} onClick={handleGoogleSignIn} />
+            <div className="my-4"><OrDivider /></div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <Field label="Username" error={errors.username} delay={0.05}>
                 <InputWithIcon icon={<FaUser className="w-3.5 h-3.5" />}
@@ -445,29 +469,33 @@ function RegisterForm() {
 // ─── Main export ──────────────────────────────────────────────
 
 export function SignupForm() {
+  return (
+    <Suspense fallback={<FullScreenSpinner />}>
+      <SignupFormPage />
+    </Suspense>
+  );
+}
+
+function SignupFormPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = safeRedirect(searchParams.get("redirect"));
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace("/");
+      router.replace(redirect);
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, router, redirect]);
 
   if (isLoading || isAuthenticated) {
-    return (
-      <div className="flex items-center justify-center min-h-screen"
-        style={{ background: "var(--color-bg-tertiary)" }}>
-        <div className="w-10 h-10 rounded-full border-[3px] animate-spin"
-          style={{ borderColor: "var(--color-accent-primary)", borderTopColor: "transparent" }} />
-      </div>
-    );
+    return <FullScreenSpinner />;
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4"
       style={{ background: "var(--color-bg-tertiary)" }}>
-      <RegisterForm />
+      <RegisterForm redirect={redirect} />
     </div>
   );
 }

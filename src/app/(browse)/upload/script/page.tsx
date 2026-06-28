@@ -61,12 +61,12 @@ function SectionCard({
         <div
           style={{
             width: 36, height: 36, borderRadius: 10,
-            background: "rgba(139,92,246,0.12)",
+            background: "rgba(255,187,0,0.12)",
             display: "flex", alignItems: "center", justifyContent: "center",
             flexShrink: 0,
           }}
         >
-          <Icon style={{ width: 18, height: 18, color: "rgb(167,139,250)" }} />
+          <Icon style={{ width: 18, height: 18, color: "var(--color-accent-primary)" }} />
         </div>
         <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)" }}>
           {title}
@@ -88,7 +88,7 @@ function TipCard({ title, items }: { title: string; items: string[] }) {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <Info style={{ width: 14, height: 14, color: "rgb(167,139,250)", flexShrink: 0 }} />
+        <Info style={{ width: 14, height: 14, color: "var(--color-accent-primary)", flexShrink: 0 }} />
         <h4 style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "var(--color-text-primary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
           {title}
         </h4>
@@ -96,7 +96,7 @@ function TipCard({ title, items }: { title: string; items: string[] }) {
       <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 7 }}>
         {items.map((item) => (
           <li key={item} style={{ display: "flex", gap: 7, alignItems: "flex-start" }}>
-            <ChevronRight style={{ width: 12, height: 12, color: "rgb(124,58,237)", flexShrink: 0, marginTop: 3 }} />
+            <ChevronRight style={{ width: 12, height: 12, color: "var(--color-accent-primary)", flexShrink: 0, marginTop: 3 }} />
             <span style={{ fontSize: 12, color: "var(--color-text-tertiary)", lineHeight: 1.5 }}>{item}</span>
           </li>
         ))}
@@ -137,9 +137,9 @@ function MultiSelect({
             padding: "5px 12px",
             fontSize: 12,
             borderRadius: 9999,
-            border: value.includes(opt) ? "1px solid rgb(124,58,237)" : "1px solid var(--color-border-secondary)",
-            backgroundColor: value.includes(opt) ? "rgb(124,58,237)" : "transparent",
-            color: value.includes(opt) ? "#fff" : "var(--color-text-secondary)",
+            border: value.includes(opt) ? "1px solid var(--color-accent-primary)" : "1px solid var(--color-border-secondary)",
+            backgroundColor: value.includes(opt) ? "var(--color-accent-primary)" : "transparent",
+            color: value.includes(opt) ? "var(--color-btn-primary-text, #000)" : "var(--color-text-secondary)",
             cursor: "pointer",
             transition: "all 0.15s",
             fontWeight: value.includes(opt) ? 600 : 400,
@@ -226,8 +226,8 @@ export default function UploadScriptPage() {
             onClick={() => router.push("/scripts")}
             style={{
               padding: "11px 28px",
-              background: "linear-gradient(to right, rgb(124,58,237), rgb(168,85,247))",
-              color: "#fff",
+              background: "linear-gradient(to right, var(--color-accent-primary), #FFCB33)",
+              color: "var(--color-btn-primary-text, #000)",
               borderRadius: 12,
               fontSize: 13,
               fontWeight: 600,
@@ -266,8 +266,8 @@ export default function UploadScriptPage() {
         style={{
           position: "relative",
           overflow: "hidden",
-          background: "linear-gradient(135deg, rgba(124,58,237,0.14) 0%, rgba(168,85,247,0.05) 100%)",
-          border: "1px solid rgba(139,92,246,0.2)",
+          background: "linear-gradient(135deg, rgba(255,187,0,0.14) 0%, rgba(255,187,0,0.05) 100%)",
+          border: "1px solid rgba(255,187,0,0.2)",
           borderRadius: 22,
           padding: "28px 36px",
           marginBottom: 28,
@@ -277,7 +277,7 @@ export default function UploadScriptPage() {
           style={{
             position: "absolute", right: -50, top: -50,
             width: 180, height: 180, borderRadius: "50%",
-            background: "rgba(139,92,246,0.15)",
+            background: "rgba(255,187,0,0.15)",
             filter: "blur(40px)",
             pointerEvents: "none",
           }}
@@ -286,18 +286,18 @@ export default function UploadScriptPage() {
           <div
             style={{
               width: 56, height: 56, borderRadius: 16, flexShrink: 0,
-              background: "linear-gradient(135deg, rgb(124,58,237), rgb(168,85,247))",
+              background: "linear-gradient(135deg, var(--color-accent-primary), #FFCB33)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 8px 24px rgba(124,58,237,0.35)",
+              boxShadow: "0 8px 24px rgba(255,187,0,0.35)",
             }}
           >
-            <FileText style={{ width: 28, height: 28, color: "#fff" }} />
+            <FileText style={{ width: 28, height: 28, color: "var(--color-btn-primary-text, #000)" }} />
           </div>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
               <span style={{ fontSize: 12, color: "var(--color-text-tertiary)" }}>WeCinema</span>
               <ChevronRight style={{ width: 12, height: 12, color: "var(--color-text-tertiary)" }} />
-              <span style={{ fontSize: 12, color: "rgb(167,139,250)", fontWeight: 600 }}>Upload Script</span>
+              <span style={{ fontSize: 12, color: "var(--color-accent-primary)", fontWeight: 600 }}>Upload Script</span>
             </div>
             <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: "var(--color-text-primary)", letterSpacing: "-0.3px" }}>
               Upload Your Screenplay
@@ -358,7 +358,7 @@ export default function UploadScriptPage() {
                     {wordCount.toLocaleString()} words
                   </span>
                   {pageEst > 0 && (
-                    <span style={{ fontSize: 11, color: "rgb(167,139,250)", fontWeight: 600 }}>
+                    <span style={{ fontSize: 11, color: "var(--color-accent-primary)", fontWeight: 600 }}>
                       ~{pageEst} page{pageEst !== 1 ? "s" : ""}
                     </span>
                   )}
@@ -426,8 +426,8 @@ export default function UploadScriptPage() {
             style={{
               width: "100%",
               padding: "15px",
-              background: "linear-gradient(to right, rgb(124,58,237), rgb(168,85,247))",
-              color: "#fff",
+              background: "linear-gradient(to right, var(--color-accent-primary), #FFCB33)",
+              color: "var(--color-btn-primary-text, #000)",
               borderRadius: 14,
               fontSize: 15,
               fontWeight: 700,
@@ -439,7 +439,7 @@ export default function UploadScriptPage() {
               justifyContent: "center",
               gap: 8,
               transition: "opacity 0.15s",
-              boxShadow: submitting ? "none" : "0 4px 20px rgba(124,58,237,0.4)",
+              boxShadow: submitting ? "none" : "0 4px 20px rgba(255,187,0,0.4)",
             }}
           >
             {submitting ? (
@@ -450,8 +450,8 @@ export default function UploadScriptPage() {
                     display: "inline-block",
                     width: 16, height: 16,
                     borderRadius: "50%",
-                    border: "2px solid rgba(255,255,255,0.3)",
-                    borderTopColor: "#fff",
+                    border: "2px solid rgba(0,0,0,0.25)",
+                    borderTopColor: "var(--color-btn-primary-text, #000)",
                   }}
                 />
                 Publishing…

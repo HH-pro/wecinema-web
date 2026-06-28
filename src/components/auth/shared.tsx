@@ -198,9 +198,17 @@ interface GoogleSignInButtonProps {
   loading: boolean;
   onClick: () => void;
   label?: string;
+  /** "default" = neutral bordered style (canonical pages, Explore). "gold" = HypeMode amber accent. */
+  variant?: "default" | "gold";
 }
 
-export function GoogleSignInButton({ loading, onClick, label = "Continue with Google" }: GoogleSignInButtonProps) {
+export function GoogleSignInButton({
+  loading,
+  onClick,
+  label = "Continue with Google",
+  variant = "default",
+}: GoogleSignInButtonProps) {
+  const gold = variant === "gold";
   return (
     <button
       type="button"
@@ -208,15 +216,15 @@ export function GoogleSignInButton({ loading, onClick, label = "Continue with Go
       disabled={loading}
       className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-semibold text-sm transition-all duration-200 outline-none"
       style={{
-        background: "var(--color-bg-secondary, #fff)",
-        border: "1.5px solid var(--color-border-secondary)",
+        background: gold ? "var(--color-bg-tertiary)" : "var(--color-bg-secondary, #fff)",
+        border: gold ? "1.5px solid var(--color-border-secondary)" : "1.5px solid var(--color-border-secondary)",
         color: "var(--color-text-primary)",
         opacity: loading ? 0.6 : 1,
         cursor: loading ? "not-allowed" : "pointer",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+        boxShadow: gold ? "none" : "0 1px 4px rgba(0,0,0,0.08)",
       }}
-      onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 2px 10px rgba(0,0,0,0.12)"; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 1px 4px rgba(0,0,0,0.08)"; }}
+      onMouseEnter={e => { if (!loading && !gold) (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 2px 10px rgba(0,0,0,0.12)"; }}
+      onMouseLeave={e => { if (!gold) (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 1px 4px rgba(0,0,0,0.08)"; }}
     >
       {loading ? (
         <Loader2 size={16} className="animate-spin" />
@@ -228,7 +236,7 @@ export function GoogleSignInButton({ loading, onClick, label = "Continue with Go
           <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z" fill="#EA4335"/>
         </svg>
       )}
-      {label}
+      {loading ? "Signing in…" : label}
     </button>
   );
 }
@@ -241,6 +249,22 @@ export function OrDivider() {
       <div className="flex-1 h-px" style={{ background: "var(--color-divider)" }} />
       <span className="text-[11px] font-medium" style={{ color: "var(--color-text-tertiary)" }}>or</span>
       <div className="flex-1 h-px" style={{ background: "var(--color-divider)" }} />
+    </div>
+  );
+}
+
+// ─── Full-screen loading spinner (auth pages: loading state + Suspense fallback) ──
+
+export function FullScreenSpinner() {
+  return (
+    <div
+      className="flex items-center justify-center min-h-screen"
+      style={{ background: "var(--color-bg-tertiary)" }}
+    >
+      <div
+        className="w-10 h-10 rounded-full border-[3px] animate-spin"
+        style={{ borderColor: "var(--color-accent-primary)", borderTopColor: "transparent" }}
+      />
     </div>
   );
 }

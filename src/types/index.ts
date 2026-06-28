@@ -58,6 +58,9 @@ export interface AuthUser {
   hasPaid: boolean;
   isAdmin: boolean;
   userType?: "buyer" | "seller" | "normalUser";
+  subscriptionType?: string | null;
+  subscriptionExpiresAt?: string | null;
+  trialEndsAt?: string | null;
 }
 
 export interface VideosResponse {

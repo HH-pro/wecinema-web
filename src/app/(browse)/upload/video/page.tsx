@@ -77,12 +77,12 @@ function SectionCard({
         <div
           style={{
             width: 36, height: 36, borderRadius: 10,
-            background: "rgba(139,92,246,0.12)",
+            background: "rgba(255,187,0,0.12)",
             display: "flex", alignItems: "center", justifyContent: "center",
             flexShrink: 0,
           }}
         >
-          <Icon style={{ width: 18, height: 18, color: "rgb(167,139,250)" }} />
+          <Icon style={{ width: 18, height: 18, color: "var(--color-accent-primary)" }} />
         </div>
         <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)" }}>
           {title}
@@ -104,7 +104,7 @@ function TipCard({ title, items }: { title: string; items: string[] }) {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <Info style={{ width: 14, height: 14, color: "rgb(167,139,250)", flexShrink: 0 }} />
+        <Info style={{ width: 14, height: 14, color: "var(--color-accent-primary)", flexShrink: 0 }} />
         <h4 style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "var(--color-text-primary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
           {title}
         </h4>
@@ -112,7 +112,7 @@ function TipCard({ title, items }: { title: string; items: string[] }) {
       <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 7 }}>
         {items.map((item) => (
           <li key={item} style={{ display: "flex", gap: 7, alignItems: "flex-start" }}>
-            <ChevronRight style={{ width: 12, height: 12, color: "rgb(124,58,237)", flexShrink: 0, marginTop: 3 }} />
+            <ChevronRight style={{ width: 12, height: 12, color: "var(--color-accent-primary)", flexShrink: 0, marginTop: 3 }} />
             <span style={{ fontSize: 12, color: "var(--color-text-tertiary)", lineHeight: 1.5 }}>{item}</span>
           </li>
         ))}
@@ -153,18 +153,18 @@ function DropZone({
     <div
       onClick={() => ref.current?.click()}
       style={{
-        border: `2px dashed ${file ? "rgba(139,92,246,0.6)" : "var(--color-border-secondary)"}`,
+        border: `2px dashed ${file ? "rgba(255,187,0,0.6)" : "var(--color-border-secondary)"}`,
         borderRadius: 14,
         padding: "24px 16px",
         textAlign: "center",
         cursor: "pointer",
-        backgroundColor: file ? "rgba(139,92,246,0.06)" : "rgba(255,255,255,0.01)",
+        backgroundColor: file ? "rgba(255,187,0,0.06)" : "rgba(255,255,255,0.01)",
         transition: "all 0.15s",
       }}
     >
       {file ? (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-          <Icon style={{ width: 18, height: 18, color: "rgb(167,139,250)", flexShrink: 0 }} />
+          <Icon style={{ width: 18, height: 18, color: "var(--color-accent-primary)", flexShrink: 0 }} />
           <span style={{ fontSize: 13, color: "var(--color-text-primary)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 140 }}>
             {file.name}
           </span>
@@ -181,7 +181,7 @@ function DropZone({
           <div
             style={{
               width: 44, height: 44, borderRadius: 12,
-              background: "rgba(139,92,246,0.08)",
+              background: "rgba(255,187,0,0.08)",
               display: "flex", alignItems: "center", justifyContent: "center",
               margin: "0 auto 10px",
             }}
@@ -207,36 +207,124 @@ function MultiSelect({
   options,
   value,
   onChange,
+  customPlaceholder,
 }: {
   options: string[];
   value: string[];
   onChange: (v: string[]) => void;
+  customPlaceholder?: string;
 }) {
+  const [customInput, setCustomInput] = useState("");
+
   const toggle = (item: string) =>
     onChange(value.includes(item) ? value.filter((v) => v !== item) : [...value, item]);
 
+  const remove = (item: string) => onChange(value.filter((v) => v !== item));
+
+  const addCustom = () => {
+    const v = customInput.trim();
+    if (!v) return;
+    if (!value.some((x) => x.toLowerCase() === v.toLowerCase())) {
+      onChange([...value, v]);
+    }
+    setCustomInput("");
+  };
+
+  // Selected items that aren't part of the preset list — rendered as removable chips.
+  const customTags = value.filter((v) => !options.some((o) => o.toLowerCase() === v.toLowerCase()));
+
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-      {options.map((opt) => (
-        <button
-          key={opt}
-          type="button"
-          onClick={() => toggle(opt)}
+    <div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+        {options.map((opt) => (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => toggle(opt)}
+            style={{
+              padding: "5px 12px",
+              fontSize: 12,
+              borderRadius: 9999,
+              border: value.includes(opt) ? "1px solid var(--color-accent-primary)" : "1px solid var(--color-border-secondary)",
+              backgroundColor: value.includes(opt) ? "var(--color-accent-primary)" : "transparent",
+              color: value.includes(opt) ? "var(--color-btn-primary-text, #000)" : "var(--color-text-secondary)",
+              cursor: "pointer",
+              transition: "all 0.15s",
+              fontWeight: value.includes(opt) ? 600 : 400,
+            }}
+          >
+            {opt}
+          </button>
+        ))}
+        {customTags.map((tag) => (
+          <span
+            key={tag}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              padding: "5px 10px 5px 12px",
+              fontSize: 12,
+              fontWeight: 600,
+              borderRadius: 9999,
+              border: "1px solid var(--color-accent-primary)",
+              backgroundColor: "var(--color-accent-primary)",
+              color: "var(--color-btn-primary-text, #000)",
+            }}
+          >
+            {tag}
+            <button
+              type="button"
+              onClick={() => remove(tag)}
+              aria-label={`Remove ${tag}`}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-btn-primary-text, #000)", display: "flex", padding: 0, opacity: 0.7 }}
+            >
+              <X style={{ width: 12, height: 12 }} />
+            </button>
+          </span>
+        ))}
+      </div>
+
+      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+        <input
+          type="text"
+          value={customInput}
+          onChange={(e) => setCustomInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") { e.preventDefault(); addCustom(); }
+          }}
+          placeholder={customPlaceholder ?? "Add your own…"}
+          maxLength={40}
           style={{
-            padding: "5px 12px",
+            flex: 1,
+            padding: "8px 12px",
+            backgroundColor: "var(--color-bg-primary)",
+            border: "1px solid var(--color-border-secondary)",
+            borderRadius: 10,
+            color: "var(--color-text-primary)",
             fontSize: 12,
-            borderRadius: 9999,
-            border: value.includes(opt) ? "1px solid rgb(124,58,237)" : "1px solid var(--color-border-secondary)",
-            backgroundColor: value.includes(opt) ? "rgb(124,58,237)" : "transparent",
-            color: value.includes(opt) ? "#fff" : "var(--color-text-secondary)",
-            cursor: "pointer",
-            transition: "all 0.15s",
-            fontWeight: value.includes(opt) ? 600 : 400,
+            outline: "none",
+            boxSizing: "border-box",
+          }}
+        />
+        <button
+          type="button"
+          onClick={addCustom}
+          disabled={!customInput.trim()}
+          style={{
+            padding: "8px 14px",
+            fontSize: 12,
+            fontWeight: 600,
+            borderRadius: 10,
+            border: "1px solid var(--color-border-secondary)",
+            backgroundColor: "transparent",
+            color: customInput.trim() ? "var(--color-accent-primary)" : "var(--color-text-tertiary)",
+            cursor: customInput.trim() ? "pointer" : "not-allowed",
           }}
         >
-          {opt}
+          Add
         </button>
-      ))}
+      </div>
     </div>
   );
 }
@@ -248,7 +336,7 @@ function ProgressBar({ value }: { value: number }) {
         style={{
           height: "100%",
           width: `${value}%`,
-          background: "linear-gradient(to right, rgb(124,58,237), rgb(168,85,247))",
+          background: "linear-gradient(to right, var(--color-accent-primary), #FFCB33)",
           borderRadius: 9999,
           transition: "width 0.3s ease",
         }}
@@ -270,6 +358,8 @@ export default function UploadVideoPage() {
   const [rating, setRating]         = useState("");
   const [hasPaid, setHasPaid]       = useState(false);
   const [isForSale, setIsForSale]   = useState(false);
+  const [isShort, setIsShort]       = useState(false);
+  const [duration, setDuration]     = useState<number | null>(null);
   const [videoFile, setVideoFile]   = useState<File | null>(null);
   const [thumbFile, setThumbFile]   = useState<File | null>(null);
   const [progress, setProgress]     = useState(0);
@@ -284,6 +374,19 @@ export default function UploadVideoPage() {
     if (f.size > 500 * 1024 * 1024) { toast.error("Video must be under 500 MB"); return; }
     if (!f.type.startsWith("video/")) { toast.error("Please select a video file"); return; }
     setVideoFile(f);
+    setDuration(null);
+
+    // Read duration client-side so Shorts can be flagged without a server round-trip.
+    const el = document.createElement("video");
+    el.preload = "metadata";
+    el.onloadedmetadata = () => {
+      if (Number.isFinite(el.duration)) {
+        setDuration(el.duration);
+        setIsShort((prev) => prev || el.duration <= 60);
+      }
+      URL.revokeObjectURL(el.src);
+    };
+    el.src = URL.createObjectURL(f);
   };
 
   const handleThumbFile = (f: File) => {
@@ -331,6 +434,8 @@ export default function UploadVideoPage() {
         rating,
         hasPaid,
         isForSale,
+        isShort,
+        ...(duration != null ? { duration } : {}),
       } as Record<string, unknown>);
 
       setProgress(100);
@@ -353,6 +458,8 @@ export default function UploadVideoPage() {
     setGenres([]);
     setThemes([]);
     setRating("");
+    setIsShort(false);
+    setDuration(null);
     setProgress(0);
   };
 
@@ -385,8 +492,8 @@ export default function UploadVideoPage() {
             onClick={() => router.push("/")}
             style={{
               padding: "11px 28px",
-              background: "linear-gradient(to right, rgb(124,58,237), rgb(168,85,247))",
-              color: "#fff",
+              background: "linear-gradient(to right, var(--color-accent-primary), #FFCB33)",
+              color: "var(--color-btn-primary-text, #000)",
               borderRadius: 12,
               fontSize: 13,
               fontWeight: 600,
@@ -425,8 +532,8 @@ export default function UploadVideoPage() {
         style={{
           position: "relative",
           overflow: "hidden",
-          background: "linear-gradient(135deg, rgba(124,58,237,0.14) 0%, rgba(168,85,247,0.05) 100%)",
-          border: "1px solid rgba(139,92,246,0.2)",
+          background: "linear-gradient(135deg, rgba(255,187,0,0.14) 0%, rgba(255,187,0,0.05) 100%)",
+          border: "1px solid rgba(255,187,0,0.2)",
           borderRadius: 22,
           padding: "28px 36px",
           marginBottom: 28,
@@ -437,7 +544,7 @@ export default function UploadVideoPage() {
           style={{
             position: "absolute", right: -50, top: -50,
             width: 180, height: 180, borderRadius: "50%",
-            background: "rgba(139,92,246,0.15)",
+            background: "rgba(255,187,0,0.15)",
             filter: "blur(40px)",
             pointerEvents: "none",
           }}
@@ -446,18 +553,18 @@ export default function UploadVideoPage() {
           <div
             style={{
               width: 56, height: 56, borderRadius: 16, flexShrink: 0,
-              background: "linear-gradient(135deg, rgb(124,58,237), rgb(168,85,247))",
+              background: "linear-gradient(135deg, var(--color-accent-primary), #FFCB33)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 8px 24px rgba(124,58,237,0.35)",
+              boxShadow: "0 8px 24px rgba(255,187,0,0.35)",
             }}
           >
-            <Video style={{ width: 28, height: 28, color: "#fff" }} />
+            <Video style={{ width: 28, height: 28, color: "var(--color-btn-primary-text, #000)" }} />
           </div>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
               <span style={{ fontSize: 12, color: "var(--color-text-tertiary)" }}>WeCinema</span>
               <ChevronRight style={{ width: 12, height: 12, color: "var(--color-text-tertiary)" }} />
-              <span style={{ fontSize: 12, color: "rgb(167,139,250)", fontWeight: 600 }}>Upload Video</span>
+              <span style={{ fontSize: 12, color: "var(--color-accent-primary)", fontWeight: 600 }}>Upload Video</span>
             </div>
             <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: "var(--color-text-primary)", letterSpacing: "-0.3px" }}>
               Upload Your Film
@@ -562,11 +669,21 @@ export default function UploadVideoPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
               <div>
                 <FieldLabel required>Genre</FieldLabel>
-                <MultiSelect options={GENRES} value={genres} onChange={setGenres} />
+                <MultiSelect
+                  options={GENRES}
+                  value={genres}
+                  onChange={setGenres}
+                  customPlaceholder="Add a custom genre…"
+                />
               </div>
               <div>
                 <FieldLabel>Themes</FieldLabel>
-                <MultiSelect options={THEMES} value={themes} onChange={setThemes} />
+                <MultiSelect
+                  options={THEMES}
+                  value={themes}
+                  onChange={setThemes}
+                  customPlaceholder="Add a custom theme…"
+                />
               </div>
               <div>
                 <FieldLabel required>Rating</FieldLabel>
@@ -585,9 +702,9 @@ export default function UploadVideoPage() {
                       style={{
                         padding: "10px 8px",
                         borderRadius: 12,
-                        border: rating === r.value ? "1.5px solid rgb(139,92,246)" : "1px solid var(--color-border-secondary)",
-                        backgroundColor: rating === r.value ? "rgba(139,92,246,0.12)" : "var(--color-bg-primary)",
-                        color: rating === r.value ? "rgb(167,139,250)" : "var(--color-text-secondary)",
+                        border: rating === r.value ? "1.5px solid var(--color-accent-primary)" : "1px solid var(--color-border-secondary)",
+                        backgroundColor: rating === r.value ? "rgba(255,187,0,0.12)" : "var(--color-bg-primary)",
+                        color: rating === r.value ? "var(--color-accent-primary)" : "var(--color-text-secondary)",
                         cursor: "pointer",
                         textAlign: "left",
                         transition: "all 0.15s",
@@ -618,6 +735,12 @@ export default function UploadVideoPage() {
                   checked: isForSale,
                   onChange: setIsForSale,
                 },
+                {
+                  label: "This is a Short",
+                  desc: "Vertical, quick-watch content — shown in the homepage Shorts row instead of regular rows.",
+                  checked: isShort,
+                  onChange: setIsShort,
+                },
               ].map(({ label, desc, checked, onChange }) => (
                 <label
                   key={label}
@@ -628,8 +751,8 @@ export default function UploadVideoPage() {
                     cursor: "pointer",
                     padding: "14px 16px",
                     borderRadius: 12,
-                    border: checked ? "1px solid rgba(139,92,246,0.4)" : "1px solid var(--color-border-secondary)",
-                    backgroundColor: checked ? "rgba(139,92,246,0.06)" : "var(--color-bg-primary)",
+                    border: checked ? "1px solid rgba(255,187,0,0.4)" : "1px solid var(--color-border-secondary)",
+                    backgroundColor: checked ? "rgba(255,187,0,0.06)" : "var(--color-bg-primary)",
                     transition: "all 0.15s",
                   }}
                 >
@@ -638,7 +761,7 @@ export default function UploadVideoPage() {
                       type="checkbox"
                       checked={checked}
                       onChange={(e) => onChange(e.target.checked)}
-                      style={{ width: 16, height: 16, accentColor: "rgb(124,58,237)", cursor: "pointer" }}
+                      style={{ width: 16, height: 16, accentColor: "var(--color-accent-primary)", cursor: "pointer" }}
                     />
                   </div>
                   <div>
@@ -655,7 +778,7 @@ export default function UploadVideoPage() {
             <div
               style={{
                 backgroundColor: "var(--color-bg-elevated)",
-                border: "1px solid rgba(139,92,246,0.25)",
+                border: "1px solid rgba(255,187,0,0.25)",
                 borderRadius: 16,
                 padding: "20px 24px",
               }}
@@ -668,15 +791,15 @@ export default function UploadVideoPage() {
                       display: "inline-block",
                       width: 14, height: 14,
                       borderRadius: "50%",
-                      border: "2px solid rgba(139,92,246,0.3)",
-                      borderTopColor: "rgb(139,92,246)",
+                      border: "2px solid rgba(255,187,0,0.3)",
+                      borderTopColor: "var(--color-accent-primary)",
                     }}
                   />
                   <span style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text-primary)" }}>
                     {progress < 90 ? "Uploading video…" : progress < 99 ? "Uploading thumbnail…" : "Finalizing…"}
                   </span>
                 </div>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "rgb(167,139,250)" }}>{progress}%</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-accent-primary)" }}>{progress}%</span>
               </div>
               <ProgressBar value={progress} />
               <p style={{ margin: "8px 0 0", fontSize: 11, color: "var(--color-text-tertiary)" }}>
@@ -692,8 +815,8 @@ export default function UploadVideoPage() {
             style={{
               width: "100%",
               padding: "15px",
-              background: "linear-gradient(to right, rgb(124,58,237), rgb(168,85,247))",
-              color: "#fff",
+              background: "linear-gradient(to right, var(--color-accent-primary), #FFCB33)",
+              color: "var(--color-btn-primary-text, #000)",
               borderRadius: 14,
               fontSize: 15,
               fontWeight: 700,
@@ -705,7 +828,7 @@ export default function UploadVideoPage() {
               justifyContent: "center",
               gap: 8,
               transition: "opacity 0.15s",
-              boxShadow: uploading || !videoFile || !thumbFile ? "none" : "0 4px 20px rgba(124,58,237,0.4)",
+              boxShadow: uploading || !videoFile || !thumbFile ? "none" : "0 4px 20px rgba(255,187,0,0.4)",
             }}
           >
             {uploading ? (
@@ -716,8 +839,8 @@ export default function UploadVideoPage() {
                     display: "inline-block",
                     width: 16, height: 16,
                     borderRadius: "50%",
-                    border: "2px solid rgba(255,255,255,0.3)",
-                    borderTopColor: "#fff",
+                    border: "2px solid rgba(0,0,0,0.25)",
+                    borderTopColor: "var(--color-btn-primary-text, #000)",
                   }}
                 />
                 Uploading…

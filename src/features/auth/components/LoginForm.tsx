@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -30,8 +30,12 @@ import {
   EmailBadge,
   ShimmerStyle,
   FaEnvelope,
+  GoogleSignInButton,
+  OrDivider,
+  FullScreenSpinner,
 } from "@/components/auth/shared";
 import { OtpInput } from "@/features/auth/components/OtpInput";
+import { safeRedirect } from "@/lib/utils/safeRedirect";
 
 // ─── Panel wrapper ────────────────────────────────────────────
 
@@ -429,8 +433,18 @@ type View = "login" | "forgot1" | "forgot2" | "verify";
 // ─── Main export ──────────────────────────────────────────────
 
 export function LoginForm() {
+  return (
+    <Suspense fallback={<FullScreenSpinner />}>
+      <LoginFormPage />
+    </Suspense>
+  );
+}
+
+function LoginFormPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = safeRedirect(searchParams.get("redirect"));
 
   const [view, setView] = useState<View>("login");
   const [forgotEmail, setForgotEmail] = useState("");
@@ -438,18 +452,12 @@ export function LoginForm() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace("/");
+      router.replace(redirect);
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, router, redirect]);
 
   if (isLoading || isAuthenticated) {
-    return (
-      <div className="flex items-center justify-center min-h-screen"
-        style={{ background: "var(--color-bg-tertiary)" }}>
-        <div className="w-10 h-10 rounded-full border-[3px] border-t-transparent animate-spin"
-          style={{ borderColor: "var(--color-accent-primary)", borderTopColor: "transparent" }} />
-      </div>
-    );
+    return <FullScreenSpinner />;
   }
 
   return (
@@ -483,6 +491,7 @@ export function LoginForm() {
         {view === "login" && (
           <LoginFormInner
             key="login"
+            redirect={redirect}
             onForgot={() => setView("forgot1")}
             onVerify={(email) => { setVerifyEmail(email); setView("verify"); }}
           />
@@ -495,9 +504,11 @@ export function LoginForm() {
 // ─── Login form (inner, stateless about view) ─────────────────
 
 function LoginFormInner({
+  redirect,
   onForgot,
   onVerify,
 }: {
+  redirect: string;
   onForgot: () => void;
   onVerify: (email: string) => void;
 }) {
@@ -506,7 +517,24 @@ function LoginFormInner({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handleGoogleSignIn = async () => {
+    setErrors({});
+    setGoogleLoading(true);
+    try {
+      const res = await authService.loginWithGoogle();
+      applyLogin(res);
+      router.push(redirect);
+    } catch (err) {
+      const code = (err as { code?: string })?.code ?? "";
+      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") return;
+      setErrors({ general: err instanceof AppError ? err.message : "Google sign-in failed. Please try again." });
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -525,7 +553,7 @@ function LoginFormInner({
     try {
       const res = await authService.login(result.data);
       applyLogin(res);
-      router.push("/");
+      router.push(redirect);
     } catch (err) {
       const msg = err instanceof AppError ? err.message : "Login failed. Please try again.";
       if (/verif/i.test(msg) || (err instanceof AppError && err.status === 403)) {
@@ -553,6 +581,8 @@ function LoginFormInner({
             <AlertCircle size={14} className="flex-shrink-0" />{errors.general}
           </div>
         )}
+        <GoogleSignInButton loading={googleLoading} onClick={handleGoogleSignIn} />
+        <div className="my-4"><OrDivider /></div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Field label="Email Address" error={errors.email} delay={0.05}>
             <InputWithIcon icon={<FaEnvelope className="w-3.5 h-3.5" />}

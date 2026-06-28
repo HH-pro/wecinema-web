@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
   PayPalScriptProvider,
   PayPalButtons,
@@ -13,6 +14,7 @@ import { Loader2 } from "lucide-react";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import * as authService from "@/features/auth/services/authService";
 import { AppError, api } from "@/features/auth/services/apiClient";
+import { GoogleSignInButton, FullScreenSpinner } from "@/components/auth/shared";
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -83,19 +85,6 @@ const FIREBASE_ERRORS: Record<string, string> = {
   "auth/email-already-in-use": "Email already in use.",
   "auth/user-not-found": "Account not found.",
 };
-
-// ─── Google SVG icon ────────��──────────────────────────────────
-
-function GoogleIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-      <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908C16.658 14.233 17.64 11.925 17.64 9.2Z" fill="#4285F4"/>
-      <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z" fill="#34A853"/>
-      <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z" fill="#FBBC05"/>
-      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z" fill="#EA4335"/>
-    </svg>
-  );
-}
 
 // ─── PayPal inner buttons ──────────────────────────────────────
 
@@ -267,12 +256,25 @@ function SuccessScreen({ planId, userType }: { planId: PlanId; userType: UserMod
 
 // ─── Main export ──────────────���────────────────────────────────
 
-export function ExploreContent({ appUrl: _appUrl }: { appUrl: string }) {
+export function ExploreContent(props: { appUrl: string }) {
+  return (
+    <Suspense fallback={<FullScreenSpinner />}>
+      <ExploreContentInner {...props} />
+    </Suspense>
+  );
+}
+
+function ExploreContentInner({ appUrl: _appUrl }: { appUrl: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { authUser, isAuthenticated, applyLogin, refreshUser } = useAuth();
 
   const [mode, setMode] = useState<UserMode>("buyer");
-  const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
+  // Restore a plan selected before being redirected through login/signup.
+  const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(() => {
+    const planParam = searchParams.get("plan");
+    return planParam === "user" || planParam === "studio" ? planParam : null;
+  });
   const [phase, setPhase] = useState<"plans" | "payment" | "success" | "already_premium">("plans");
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -504,48 +506,33 @@ export function ExploreContent({ appUrl: _appUrl }: { appUrl: string }) {
                       Continue to Payment
                     </button>
                   ) : (
-                    <>
+                    <div onClick={(e) => e.stopPropagation()}>
                       {/* Google sign-in */}
-                      <button
-                        type="button"
-                        onClick={handleGoogleLogin}
-                        disabled={googleLoading}
-                        style={{
-                          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                          width: "100%", padding: "10px 0", borderRadius: 12,
-                          border: "1px solid var(--color-border-secondary)",
-                          backgroundColor: "var(--color-bg-elevated)", color: "var(--color-text-secondary)",
-                          fontSize: 14, fontWeight: 600, cursor: googleLoading ? "not-allowed" : "pointer",
-                          opacity: googleLoading ? 0.6 : 1, transition: "background-color 0.15s",
-                        }}
-                      >
-                        {googleLoading ? <Loader2 size={15} className="animate-spin" /> : <GoogleIcon />}
-                        {googleLoading ? "Signing in…" : "Continue with Google"}
-                      </button>
+                      <GoogleSignInButton loading={googleLoading} onClick={handleGoogleLogin} />
 
-                      {/* Email sign-in link */}
-                      <a
-                        href="/login"
+                      <div style={{ height: 10 }} />
+
+                      {/* Email sign-in link — carries the selected plan through the auth round-trip */}
+                      <Link
+                        href={`/login?redirect=${encodeURIComponent(`/explore?plan=${plan.id}`)}`}
                         style={{
                           display: "flex", alignItems: "center", justifyContent: "center",
                           width: "100%", padding: "10px 0", borderRadius: 12, border: "none",
                           backgroundColor: "var(--color-accent-primary)", color: "#000",
                           fontSize: 14, fontWeight: 700, textDecoration: "none",
                         }}
-                        onClick={(e) => e.stopPropagation()}
                       >
                         Sign In with Email
-                      </a>
+                      </Link>
 
-                      <a
-                        href="/signup"
-                        style={{ textAlign: "center", fontSize: 13, color: "var(--color-text-tertiary)", textDecoration: "none" }}
-                        onClick={(e) => e.stopPropagation()}
+                      <Link
+                        href={`/signup?redirect=${encodeURIComponent(`/explore?plan=${plan.id}`)}`}
+                        style={{ display: "block", marginTop: 10, textAlign: "center", fontSize: 13, color: "var(--color-text-tertiary)", textDecoration: "none" }}
                       >
                         Don&apos;t have an account?{" "}
                         <span style={{ color: "var(--color-accent-primary)", fontWeight: 600 }}>Sign up free</span>
-                      </a>
-                    </>
+                      </Link>
+                    </div>
                   )}
                 </div>
               )}
