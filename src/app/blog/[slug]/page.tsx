@@ -58,6 +58,16 @@ export async function generateMetadata({
 }
 
 
+function toUtcIso(iso?: string): string | undefined {
+  if (!iso) return undefined;
+  return iso.endsWith("Z") || /[+-]\d{2}:\d{2}$/.test(iso) ? iso : `${iso}Z`;
+}
+
+function resolveAuthorUrl(author: BlogPost["author"]): string | undefined {
+  if (!author || typeof author === "string") return undefined;
+  return author._id ? `https://wecinema.co/profile/${author._id}` : undefined;
+}
+
 function formatDate(iso?: string) {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
@@ -111,9 +121,10 @@ export default async function BlogPostPage({
             "@type": "Person",
             name: author,
             ...(avatar ? { image: avatar } : {}),
+            ...(resolveAuthorUrl(post.author) ? { url: resolveAuthorUrl(post.author) } : {}),
           },
-          datePublished: publishedAt,
-          dateModified: post.createdAt ?? publishedAt,
+          datePublished: toUtcIso(publishedAt),
+          dateModified: toUtcIso(post.createdAt ?? publishedAt),
           publisher: {
             "@type": "Organization",
             name: "WeCinema",
