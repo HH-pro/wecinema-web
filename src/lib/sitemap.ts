@@ -51,13 +51,17 @@ function asArray<T>(data: unknown, ...keys: string[]): T[] {
   return [];
 }
 
-interface VideoLike {
+export interface VideoLike {
   _id?: string;
   slug?: string;
   updatedAt?: string;
   createdAt?: string;
   hidden?: boolean;
   published?: boolean;
+  title?: string;
+  description?: string;
+  thumbnail?: string;
+  duration?: number | string;
 }
 
 export async function getVideoSitemapEntries(): Promise<SitemapEntry[]> {
@@ -70,6 +74,14 @@ export async function getVideoSitemapEntries(): Promise<SitemapEntry[]> {
       path: `/watch/${v.slug ?? v._id}`,
       lastModified: v.updatedAt ?? v.createdAt,
     }));
+}
+
+export async function getVideoRichEntries(): Promise<VideoLike[]> {
+  const data = await getJson<unknown>("/video/all");
+  const videos = asArray<VideoLike>(data, "videos", "data");
+  return videos
+    .filter((v) => (v.slug || v._id) && v.hidden !== true && v.published !== false)
+    .slice(0, MAX_PER_TYPE);
 }
 
 interface BlogLike {

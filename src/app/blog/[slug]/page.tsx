@@ -8,6 +8,7 @@ import { SafeHtml } from "@/components/ui/SafeHtml";
 import { OG, SITE_ORIGIN } from "@/lib/seo";
 import { getBlogPost, getBlogPosts, resolveAuthorName, resolveAuthorAvatar } from "@/features/blog/api/blogQueries";
 import type { BlogPost } from "@/features/blog/api/blogQueries";
+import { decodeHtmlEntities } from "@/features/blog/types";
 
 const SITE = SITE_ORIGIN;
 
@@ -25,7 +26,7 @@ export async function generateMetadata({
     return { title: "Post Not Found" };
   }
 
-  const title       = post.seoTitle ?? `${post.title} | Wecinema Blog`;
+  const title       = decodeHtmlEntities(post.seoTitle ?? `${post.title} | Wecinema Blog`);
   const description = post.seoDescription ?? post.excerpt ?? "";
   const image       = post.ogImage ?? post.featuredImage?.url ?? OG.blog;
   const canonical   = `/blog/${post.slug}`;
@@ -40,7 +41,7 @@ export async function generateMetadata({
       title,
       description,
       url: `${SITE}${canonical}`,
-      images: [{ url: image, width: 1200, height: 630, alt: post.title }],
+      images: [{ url: image, width: 1200, height: 630, alt: title }],
       locale: "en_US",
       publishedTime: post.publishedAt,
       authors: [resolveAuthorName(post.author)],
@@ -55,6 +56,7 @@ export async function generateMetadata({
     },
   };
 }
+
 
 function formatDate(iso?: string) {
   if (!iso) return "";
@@ -74,7 +76,8 @@ export default async function BlogPostPage({
   const author       = resolveAuthorName(post.author);
   const avatar       = resolveAuthorAvatar(post.author);
   const imageUrl     = post.featuredImage?.url;
-  const imageAlt     = post.featuredImage?.alt ?? post.title;
+  const decodedTitle = decodeHtmlEntities(post.title);
+  const imageAlt     = post.featuredImage?.alt ?? decodedTitle;
   const publishedAt  = post.publishedAt ?? post.createdAt;
 
   const related = (await getBlogPosts({ category: post.category })).posts
@@ -82,22 +85,47 @@ export default async function BlogPostPage({
     .slice(0, 3);
 
   const shareUrl  = `${SITE}/blog/${post.slug}`;
-  const shareText = encodeURIComponent(post.title);
+  const shareText = encodeURIComponent(decodedTitle);
 
   return (
     <Layout>
       <JsonLd
         data={{
           "@context": "https://schema.org",
-          "@type": "Article",
-          headline: post.title,
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Home", item: `${SITE}/` },
+            { "@type": "ListItem", position: 2, name: "Blog", item: `${SITE}/blog` },
+            { "@type": "ListItem", position: 3, name: decodedTitle, item: shareUrl },
+          ],
+        }}
+      />
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "BlogPosting",
+          headline: decodedTitle,
           description: post.seoDescription ?? post.excerpt ?? "",
-          ...(imageUrl ? { image: imageUrl } : {}),
-          author: { "@type": "Person", name: author },
+          ...(imageUrl ? { image: { "@type": "ImageObject", url: imageUrl, width: 1200, height: 630 } } : {}),
+          author: {
+            "@type": "Person",
+            name: author,
+            ...(avatar ? { image: avatar } : {}),
+          },
           datePublished: publishedAt,
-          dateModified: post.createdAt,
-          publisher: { "@type": "Organization", name: "Wecinema", url: `${SITE}/` },
+          dateModified: post.createdAt ?? publishedAt,
+          publisher: {
+            "@type": "Organization",
+            name: "WeCinema",
+            url: `${SITE}/`,
+            logo: { "@type": "ImageObject", url: `${SITE}/seo/WeCinema.webp` },
+          },
           mainEntityOfPage: { "@type": "WebPage", "@id": shareUrl },
+          keywords: post.tags?.join(", "),
+          articleSection: post.category,
+          inLanguage: "en-US",
+          ...(post.readTime ? { timeRequired: `PT${post.readTime}M` } : {}),
+          isPartOf: { "@type": "Blog", "@id": `${SITE}/blog`, name: "WeCinema Blog" },
         }}
       />
 
@@ -116,7 +144,7 @@ export default async function BlogPostPage({
               {post.category}
             </Link>
 
-            <h1 className="blog-post-title">{post.title}</h1>
+            <h1 className="blog-post-title">{decodedTitle}</h1>
 
             {post.excerpt && (
               <p className="blog-post-excerpt">{post.excerpt}</p>

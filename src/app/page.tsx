@@ -97,8 +97,30 @@ export default async function HomePage() {
           "@context": "https://schema.org",
           "@type": "Organization",
           name: "WeCinema",
+          alternateName: "Wecinema",
           url: SITE,
-          logo: `${SITE}/wecinema.webp`,
+          logo: {
+            "@type": "ImageObject",
+            url: `${SITE}/wecinema.webp`,
+            width: 512,
+            height: 512,
+          },
+          description: HOME_DESCRIPTION,
+          foundingDate: "2024",
+          knowsAbout: [
+            "Independent Film",
+            "Indie Film Distribution",
+            "Film Marketplace",
+            "Screenplay Sales",
+            "Film Licensing",
+            "Short Film Streaming",
+          ],
+          contactPoint: {
+            "@type": "ContactPoint",
+            contactType: "customer support",
+            url: `${SITE}/support`,
+            availableLanguage: "English",
+          },
           sameAs: [...SOCIAL_PROFILES],
         }}
       />

@@ -6,7 +6,7 @@ import { OG, SITE_ORIGIN } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { WatchClient } from "@/features/watch/components/WatchClient";
 
-export const revalidate = 0;
+export const revalidate = 3600;
 
 const SITE = SITE_ORIGIN;
 
@@ -55,7 +55,7 @@ export async function generateMetadata({
     description,
     alternates: { canonical: `/watch/${slug}` },
     openGraph: {
-      type: "video.other",
+      type: "video.movie",
       siteName: "WeCinema",
       title,
       description,
