@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { IoMdHome } from "react-icons/io";
 import { RiMovie2Line } from "react-icons/ri";
 import { MdChatBubbleOutline, MdMenu } from "react-icons/md";
+import { Clapperboard } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
 import { SiteFooter } from "@/features/home/components/SiteFooter";
@@ -106,6 +107,7 @@ export default function Layout({ children, hasHeader = true }: LayoutProps) {
       <nav className="layout-bottom-nav" style={{ height: BOTTOM_NAV_H }}>
         <BottomNavItem href="/"        icon={<IoMdHome size={22} />}            label="Home"    active={pathname === "/"} />
         <BottomNavItem href="/explore" icon={<RiMovie2Line size={22} />}         label="Explore" active={pathname.startsWith("/explore") || pathname.startsWith("/hypemode")} />
+        <BottomNavItem href="/shorts"  icon={<Clapperboard size={21} />}         label="Shorts"  active={pathname === "/shorts"} />
         <BottomNavItem href="/chatbot" icon={<MdChatBubbleOutline size={22} />} label="AI Chat" active={pathname === "/chatbot"} />
         <button
           type="button"

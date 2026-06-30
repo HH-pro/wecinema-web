@@ -26,7 +26,7 @@ import {
   RiMovie2Line, RiShoppingBagLine, RiStoreLine, RiCustomerService2Line,
   RiFileList3Line,
 } from "react-icons/ri";
-import { X } from "lucide-react";
+import { X, Clapperboard } from "lucide-react";
 
 import { SIDEBAR_COLLAPSED_W, SIDEBAR_EXPANDED_W } from "@/lib/constants";
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -564,6 +564,7 @@ export default function Sidebar({ expand, onClose }: SidebarProps) {
           <div className="px-1.5 py-3 pt-5 space-y-0.5">
             <nav className="space-y-0.5">
               <NavItem href="/" icon={<IoMdHome />} label="Home" expand={expand} active={isActive("/")} />
+              <NavItem href="/shorts" icon={<Clapperboard size={17} />} label="Shorts" expand={expand} active={isActive("/shorts")} />
               <NavItem
                 href={hasPaid ? "/hypemode" : "/explore"}
                 onClick={hasPaid ? handleHypeModeClick : undefined}
