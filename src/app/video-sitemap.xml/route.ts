@@ -34,14 +34,15 @@ export async function GET() {
         ? Math.floor(rawDuration)
         : 0;
 
+      const contentLoc = v.file ? esc(v.file) : "";
+
       return `  <url>
     <loc>${loc}</loc>
     <video:video>
       <video:thumbnail_loc>${thumbUrl || `${SITE}/seo/Video.webp`}</video:thumbnail_loc>
       <video:title>${title}</video:title>
       ${description ? `<video:description>${description}</video:description>` : ""}
-      <video:content_loc>${loc}</video:content_loc>
-      <video:player_loc>${loc}</video:player_loc>
+      ${contentLoc ? `<video:content_loc>${contentLoc}</video:content_loc>` : ""}
       <video:publication_date>${pubDate}</video:publication_date>
       ${durationSec ? `<video:duration>${durationSec}</video:duration>` : ""}
       <video:family_friendly>yes</video:family_friendly>

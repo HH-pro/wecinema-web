@@ -62,6 +62,7 @@ export interface VideoLike {
   description?: string;
   thumbnail?: string;
   duration?: number | string;
+  file?: string;
 }
 
 export async function getVideoSitemapEntries(): Promise<SitemapEntry[]> {
