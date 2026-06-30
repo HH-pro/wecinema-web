@@ -25,6 +25,7 @@ export interface BlogPost {
   featuredImage?: BlogFeaturedImage;
   publishedAt?: string;
   createdAt: string;
+  updatedAt?: string;
   seoTitle?: string;
   seoDescription?: string;
   ogImage?: string;

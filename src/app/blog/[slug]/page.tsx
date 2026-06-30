@@ -124,7 +124,7 @@ export default async function BlogPostPage({
             ...(resolveAuthorUrl(post.author) ? { url: resolveAuthorUrl(post.author) } : {}),
           },
           datePublished: toUtcIso(publishedAt),
-          dateModified: toUtcIso(post.createdAt ?? publishedAt),
+          dateModified: toUtcIso(post.updatedAt ?? post.createdAt ?? publishedAt),
           publisher: {
             "@type": "Organization",
             name: "WeCinema",

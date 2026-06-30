@@ -29,6 +29,10 @@ export async function GET() {
       const pubDate = v.createdAt
         ? new Date(v.createdAt).toISOString()
         : new Date().toISOString();
+      const rawDuration = v.duration != null ? Number(v.duration) : NaN;
+      const durationSec = Number.isFinite(rawDuration) && rawDuration > 0
+        ? Math.floor(rawDuration)
+        : 0;
 
       return `  <url>
     <loc>${loc}</loc>
@@ -39,6 +43,7 @@ export async function GET() {
       <video:content_loc>${loc}</video:content_loc>
       <video:player_loc>${loc}</video:player_loc>
       <video:publication_date>${pubDate}</video:publication_date>
+      ${durationSec ? `<video:duration>${durationSec}</video:duration>` : ""}
       <video:family_friendly>yes</video:family_friendly>
       <video:live>no</video:live>
     </video:video>
