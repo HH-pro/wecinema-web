@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { IoMdHome } from "react-icons/io";
@@ -46,6 +46,30 @@ export default function Layout({ children, hasHeader = true }: LayoutProps) {
   useEffect(() => { setExpanded(false); }, [pathname]);
 
   const sidebarPx = expanded ? SIDEBAR_EXPANDED_W : SIDEBAR_COLLAPSED_W;
+
+  // YouTube-style bottom nav: hides on scroll-down, reappears on scroll-up
+  // or near the top. Only matters on mobile (the nav is CSS-hidden at
+  // >=769px) but the listener itself is cheap and harmless elsewhere.
+  const [navHidden, setNavHidden] = useState(false);
+  const lastScrollYRef = useRef(0);
+
+  useEffect(() => {
+    lastScrollYRef.current = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      const diff = y - lastScrollYRef.current;
+      if (y < BOTTOM_NAV_H) {
+        setNavHidden(false);
+      } else if (diff > 4) {
+        setNavHidden(true);
+      } else if (diff < -4) {
+        setNavHidden(false);
+      }
+      lastScrollYRef.current = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
     <div style={{ color: "var(--color-text-primary)" }}>
@@ -96,8 +120,15 @@ export default function Layout({ children, hasHeader = true }: LayoutProps) {
       </div>
 
       {/* Mobile bottom navigation — CSS-gated (<=768px), always in the DOM so
-          it's correct on the very first paint, no JS/resize race. */}
-      <nav className="layout-bottom-nav" style={{ height: BOTTOM_NAV_H }}>
+          it's correct on the very first paint, no JS/resize race. Slides
+          out of view on scroll-down, back in on scroll-up (YouTube-style). */}
+      <nav
+        className="layout-bottom-nav"
+        style={{
+          height: BOTTOM_NAV_H,
+          transform: navHidden ? `translateY(${BOTTOM_NAV_H}px)` : "translateY(0)",
+        }}
+      >
         <BottomNavItem href="/"        icon={<IoMdHome size={22} />}            label="Home"    active={pathname === "/"} />
         <BottomNavItem href="/explore" icon={<RiMovie2Line size={22} />}         label="Explore" active={pathname.startsWith("/explore") || pathname.startsWith("/hypemode")} />
         <BottomNavItem href="/shorts"  icon={<Clapperboard size={21} />}         label="Shorts"  active={pathname === "/shorts"} />

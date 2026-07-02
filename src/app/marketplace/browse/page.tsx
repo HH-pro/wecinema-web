@@ -1,6 +1,7 @@
 "use client";
 // src/pages/marketplace/shared/Browse.tsx
 import React, { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import MarketplaceLayout from '@/features/marketplace/components/MarketplaceLayout';
 import { Listing } from '@/types/marketplace.types';
 import {
@@ -12,13 +13,22 @@ import { useRouter } from 'next/navigation';
 import { getListings } from '@/features/marketplace/api/marketplace.service';
 import { makeOffer, createDirectPayment } from '@/features/marketplace/api/offer.service';
 import { useAuth } from '@/features/auth/context/AuthContext';
-import VideoPlayerModal from '@/features/marketplace/components/shared/VideoPlayerModal';
-import PaymentModal, {
-  type BillingDetails,
-  type OfferData,
-  type PaymentStatus,
+import type {
+  BillingDetails,
+  OfferData,
+  PaymentStatus,
 } from '@/features/marketplace/components/buyer/PaymentModal';
-import OfferModal from '@/features/marketplace/components/buyer/OfferModal';
+
+// These three modals are only ever shown after a user interaction (play a
+// preview, make an offer, pay), and PaymentModal alone pulls in the ~230KB
+// Stripe Elements SDK. Loading them eagerly (they were previously always
+// mounted, just hidden via a `show` prop) meant that JS shipped on every
+// visit to this page even for users who never open a modal. Dynamic import
+// + gating the JSX behind the same `show*` flags defers the chunk fetch
+// until the user actually triggers it.
+const VideoPlayerModal = dynamic(() => import('@/features/marketplace/components/shared/VideoPlayerModal'), { ssr: false });
+const PaymentModal = dynamic(() => import('@/features/marketplace/components/buyer/PaymentModal'), { ssr: false });
+const OfferModal = dynamic(() => import('@/features/marketplace/components/buyer/OfferModal'), { ssr: false });
 
 // Constants for placeholder images
 const VIDEO_PLACEHOLDER = '/wecinema.webp';
@@ -1066,26 +1076,30 @@ const Browse: React.FC = () => {
       </div>
 
       {/* Video Popup Modal */}
-      <VideoPlayerModal
-        show={showVideoPopup}
-        videoUrl={selectedVideo}
-        videoTitle={videoTitle}
-        videoThumbnail={videoListing ? getThumbnailUrl(videoListing) : ''}
-        onClose={handleCloseVideoPopup}
-      />
+      {showVideoPopup && (
+        <VideoPlayerModal
+          show={showVideoPopup}
+          videoUrl={selectedVideo}
+          videoTitle={videoTitle}
+          videoThumbnail={videoListing ? getThumbnailUrl(videoListing) : ''}
+          onClose={handleCloseVideoPopup}
+        />
+      )}
 
       {/* Offer Modal */}
-      <OfferModal
-        show={showOfferModal}
-        selectedListing={selectedListing}
-        offerForm={offerForm}
-        onClose={() => setShowOfferModal(false)}
-        onSubmit={handleSubmitOffer}
-        onOfferFormChange={handleOfferFormChange}
-        paymentStatus={paymentStatus}
-        error={error}
-        getThumbnailUrl={getThumbnailUrl}
-      />
+      {showOfferModal && (
+        <OfferModal
+          show={showOfferModal}
+          selectedListing={selectedListing}
+          offerForm={offerForm}
+          onClose={() => setShowOfferModal(false)}
+          onSubmit={handleSubmitOffer}
+          onOfferFormChange={handleOfferFormChange}
+          paymentStatus={paymentStatus}
+          error={error}
+          getThumbnailUrl={getThumbnailUrl}
+        />
+      )}
 
       {/* Own-listing error popup */}
       {showOwnListingError && (
