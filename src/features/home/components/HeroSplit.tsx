@@ -97,9 +97,17 @@ export function HeroSplit({
   // sees before the slider's interval advances it.
   const [slideIndex, setSlideIndex] = useState(slides.length > 1 ? 1 : 0);
   const [visible, setVisible] = useState(true);
+  // The very first paint must show the hero immediately — the entrance
+  // animation (used for later slide transitions) would otherwise delay
+  // when the backdrop image / <h1> are considered "painted" for LCP/FCP.
+  const [hasMounted, setHasMounted] = useState(false);
   const slideIndexRef = useRef(slideIndex);
   const fadeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pausedRef = useRef(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   useEffect(() => {
     slideIndexRef.current = slideIndex;
@@ -133,6 +141,10 @@ export function HeroSplit({
   const slide = slides[slideIndex] ?? slides[0]!;
   const film = slide.type === "film" ? slide.film : undefined;
   const views = formatViews(film?.views);
+
+  // No stagger-in on the very first paint — only once mounted (i.e. on
+  // slide changes) does content get the entrance animation.
+  const rise = (n: 1 | 2 | 3 | 4) => (hasMounted ? `hero-rise hero-rise-${n}` : "");
 
   // Warm the chart.js chunk after first paint so the hero graphs render fast.
   useEffect(() => {
@@ -195,7 +207,11 @@ export function HeroSplit({
       )}
       {/* Cinematic film backdrop (poster, ken-burns) — only on film slides */}
       {film?.image && (
-        <div key={film.id} className="hero-backdrop-fade" style={{ position: "absolute", inset: 0 }}>
+        <div
+          key={film.id}
+          className={hasMounted ? "hero-backdrop-fade" : ""}
+          style={{ position: "absolute", inset: 0 }}
+        >
           <HeroBackdrop src={film.image} alt="" priority />
         </div>
       )}
@@ -234,7 +250,7 @@ export function HeroSplit({
         {slide.type === "graphs" ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <span
-              className="hero-rise hero-rise-1"
+              className={rise(1)}
               style={{
                 alignSelf: "flex-start",
                 display: "inline-flex",
@@ -255,7 +271,7 @@ export function HeroSplit({
             </span>
 
             <h1
-              className="hero-rise hero-rise-2"
+              className={rise(2)}
               style={{
                 margin: 0,
                 fontSize: "clamp(1.4rem, 2.6vw, 1.9rem)",
@@ -270,7 +286,7 @@ export function HeroSplit({
               What&apos;s trending on <span style={{ color: "var(--color-accent-primary,#FFBB00)" }}>WeCinema</span>
             </h1>
 
-            <div className="hero-rise hero-rise-3">
+            <div className={rise(3)}>
               <HeroGraphRow graphs={graphs} />
             </div>
           </div>
@@ -279,7 +295,7 @@ export function HeroSplit({
             {film && (
               <Link
                 href={film.href}
-                className="hero-rise hero-rise-1 hover:!bg-white/15"
+                className={`${rise(1)} hover:!bg-white/15`}
                 style={{
                   alignSelf: "flex-start",
                   display: "inline-flex",
@@ -323,7 +339,7 @@ export function HeroSplit({
             )}
 
             <h1
-              className="hero-rise hero-rise-2"
+              className={rise(2)}
               style={{
                 margin: 0,
                 fontSize: "clamp(2rem, 5vw, 3.25rem)",
@@ -339,7 +355,7 @@ export function HeroSplit({
             </h1>
 
             <p
-              className="hero-rise hero-rise-3"
+              className={rise(3)}
               style={{
                 margin: 0,
                 fontSize: "clamp(0.98rem, 2vw, 1.15rem)",
@@ -353,7 +369,7 @@ export function HeroSplit({
             </p>
 
             {(film?.genre || film?.rating || views) && (
-              <div className="hero-rise hero-rise-3" style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+              <div className={rise(3)} style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
                 {film?.genre && <span style={metaChip}>{film.genre}</span>}
                 {film?.rating && (
                   <span style={{ ...metaChip, display: "inline-flex", alignItems: "center", gap: 4 }}>
@@ -369,7 +385,7 @@ export function HeroSplit({
             )}
 
             {/* Primary CTAs */}
-            <div className="hero-rise hero-rise-4" style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 4 }}>
+            <div className={rise(4)} style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 4 }}>
               <Link href="/explore" style={primaryBtn} className="hover:!brightness-110">
                 <Play size={16} fill="currentColor" /> Start Watching
               </Link>
@@ -380,7 +396,7 @@ export function HeroSplit({
 
             {/* Secondary, supply-side links — subordinate to the viewer CTAs */}
             <div
-              className="hero-rise hero-rise-4"
+              className={rise(4)}
               style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px", fontSize: 13.5, color: "rgba(255,255,255,0.72)" }}
             >
               <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -398,7 +414,7 @@ export function HeroSplit({
 
         {/* Slide dots — manual navigation across the graphs slide + every featured film/event */}
         {slides.length > 1 && (
-          <div className="hero-rise hero-rise-4" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div className={rise(4)} style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {slides.map((s, i) => (
               <button
                 key={s.id}

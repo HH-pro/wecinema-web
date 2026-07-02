@@ -7,7 +7,6 @@ import {
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
 import toast from "react-hot-toast";
 
 import { IoMdHome } from "react-icons/io";
@@ -117,33 +116,24 @@ const NavItem = ({
   const inner = (
     <>
       {active && (
-        <motion.span
-          layoutId="activeBar"
-          className="absolute inset-y-[8px] left-0 w-[3px] rounded-r-full"
+        <span
+          className="absolute inset-y-[8px] left-0 w-[3px] rounded-r-full sb-active-bar"
           style={{ background: "var(--color-accent-primary)" }}
         />
       )}
       <span className="flex-shrink-0 flex items-center justify-center text-[17px] leading-none">{icon}</span>
-      <AnimatePresence initial={false}>
-        {expand && (
-          <motion.span
-            key="label"
-            initial={{ opacity: 0, width: 0 }}
-            animate={{ opacity: 1, width: "auto", transition: { width: { duration: 0.18 }, opacity: { duration: 0.14, delay: 0.1 } } }}
-            exit={{ opacity: 0, width: 0, transition: { opacity: { duration: 0.08 }, width: { duration: 0.18, delay: 0.05 } } }}
-            className="flex-1 text-[13px] leading-none truncate font-medium overflow-hidden whitespace-nowrap"
-          >
-            {label}
-          </motion.span>
-        )}
-      </AnimatePresence>
-      <AnimatePresence initial={false}>
-        {expand && badge && (
-          <motion.span key="badge" initial={{ opacity: 0, scale: 0.75 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.75 }} className="flex-shrink-0">
-            {badge}
-          </motion.span>
-        )}
-      </AnimatePresence>
+      {/* Always mounted (not conditionally rendered) — CSS transitions the
+          opacity/width instead of a JS animation library, and the sidebar's
+          own width transition covers the reveal. */}
+      <span
+        className="flex-1 text-[13px] leading-none truncate font-medium overflow-hidden whitespace-nowrap sb-nav-label"
+        style={{ opacity: expand ? 1 : 0, maxWidth: expand ? 200 : 0 }}
+      >
+        {label}
+      </span>
+      {expand && badge && (
+        <span className="flex-shrink-0 sb-badge-in">{badge}</span>
+      )}
     </>
   );
 
@@ -307,14 +297,11 @@ const ProfilePopup = ({ isOpen, onClose, anchorRef, userMode, onModeChange }: Pr
   const hasRole = userMode === "buyer" || userMode === "seller";
 
   const popup = (
-    <AnimatePresence>
+    <>
       {isOpen && (
-        <motion.div
+        <div
           ref={popRef}
-          initial={{ opacity: 0, y: 8, scale: 0.97 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 8, scale: 0.97 }}
-          transition={{ duration: 0.15, ease: "easeOut" }}
+          className="sb-popup-in"
           style={{
             position: "fixed", zIndex: 9998,
             width: POPUP_W,
@@ -469,9 +456,9 @@ const ProfilePopup = ({ isOpen, onClose, anchorRef, userMode, onModeChange }: Pr
               Sign Out
             </button>
           </div>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 
   return createPortal(popup, document.body);
@@ -531,13 +518,25 @@ export default function Sidebar({ expand, onClose }: SidebarProps) {
 
   return (
     <>
-      <style>{`@keyframes sbTip { from{opacity:0;transform:translateY(-50%) translateX(-4px)} to{opacity:1;transform:translateY(-50%) translateX(0)} }`}</style>
+      <style>{`
+        @keyframes sbTip { from{opacity:0;transform:translateY(-50%) translateX(-4px)} to{opacity:1;transform:translateY(-50%) translateX(0)} }
+        @keyframes sbBadgeIn { from{opacity:0;transform:scale(0.75)} to{opacity:1;transform:scale(1)} }
+        @keyframes sbBarIn { from{opacity:0;transform:scaleY(0.3)} to{opacity:1;transform:scaleY(1)} }
+        @keyframes sbPopupIn { from{opacity:0;transform:translateY(8px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+        .sb-nav-label { transition: opacity 0.14s ease, max-width 0.18s ease; }
+        .sb-badge-in { animation: sbBadgeIn 0.15s ease forwards; }
+        .sb-active-bar { animation: sbBarIn 0.15s ease forwards; }
+        .sb-popup-in { animation: sbPopupIn 0.15s ease-out forwards; }
+      `}</style>
 
-      <motion.aside
-        animate={{ width: expand ? SIDEBAR_EXPANDED_W : SIDEBAR_COLLAPSED_W }}
-        transition={{ type: "tween", duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+      <aside
         className="flex flex-col h-full border-r overflow-hidden"
-        style={{ backgroundColor: "var(--color-nav-bg)", borderColor: "var(--color-divider)" }}
+        style={{
+          backgroundColor: "var(--color-nav-bg)",
+          borderColor: "var(--color-divider)",
+          width: expand ? SIDEBAR_EXPANDED_W : SIDEBAR_COLLAPSED_W,
+          transition: "width 0.2s cubic-bezier(0.4,0,0.2,1)",
+        }}
       >
         {/* Scrollable nav area */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden hide-scrollbar">
@@ -697,7 +696,7 @@ export default function Sidebar({ expand, onClose }: SidebarProps) {
             </Link>
           </div>
         )}
-      </motion.aside>
+      </aside>
 
       <ProfilePopup
         isOpen={popupOpen}

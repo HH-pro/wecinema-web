@@ -3,7 +3,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
 import { IoMdHome } from "react-icons/io";
 import { RiMovie2Line } from "react-icons/ri";
 import { MdChatBubbleOutline, MdMenu } from "react-icons/md";
@@ -57,22 +56,16 @@ export default function Layout({ children, hasHeader = true }: LayoutProps) {
           on a JS viewport check or a resize event firing. */}
       {expanded && (
         <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm min-[1121px]:hidden"
+          <div
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm min-[1121px]:hidden layout-drawer-backdrop"
             onClick={() => setExpanded(false)}
           />
-          <motion.div
-            initial={{ x: -SIDEBAR_EXPANDED_W }}
-            animate={{ x: 0 }}
-            transition={{ type: "spring", stiffness: 340, damping: 36 }}
-            className="fixed inset-y-0 left-0 z-50 min-[1121px]:hidden"
+          <div
+            className="fixed inset-y-0 left-0 z-50 min-[1121px]:hidden layout-drawer-panel"
             style={{ width: SIDEBAR_EXPANDED_W }}
           >
             <Sidebar expand={true} onClose={() => setExpanded(false)} />
-          </motion.div>
+          </div>
         </>
       )}
 

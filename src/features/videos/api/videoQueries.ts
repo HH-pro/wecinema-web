@@ -79,7 +79,7 @@ export async function getShortsVideos(limit = 50): Promise<Video[]> {
   try {
     const data = await apiFetch<VideoListResponse | Video[]>(
       `/video/shorts?limit=${limit}`,
-      { revalidate: CACHE_TTL, tags: ["videos:shorts"] },
+      { revalidate: 0 },
     );
     return extractList(data);
   } catch (err) {

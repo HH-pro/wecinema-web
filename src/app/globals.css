@@ -904,5 +904,24 @@ h3, .text-h3 { font-family: var(--font-heading); font-size: 1.125rem; font-weigh
   .hero-rise { opacity: 1; animation: none; }
 }
 
+/* ===========================================================================
+   Mobile nav drawer — plain CSS entrance (no framer-motion). Only animates
+   in; closing removes the element immediately, same convention used by the
+   header's dropdown menus.
+   =========================================================================== */
+@keyframes layoutBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+.layout-drawer-backdrop {
+  animation: layoutBackdropIn 0.2s ease forwards;
+}
+
+@keyframes layoutDrawerIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+.layout-drawer-panel {
+  animation: layoutDrawerIn 0.28s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .layout-drawer-backdrop, .layout-drawer-panel { animation: none; }
+}
+
 /* FAQ <details> — hide the native disclosure marker */
 summary::-webkit-details-marker { display: none; }
