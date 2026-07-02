@@ -31,7 +31,9 @@ function formatDuration(d?: string | number): string | null {
 }
 
 export function ShortsCard({ video, priority = false }: { video: Video; priority?: boolean }) {
-  const href = `/watch/${video.slug ?? video._id}`;
+  // Opens the vertical shorts feed (not the regular watch page) positioned
+  // at this video, matching TikTok/YouTube Shorts card behavior.
+  const href = `/shorts?v=${encodeURIComponent(video.slug ?? video._id)}`;
   const thumb = video.thumbnailSmall ?? video.thumbnail ?? FALLBACK_THUMB;
   const isDataThumb = thumb.startsWith("data:");
   const views = video.views ?? 0;

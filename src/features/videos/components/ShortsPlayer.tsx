@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useEffect, useState, useCallback, type ReactNode } from "react";
+import { useRef, useEffect, useState, useCallback, useMemo, type ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Heart, Share2, Volume2, VolumeX, Eye, Play, Pause } from "lucide-react";
 import type { Video } from "@/types";
 
@@ -128,25 +128,18 @@ function ShortItem({ video, isActive, index, activeIndex, muted, onMuteToggle }:
     isActive ? "auto" : Math.abs(index - activeIndex) <= 1 ? "metadata" : "none";
 
   return (
-    <div
-      style={{
-        position: "relative",
-        width: "100%",
-        height: "100dvh",
-        background: "#000",
-        overflow: "hidden",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
+    // Outer: full-bleed, dark backdrop, centers the actual player.
+    // Inner (.shorts-frame): full-bleed on mobile, but capped to a 9:16
+    // card on desktop — so shorts don't stretch to fill a wide viewport.
+    <div className="shorts-frame-outer">
+      <div className="shorts-frame">
       {/* Thumbnail – shown until the video starts */}
       {thumb && !isDataThumb && (
         <Image
           src={thumb}
           alt={video.title}
           fill
-          sizes="100vw"
+          sizes="(min-width: 768px) 440px, 100vw"
           style={{ objectFit: "cover" }}
           priority={isActive}
           unoptimized={false}
@@ -339,6 +332,7 @@ function ShortItem({ video, isActive, index, activeIndex, muted, onMuteToggle }:
           </p>
         )}
       </div>
+      </div>
     </div>
   );
 }
@@ -346,10 +340,30 @@ function ShortItem({ video, isActive, index, activeIndex, muted, onMuteToggle }:
 // ─── ShortsPlayer ─────────────────────────────────────────────────────────────
 export function ShortsPlayer({ videos }: { videos: Video[] }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const containerRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [activeIndex, setActiveIndex] = useState(0);
+
+  // Deep-link support: /shorts?v=<slug-or-id> opens positioned at that
+  // video (e.g. clicked from the homepage's Shorts row) instead of always
+  // starting at the first one.
+  const initialVideoParam = searchParams.get("v");
+  const initialIndex = useMemo(() => {
+    if (!initialVideoParam) return 0;
+    const idx = videos.findIndex((v) => v.slug === initialVideoParam || v._id === initialVideoParam);
+    return idx === -1 ? 0 : idx;
+  }, [initialVideoParam, videos]);
+
+  const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [muted, setMuted] = useState(true); // start muted → autoplay always works
+
+  // Jump (no scroll animation) to the deep-linked video on first mount.
+  useEffect(() => {
+    if (initialIndex > 0) {
+      itemRefs.current[initialIndex]?.scrollIntoView({ behavior: "auto", block: "start" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Detect which item is ≥50% visible
   useEffect(() => {
@@ -425,6 +439,29 @@ export function ShortsPlayer({ videos }: { videos: Video[] }) {
         }
         .shorts-scroller::-webkit-scrollbar {
           display: none;
+        }
+        .shorts-frame-outer {
+          position: relative;
+          width: 100%;
+          height: 100dvh;
+          background: #000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .shorts-frame {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+        }
+        @media (min-width: 768px) {
+          .shorts-frame {
+            width: min(calc(100dvh * 9 / 16), 440px);
+            height: min(100%, calc(440px * 16 / 9));
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+          }
         }
       `}</style>
 

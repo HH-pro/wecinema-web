@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { getShortsVideos } from "@/features/videos/api/videoQueries";
 import { ShortsPlayer } from "@/features/videos/components/ShortsPlayer";
 import { OG, SITE_ORIGIN } from "@/lib/seo";
@@ -24,5 +25,9 @@ export const metadata: Metadata = {
 
 export default async function ShortsPage() {
   const videos = await getShortsVideos(100);
-  return <ShortsPlayer videos={videos} />;
+  return (
+    <Suspense fallback={<div style={{ position: "fixed", inset: 0, background: "#000" }} />}>
+      <ShortsPlayer videos={videos} />
+    </Suspense>
+  );
 }
