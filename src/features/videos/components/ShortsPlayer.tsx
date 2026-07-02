@@ -4,8 +4,19 @@ import { useRef, useEffect, useState, useCallback, useMemo, type ReactNode } fro
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Heart, Share2, Volume2, VolumeX, Eye, Play, Pause } from "lucide-react";
+import { ArrowLeft, Heart, MessageCircle, Share2, Volume2, VolumeX, Eye, Play, Pause } from "lucide-react";
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { api } from "@/features/auth/services/apiClient";
+import { toast } from "@/lib/toast";
+import { HypemodeAuthDrawer } from "@/app/hypemode/HypemodeAuthDrawer";
+import { ShortsCommentsDrawer } from "@/features/videos/components/ShortsCommentsDrawer";
 import type { Video } from "@/types";
+
+function openAuthEvent(tab: "login" | "signup" = "login") {
+  window.dispatchEvent(
+    new CustomEvent("wecinema:open-auth", { detail: { tab } }),
+  );
+}
 
 function fmtCount(n?: number): string {
   if (!n) return "0";
@@ -65,13 +76,31 @@ interface ShortItemProps {
   activeIndex: number;
   muted: boolean;
   onMuteToggle: () => void;
+  commentCount: number;
+  onOpenComments: (video: Video) => void;
 }
 
-function ShortItem({ video, isActive, index, activeIndex, muted, onMuteToggle }: ShortItemProps) {
+function ShortItem({
+  video,
+  isActive,
+  index,
+  activeIndex,
+  muted,
+  onMuteToggle,
+  commentCount,
+  onOpenComments,
+}: ShortItemProps) {
+  const { authUser } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [paused, setPaused] = useState(true);
-  const [liked, setLiked] = useState(false);
+  // Derived from authUser/video.likes each render (authUser resolves async after
+  // mount), with a local override applied after the user clicks like/unlike.
+  const baseLiked = authUser ? (video.likes ?? []).includes(authUser._id) : false;
+  const [likeOverride, setLikeOverride] = useState<boolean | null>(null);
+  const liked = likeOverride ?? baseLiked;
+  const [likesCount, setLikesCount] = useState(video.likes?.length ?? 0);
+  const [likeLoading, setLikeLoading] = useState(false);
   const [tapIcon, setTapIcon] = useState<"play" | "pause" | null>(null);
 
   const thumb = video.thumbnailSmall ?? video.thumbnail ?? "";
@@ -111,17 +140,43 @@ function ShortItem({ video, isActive, index, activeIndex, muted, onMuteToggle }:
 
   const share = useCallback(async () => {
     const url = `${window.location.origin}/watch/${video.slug ?? video._id}`;
-    if (navigator.share) {
-      try { await navigator.share({ title: video.title, url }); } catch {}
-    } else {
-      try { await navigator.clipboard.writeText(url); } catch {}
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: video.title, url });
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied to clipboard");
+      }
+    } catch {
+      /* user cancelled or unsupported — nothing to do */
     }
   }, [video.slug, video._id, video.title]);
 
+  const handleLike = useCallback(async () => {
+    if (!authUser) { openAuthEvent(); return; }
+    if (likeLoading) return;
+    const prevLiked = liked;
+    const prevCount = likesCount;
+    setLikeOverride(!liked);
+    setLikesCount((c) => c + (liked ? -1 : 1));
+    setLikeLoading(true);
+    try {
+      const data = await api.post<{ likesCount?: number }>(`/video/like/${video._id}`, {
+        userId: authUser._id,
+        action: "like",
+      });
+      if (data.likesCount !== undefined) setLikesCount(data.likesCount);
+    } catch {
+      setLikeOverride(prevLiked);
+      setLikesCount(prevCount);
+      toast.error("Couldn't like this video. Try again.");
+    } finally {
+      setLikeLoading(false);
+    }
+  }, [authUser, liked, likesCount, likeLoading, video._id]);
+
   // Cleanup timer on unmount
   useEffect(() => () => clearTimeout(timerRef.current), []);
-
-  const likeCount = (video.likes?.length ?? 0) + (liked ? 1 : 0);
 
   // Determine preload strategy: auto for active, metadata for adjacent, none for far
   const preload =
@@ -258,12 +313,16 @@ function ShortItem({ video, isActive, index, activeIndex, muted, onMuteToggle }:
           zIndex: 10,
         }}
       >
-        <ActionBtn onClick={() => setLiked((l) => !l)} label={fmtCount(likeCount)}>
+        <ActionBtn onClick={handleLike} label={fmtCount(likesCount)}>
           <Heart
             size={28}
             fill={liked ? "#ef4444" : "none"}
             color={liked ? "#ef4444" : "#fff"}
           />
+        </ActionBtn>
+
+        <ActionBtn onClick={() => onOpenComments(video)} label={fmtCount(commentCount)}>
+          <MessageCircle size={26} color="#fff" />
         </ActionBtn>
 
         <ActionBtn onClick={share} label="Share">
@@ -357,6 +416,32 @@ export function ShortsPlayer({ videos }: { videos: Video[] }) {
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [muted, setMuted] = useState(true); // start muted → autoplay always works
 
+  // Comments drawer — a single instance shared across all items; `commentsVideo`
+  // is kept set (not nulled) after close so the exit animation has content to show.
+  const [commentsVideo, setCommentsVideo] = useState<Video | null>(null);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
+
+  const openComments = useCallback((video: Video) => {
+    setCommentsVideo(video);
+    setCommentsOpen(true);
+  }, []);
+
+  // Auth prompt drawer, mirrors the wiring in WatchClient — this page has no
+  // ancestor that already listens for "wecinema:open-auth".
+  const [authDrawerOpen, setAuthDrawerOpen] = useState(false);
+  const [authDrawerTab, setAuthDrawerTab] = useState<"login" | "signup">("login");
+
+  useEffect(() => {
+    function handleOpenAuth(e: Event) {
+      const detail = (e as CustomEvent<{ tab?: "login" | "signup" }>).detail;
+      setAuthDrawerTab(detail?.tab ?? "login");
+      setAuthDrawerOpen(true);
+    }
+    window.addEventListener("wecinema:open-auth", handleOpenAuth);
+    return () => window.removeEventListener("wecinema:open-auth", handleOpenAuth);
+  }, []);
+
   // Jump (no scroll animation) to the deep-linked video on first mount.
   useEffect(() => {
     if (initialIndex > 0) {
@@ -383,9 +468,13 @@ export function ShortsPlayer({ videos }: { videos: Video[] }) {
     return () => items.forEach((el) => { if (el) obs.unobserve(el); });
   }, []);
 
-  // Keyboard nav: ↑↓ or j/k
+  // Keyboard nav: ↑↓ or j/k — suppressed while typing in the comments/auth
+  // drawers so arrow keys move the caret instead of scrolling the feed.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (commentsOpen || authDrawerOpen) return;
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
       if (e.key === "ArrowDown" || e.key === "j") {
         e.preventDefault();
         const next = Math.min(activeIndex + 1, videos.length - 1);
@@ -398,7 +487,7 @@ export function ShortsPlayer({ videos }: { videos: Video[] }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [activeIndex, videos.length]);
+  }, [activeIndex, videos.length, commentsOpen, authDrawerOpen]);
 
   if (videos.length === 0) {
     return (
@@ -557,10 +646,28 @@ export function ShortsPlayer({ videos }: { videos: Video[] }) {
                 isActive={i === activeIndex}
                 muted={muted}
                 onMuteToggle={() => setMuted((m) => !m)}
+                commentCount={commentCounts[video._id] ?? video.comments?.length ?? 0}
+                onOpenComments={openComments}
               />
             </div>
           ))}
         </div>
+
+        <ShortsCommentsDrawer
+          key={commentsVideo?._id ?? "none"}
+          video={commentsVideo}
+          open={commentsOpen}
+          onClose={() => setCommentsOpen(false)}
+          onCountChange={(videoId, count) =>
+            setCommentCounts((prev) => ({ ...prev, [videoId]: count }))
+          }
+        />
+
+        <HypemodeAuthDrawer
+          open={authDrawerOpen}
+          onClose={() => setAuthDrawerOpen(false)}
+          defaultTab={authDrawerTab}
+        />
       </div>
     </>
   );

@@ -1,15 +1,22 @@
 import { apiFetch, ApiError } from "@/lib/fetch/serverFetch";
-import { CATEGORIES } from "@/lib/constants";
 import type { Video } from "@/types";
+
+/**
+ * How many videos the homepage's video-grid rows (currently just Trending)
+ * show, expressed as rows at the desktop 3-column layout. Bump this when
+ * ready to show more — it's intentionally kept low for now.
+ */
+const HOMEPAGE_ROWS = 2;
+const HOMEPAGE_COLUMNS = 3;
+const HOMEPAGE_ROW_LIMIT = HOMEPAGE_ROWS * HOMEPAGE_COLUMNS;
 
 /**
  * Homepage data layer.
  *
- * The homepage used to make 6 separate `/video/category/:genre` calls. We now
- * fetch `/video/all` ONCE (server-side, ISR-cached) and derive everything the
- * page needs in memory: the hero "featured" films, the trending row, per-genre
- * rows (only non-empty genres), and the stat counters. Fewer API calls, and it
- * lets us reliably hide empty genres + compute homepage counts.
+ * The homepage used to make several separate `/video/category/:genre` calls.
+ * We now fetch `/video/all` ONCE (server-side, ISR-cached) and derive
+ * everything the page needs in memory: the hero "featured" films, the
+ * trending row, and the stat counters.
  */
 
 interface VideoListResponse {
@@ -31,18 +38,10 @@ export interface HomepageStats {
   totalCreators: number;
 }
 
-export interface GenreBucket {
-  genre: string;
-  videos: Video[];
-  /** lower-cased slug for the /category/:slug route */
-  slug: string;
-}
-
 export interface HomepageData {
   featured: Video[];
   trending: Video[];
   shorts: Video[];
-  byGenre: GenreBucket[];
   stats: HomepageStats;
 }
 
@@ -50,7 +49,6 @@ const EMPTY: HomepageData = {
   featured: [],
   trending: [],
   shorts: [],
-  byGenre: [],
   stats: { totalFilms: 0, totalCreators: 0 },
 };
 
@@ -62,11 +60,6 @@ function authorId(v: Video): string | null {
   if (typeof v.author === "object" && v.author !== null) return v.author._id ?? null;
   if (typeof v.author === "string") return v.author;
   return null;
-}
-
-function genresOf(v: Video): string[] {
-  if (Array.isArray(v.genre)) return v.genre;
-  return v.genre ? [v.genre] : [];
 }
 
 /** Content-safety + visibility gate: only published, non-hidden uploads. */
@@ -121,27 +114,15 @@ export async function getHomepageData(): Promise<HomepageData> {
   const trending = all
     .filter((v) => v.recommended || v.red_carpet)
     .sort(trendingSort)
-    .slice(0, 12);
-  const trendingResolved = trending.length > 0 ? trending : [...all].sort(trendingSort).slice(0, 12);
+    .slice(0, HOMEPAGE_ROW_LIMIT);
+  const trendingResolved =
+    trending.length > 0 ? trending : [...all].sort(trendingSort).slice(0, HOMEPAGE_ROW_LIMIT);
 
   // ── Shorts: short-form vertical videos ──
   const shorts = all
     .filter((v) => v.isShort)
     .sort(trendingSort)
     .slice(0, 12);
-
-  // ── Genre rows: only genres that actually contain videos ──
-  const byGenre: GenreBucket[] = [];
-  for (const genre of CATEGORIES) {
-    const lower = genre.toLowerCase();
-    const videos = all
-      .filter((v) => genresOf(v).some((g) => g.toLowerCase() === lower))
-      .sort(trendingSort)
-      .slice(0, 12);
-    if (videos.length > 0) {
-      byGenre.push({ genre, videos, slug: lower });
-    }
-  }
 
   // ── Stats ──
   const creators = new Set<string>();
@@ -154,7 +135,6 @@ export async function getHomepageData(): Promise<HomepageData> {
     featured,
     trending: trendingResolved,
     shorts,
-    byGenre,
     stats: { totalFilms: all.length, totalCreators: creators.size },
   };
 }
