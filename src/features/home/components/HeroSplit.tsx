@@ -91,11 +91,11 @@ export function HeroSplit({
     ...featured.slice(0, 5).map((film): Slide => ({ type: "film", id: film.id, film })),
   ];
 
-  // Default to the first film slide (not the graphs slide) when one exists —
-  // its <h1> carries the page's primary keywords ("Watch, buy & sell
-  // independent films"), and this is the only <h1> a crawler or no-JS client
-  // sees before the slider's interval advances it.
-  const [slideIndex, setSlideIndex] = useState(slides.length > 1 ? 1 : 0);
+  // Always start on the first slide (index 0 — the live trending charts) on
+  // every load/reload. Its <h1> ("What's trending on WeCinema") is the one a
+  // crawler or no-JS client sees. On desktop the slider does not auto-advance
+  // (see the interval effect below), so it holds here until the user navigates.
+  const [slideIndex, setSlideIndex] = useState(0);
   const [visible, setVisible] = useState(true);
   // The very first paint must show the hero immediately — the entrance
   // animation (used for later slide transitions) would otherwise delay
@@ -124,11 +124,33 @@ export function HeroSplit({
 
   useEffect(() => {
     if (slides.length <= 1) return undefined;
-    const id = setInterval(() => {
-      if (pausedRef.current) return;
-      goToSlide((slideIndexRef.current + 1) % slides.length);
-    }, SLIDE_INTERVAL_MS);
-    return () => clearInterval(id);
+    // Auto-advance on mobile only. On desktop (>=768px) the hero is manual —
+    // arrows/dots — so it stays on the first slide until the user moves it.
+    // matchMedia keeps this correct across resizes / breakpoint crossings.
+    const mq = window.matchMedia("(max-width: 767px)");
+    let id: ReturnType<typeof setInterval> | null = null;
+    const stop = () => {
+      if (id) {
+        clearInterval(id);
+        id = null;
+      }
+    };
+    const sync = () => {
+      if (mq.matches && !id) {
+        id = setInterval(() => {
+          if (pausedRef.current) return;
+          goToSlide((slideIndexRef.current + 1) % slides.length);
+        }, SLIDE_INTERVAL_MS);
+      } else if (!mq.matches) {
+        stop();
+      }
+    };
+    sync();
+    mq.addEventListener("change", sync);
+    return () => {
+      mq.removeEventListener("change", sync);
+      stop();
+    };
   }, [slides.length]);
 
   useEffect(
