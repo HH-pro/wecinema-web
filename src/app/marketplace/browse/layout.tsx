@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { OG, SITE_ORIGIN } from "@/lib/seo";
 
-const TITLE = "Browse the Film Marketplace | WeCinema";
+const TITLE = "Browse Independent Films & Scripts for Sale | WeCinema Marketplace";
 const DESCRIPTION =
-  "Browse films, scripts, licensing and adaptation rights for sale from independent creators on the WeCinema marketplace.";
+  "Browse independent films, scripts, licensing deals, and adaptation rights for sale from creators on the WeCinema marketplace. Make an offer or buy securely.";
 
 // The page is a client component and can't export metadata itself, so this
 // sibling layout supplies the title + self-referencing canonical for indexing.
