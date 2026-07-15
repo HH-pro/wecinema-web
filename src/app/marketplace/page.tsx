@@ -9,9 +9,9 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { OG, SITE_ORIGIN } from "@/lib/seo";
 
 const SITE = SITE_ORIGIN;
-const TITLE = "Film Marketplace | WeCinema";
+const TITLE = "Independent Film Marketplace — Buy, Sell & License Films | WeCinema";
 const DESCRIPTION =
-  "Buy, sell, license, and discover independent film projects, scripts, and creative services.";
+  "Buy, sell, and license independent films, scripts, and adaptation rights directly from creators — protected by Stripe escrow. Free to join on WeCinema.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
@@ -82,10 +82,10 @@ export default function MarketplacePage() {
             <FaStore size={28} color="#fff" />
           </div>
           <h1 style={{ margin: "0 0 12px", fontSize: "clamp(1.8rem, 5vw, 2.8rem)", fontWeight: 900, fontFamily: "var(--font-heading)", color: "#fff", lineHeight: 1.2 }}>
-            The Film & Script Marketplace
+            The Independent Film & Script Marketplace
           </h1>
           <p style={{ margin: "0 0 8px", fontSize: 17, color: "rgba(255,255,255,0.9)", maxWidth: 580, marginInline: "auto", lineHeight: 1.6 }}>
-            Buy and sell films, scripts, and video content — directly between creators and buyers, protected by Stripe escrow.
+            Buy, sell, and license independent films, scripts, and adaptation rights — directly between creators and buyers, protected by Stripe escrow.
           </p>
           <p style={{ margin: "0 0 32px", fontSize: 14, color: "rgba(255,255,255,0.75)" }}>Free to join. 15% platform fee on sales only.</p>
 

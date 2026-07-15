@@ -23,7 +23,9 @@ export async function GET() {
       const slug = v.slug ?? v._id;
       if (!slug) return "";
       const loc = `${SITE}/watch/${slug}`;
-      const thumbUrl = v.thumbnail ? esc(v.thumbnail) : "";
+      // Stable proxy (see src/app/og/video/[slug]/route.ts) rather than the raw
+      // pre-signed S3 URL, which expires and 403s when Google refetches it.
+      const thumbUrl = slug ? esc(`${SITE}/og/video/${slug}`) : "";
       const title = v.title ? esc(v.title) : esc(slug);
       const description = v.description ? esc(v.description.slice(0, 2048)) : "";
       const pubDate = v.createdAt

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { OG, SITE_ORIGIN } from "@/lib/seo";
 
-const TITLE = "Marketplace Resources | WeCinema";
+const TITLE = "Resources for Selling Films & Scripts Online | WeCinema";
 const DESCRIPTION =
-  "Guides, tools, and resources for filmmakers and buyers using the WeCinema marketplace.";
+  "Guides, pricing tips, and tools for independent filmmakers selling films, scripts, and licensing rights online through the WeCinema marketplace.";
 
 // Client-component page — metadata lives here so the route is indexable with a
 // self-referencing canonical instead of inheriting the homepage canonical.

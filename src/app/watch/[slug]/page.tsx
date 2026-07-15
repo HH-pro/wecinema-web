@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Layout from "@/components/layout/Layout";
+import type { Video } from "@/types";
 import { getVideoBySlug } from "@/features/videos/api/videoQueries";
-import { OG, SITE_ORIGIN } from "@/lib/seo";
+import { SITE_ORIGIN } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { WatchClient } from "@/features/watch/components/WatchClient";
 
@@ -31,6 +32,44 @@ const WATCH_FALLBACK_TITLE = "Watch Independent Films | WeCinema";
 const WATCH_FALLBACK_DESCRIPTION =
   "Stream independent films, creator projects, and original stories on WeCinema.";
 
+/** Collapse whitespace and clamp to `max` chars on a word boundary with an ellipsis. */
+function clampDescription(text: string, max = 160): string {
+  const t = text.trim().replace(/\s+/g, " ");
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max - 1);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${(lastSpace > 40 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
+}
+
+/**
+ * Build a non-empty, useful meta description for a video.
+ *
+ * Creators frequently leave `description` blank (an empty string, which `??`
+ * does NOT treat as missing), so relying on `video.description ?? fallback`
+ * shipped an empty `<meta name="description">` on the site's largest URL class.
+ * When the real description is missing or too thin, synthesize one from the
+ * title, genre and creator instead of falling back to a single generic string.
+ */
+function buildWatchDescription(video: Video): string {
+  const raw = video.description?.trim();
+  if (raw && raw.length >= 50) return clampDescription(raw);
+
+  const genres = Array.isArray(video.genre)
+    ? video.genre
+    : video.genre
+      ? [video.genre]
+      : [];
+  const creator =
+    typeof video.author === "string" ? undefined : video.author?.username;
+  const genrePart = genres.length
+    ? `${genres.slice(0, 2).join(" & ")} film`
+    : "independent film";
+  const creatorPart = creator ? ` by ${creator}` : "";
+  const base = `Watch "${video.title}", ${genrePart}${creatorPart}, streaming now on WeCinema.`;
+
+  return clampDescription(raw ? `${base} ${raw}` : base);
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -47,8 +86,10 @@ export async function generateMetadata({
   }
 
   const title = `${video.title} | WeCinema`;
-  const description = video.description ?? WATCH_FALLBACK_DESCRIPTION;
-  const image = video.thumbnail ?? OG.video;
+  const description = buildWatchDescription(video);
+  // Stable, signature-free OG image URL (see src/app/og/video/[slug]/route.ts) —
+  // resolves to the current thumbnail server-side so previews never expire.
+  const image = `${SITE}/og/video/${slug}`;
 
   return {
     title: { absolute: title },
@@ -93,8 +134,10 @@ export default async function WatchPage({
     "@context": "https://schema.org",
     "@type": "VideoObject",
     name: video.title,
-    description: video.description ?? WATCH_FALLBACK_DESCRIPTION,
-    thumbnailUrl: [video.thumbnail ?? OG.video],
+    description: buildWatchDescription(video),
+    // Stable proxy URL — a bare signed S3 thumbnail expires and forfeits video
+    // rich-result eligibility once Google refetches it.
+    thumbnailUrl: [`${SITE}/og/video/${slug}`],
     uploadDate: video.createdAt,
     contentUrl: video.file,
     embedUrl: `${SITE}/watch/${slug}`,
