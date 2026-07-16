@@ -41,6 +41,13 @@ const SITE_URL = (/localhost/i.test(rawSiteUrl) ? "https://wecinema.co" : rawSit
 const DESCRIPTION =
   "WeCinema is the home of independent film. Watch movies, upload your own, browse scripts, and sell your work to a global audience.";
 
+// Runs synchronously during HTML parse — BEFORE first paint — so the correct
+// theme is applied up front. Without this, the server ships data-theme="light"
+// and ThemeProvider only switches to the saved/system theme after hydration,
+// producing a visible light→dark flash that reads as the page "loading twice".
+// Keep in sync with ThemeProvider's STORAGE_KEY ("wc_theme").
+const THEME_INIT_SCRIPT = `(function(){try{var m=localStorage.getItem('wc_theme')||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var e=document.documentElement;e.setAttribute('data-theme',m);e.style.colorScheme=m;}catch(e){}})();`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
@@ -129,6 +136,10 @@ export default function RootLayout({
       className={`${poppins.variable} ${poppinsExtra.variable} ${roboto.variable}`}
     >
       <body>
+        {/* Pre-hydration theme setter — must be the first thing in <body> so it
+            executes before the page paints (prevents the theme-flash / "double
+            load"). */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <Providers>{children}</Providers>
         <Analytics />
         <MetaPixel />
