@@ -184,6 +184,25 @@ const Guide: React.FC = () => {
         <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 2.6rem)", fontWeight: 800, margin: "0 0 14px", fontFamily: "var(--font-poppins)" }}>
           How to Sell Your Film or Script Online
         </h1>
+        {/* Featured-snippet / AI-citation lead: a self-contained 40–55 word direct
+            answer immediately under the H1, before the narrative intro. */}
+        <p
+          style={{
+            fontSize: 17,
+            lineHeight: 1.65,
+            fontWeight: 500,
+            color: "var(--color-text-primary)",
+            margin: "0 0 18px",
+            maxWidth: 720,
+            paddingLeft: 16,
+            borderLeft: "3px solid var(--color-accent-primary)",
+          }}
+        >
+          To sell your film or script online, create a free WeCinema seller account, connect Stripe, and
+          list your work — choosing an outright sale, a license, adaptation rights, or a commission. Set
+          your price, get approved, and Stripe escrow holds the buyer&apos;s payment until you deliver, then
+          releases your earnings.
+        </p>
         <p style={{ ...para, fontSize: 16.5, maxWidth: 720 }}>
           Selling your film or script online has never been more accessible. Whether you&apos;ve finished a
           short film, hold the rights to a feature, or have a screenplay ready for the right producer, you
