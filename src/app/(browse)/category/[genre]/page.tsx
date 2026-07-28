@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { VideoGrid } from "@/features/videos/components/VideoGrid";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
+import { CollectionFaq } from "@/components/seo/CollectionFaq";
 import { getVideosByCategory } from "@/features/videos/api/videoQueries";
 import { CATEGORIES } from "@/lib/constants";
 import { getGenreCopy } from "@/lib/collectionSeo";
@@ -132,6 +133,8 @@ export default async function CategoryPage({ params }: { params: Promise<Params>
         </div>
 
         <VideoGrid videos={videos} emptyMessage={`No ${label.toLowerCase()} films yet.`} />
+
+        <CollectionFaq heading={`${label} films — FAQ`} faqs={copy.faqs} />
 
         {/* Internal linking — pass authority across the genre cluster + aid discovery */}
         <nav aria-label="Browse other genres" style={{ marginTop: 40 }}>

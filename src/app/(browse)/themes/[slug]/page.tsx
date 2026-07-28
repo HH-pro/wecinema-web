@@ -4,6 +4,7 @@ import { VideoGrid } from "@/features/videos/components/VideoGrid";
 import { ThemePills } from "@/features/videos/components/ThemePills";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
+import { CollectionFaq } from "@/components/seo/CollectionFaq";
 import { getVideosByTheme } from "@/features/videos/api/videoQueries";
 import { THEMES } from "@/lib/constants";
 import { getThemeCopy } from "@/lib/collectionSeo";
@@ -126,6 +127,7 @@ export default async function ThemePage({ params }: { params: Promise<Params> })
 
       <div style={{ padding: "28px 24px" }}>
         <VideoGrid videos={videos} emptyMessage={`No films with theme "${label}" yet.`} />
+        <CollectionFaq heading={`Films about ${label.toLowerCase()} — FAQ`} faqs={copy.faqs} />
       </div>
     </>
   );

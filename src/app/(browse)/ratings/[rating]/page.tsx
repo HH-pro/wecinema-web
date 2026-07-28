@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { VideoGrid } from "@/features/videos/components/VideoGrid";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
+import { CollectionFaq } from "@/components/seo/CollectionFaq";
 import { getVideosByRating } from "@/features/videos/api/videoQueries";
 import { RATINGS, RATING_META } from "@/lib/constants";
 import { getRatingCopy } from "@/lib/collectionSeo";
@@ -153,6 +154,8 @@ export default async function RatingPage({ params }: { params: Promise<Params> }
         </p>
 
         <VideoGrid videos={videos} emptyMessage={`No ${rating}-rated films yet.`} />
+
+        <CollectionFaq heading={`Rated ${rating} films — FAQ`} faqs={copy.faqs} />
 
         <nav aria-label="Browse other content ratings" style={{ marginTop: 40 }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 12px", color: "var(--color-text-primary)" }}>

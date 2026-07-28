@@ -11,6 +11,12 @@
  * here, so the description a searcher sees in Google matches the page.
  */
 
+/** A single question/answer for the on-page FAQ + FAQPage schema. */
+export interface FAQ {
+  q: string;
+  a: string;
+}
+
 export interface CollectionCopy {
   /** ~155-char meta description (search snippet). */
   description: string;
@@ -18,9 +24,19 @@ export interface CollectionCopy {
   intro: string;
   /** Secondary/long-tail keywords woven into the page for topical depth. */
   keywords: string[];
+  /**
+   * Page-specific FAQ. Rendered visibly AND as FAQPage JSON-LD, so these pages
+   * become eligible for "People Also Ask", featured snippets and AI-answer
+   * citations (AEO/GEO). Answers deliberately name WeCinema so answer engines
+   * resolve the brand entity. Generated per page so each set is distinct.
+   */
+  faqs: FAQ[];
 }
 
-const GENRE_COPY: Record<string, CollectionCopy> = {
+/** Base copy stored inline; FAQs are attached by the getters below. */
+type BaseCopy = Omit<CollectionCopy, "faqs">;
+
+const GENRE_COPY: Record<string, BaseCopy> = {
   action: {
     description:
       "Watch independent action films online — high-stakes chases, fights and thrillers from filmmakers worldwide. Stream action movies free on WeCinema.",
@@ -86,7 +102,7 @@ const GENRE_COPY: Record<string, CollectionCopy> = {
   },
 };
 
-const RATING_COPY: Record<string, CollectionCopy> = {
+const RATING_COPY: Record<string, BaseCopy> = {
   G: {
     description:
       "Watch G-rated films online — family-friendly movies suitable for all ages on WeCinema. Stream independent general-audience films free.",
@@ -143,24 +159,96 @@ function cap(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+// ─── FAQ generators (AEO/GEO) ────────────────────────────────
+// Each set is built from the page's own subject so no two pages share a FAQ.
+// Answers name WeCinema and give a direct, self-contained response — the exact
+// shape answer engines quote and Google shows as "People Also Ask".
+
+function genreFaqs(label: string): FAQ[] {
+  const g = label.toLowerCase();
+  return [
+    {
+      q: `Where can I watch independent ${g} films online?`,
+      a: `You can stream independent ${g} films free on WeCinema, a platform where filmmakers upload their work directly to a global audience. Open the ${label} Films collection to watch now, no subscription required.`,
+    },
+    {
+      q: `Are the ${g} films on WeCinema free to watch?`,
+      a: `Yes — most ${g} films on WeCinema are free to stream. Some titles are also available to buy or license in the marketplace, and those payments go directly to the filmmakers through escrow-protected checkout.`,
+    },
+    {
+      q: `Can I sell or license my own ${g} film on WeCinema?`,
+      a: `Yes. WeCinema is also a marketplace: filmmakers can upload a ${g} film and sell it, license it, or offer adaptation rights with escrow-protected payments. Create a free account to list your work.`,
+    },
+    {
+      q: `What makes independent ${g} films different from studio movies?`,
+      a: `Independent ${g} films are made outside the major studio system, so they take creative risks big studios avoid — original voices, unconventional stories, and direct support for the creator. WeCinema is dedicated entirely to this independent work.`,
+    },
+  ];
+}
+
+function ratingFaqs(rating: string, meaning: string): FAQ[] {
+  // "an R rating" vs "a PG rating" — R is the only rating that starts with a vowel sound.
+  const article = rating === "R" ? "an" : "a";
+  return [
+    {
+      q: `What does ${article} ${rating} rating mean?`,
+      a: `${meaning} On WeCinema you can browse the ${rating} collection to find independent films that match this content rating.`,
+    },
+    {
+      q: `Where can I watch ${rating}-rated independent films online?`,
+      a: `Stream ${rating}-rated independent films free on WeCinema. Films are organized by content rating so you always know what you're watching before you press play.`,
+    },
+    {
+      q: `Can I publish ${article} ${rating}-rated film on WeCinema?`,
+      a: `Yes. When you upload a film to WeCinema you set its content rating, so viewers can filter by it. Create a free account to publish or sell your ${rating}-rated work.`,
+    },
+  ];
+}
+
+function themeFaqs(label: string, angle: string): FAQ[] {
+  const t = label.toLowerCase();
+  return [
+    {
+      q: `What are films about ${t}?`,
+      a: `Films about ${t} explore ${angle}. On WeCinema you can watch independent ${t}-themed films — from shorts to features — made by filmmakers you can support directly.`,
+    },
+    {
+      q: `Where can I watch independent films about ${t} online?`,
+      a: `Stream independent films exploring ${t} free on WeCinema. Browse the ${label} collection to discover ${t}-themed stories from filmmakers worldwide.`,
+    },
+    {
+      q: `Can I sell a film about ${t} on WeCinema?`,
+      a: `Yes — WeCinema is a marketplace as well as a streaming platform. Upload your ${t}-themed film to sell it, license it or offer adaptation rights with escrow-protected payments.`,
+    },
+  ];
+}
+
+const RATING_MEANING: Record<string, string> = {
+  G: "A G rating means the film is suitable for general audiences of all ages, with nothing a parent would need to worry about.",
+  PG: "A PG rating means parental guidance is suggested — the film is broadly suitable but may contain material some parents prefer to preview.",
+  "PG-13": "A PG-13 rating means parents are strongly cautioned — the film may contain intense scenes, language or themes not suitable for children under 13.",
+  R: "An R rating means the film is restricted to adult audiences and may contain strong language, violence or mature themes.",
+};
+
 export function getGenreCopy(genre: string): CollectionCopy {
   const key = genre.toLowerCase();
-  if (GENRE_COPY[key]) return GENRE_COPY[key];
-  return {
+  const label = cap(key);
+  const base: BaseCopy = GENRE_COPY[key] ?? {
     description: `Watch independent ${key} films online on WeCinema. Stream, discover and support ${key} filmmakers worldwide — free to watch.`,
     intro: `Browse independent ${key} films on WeCinema — uploaded by filmmakers you can support directly. Stream now, or buy and license titles in the marketplace.`,
     keywords: [`watch ${key} films online`, `indie ${key} movies`, `${key} streaming`],
   };
+  return { ...base, faqs: genreFaqs(label) };
 }
 
 export function getRatingCopy(rating: string): CollectionCopy {
-  return (
-    RATING_COPY[rating] ?? {
-      description: `Watch ${rating}-rated independent films online on WeCinema. Stream movies with a ${rating} content rating from filmmakers worldwide.`,
-      intro: `Browse ${rating}-rated independent films on WeCinema, curated by content rating so you always know what you're watching.`,
-      keywords: [`${rating} rated movies online`, `${rating} films streaming`],
-    }
-  );
+  const base: BaseCopy = RATING_COPY[rating] ?? {
+    description: `Watch ${rating}-rated independent films online on WeCinema. Stream movies with a ${rating} content rating from filmmakers worldwide.`,
+    intro: `Browse ${rating}-rated independent films on WeCinema, curated by content rating so you always know what you're watching.`,
+    keywords: [`${rating} rated movies online`, `${rating} films streaming`],
+  };
+  const meaning = RATING_MEANING[rating] ?? `A ${rating} content rating helps viewers know what to expect before watching.`;
+  return { ...base, faqs: ratingFaqs(rating, meaning) };
 }
 
 export function getThemeCopy(slug: string): CollectionCopy {
@@ -171,5 +259,6 @@ export function getThemeCopy(slug: string): CollectionCopy {
     description: `Watch independent films about ${key} on WeCinema — ${angle}. Stream ${key}-themed movies from filmmakers worldwide.`,
     intro: `The theme of ${label.toLowerCase()} runs through some of cinema's most memorable stories — ${angle}. Explore independent films exploring ${key} on WeCinema, from short films to features, made by creators you can support directly.`,
     keywords: [`films about ${key}`, `${key} themed movies`, `indie films ${key}`, `${key} short films`],
+    faqs: themeFaqs(label, angle),
   };
 }
