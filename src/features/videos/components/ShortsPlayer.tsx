@@ -201,7 +201,11 @@ function ShortItem({
         />
       )}
 
-      {/* Video element */}
+      {/* Video element. `file` is absent for gated content — the backend
+          excludes rentable videos from the shorts feed, so this should never
+          happen here, but rendering a <video> with no src produces a silent
+          black tile rather than an obvious failure. Fall back to the poster. */}
+      {video.file && (
       <video
         ref={videoRef}
         src={video.file}
@@ -222,6 +226,7 @@ function ShortItem({
           zIndex: 1,
         }}
       />
+      )}
 
       {/* Tap-to-play / pause flash icon */}
       {tapIcon && (

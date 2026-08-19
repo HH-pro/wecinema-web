@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   CheckCircle, ChevronRight, Film, ImageIcon, Info,
   Settings2, Tag, Upload, Video, X,
@@ -10,6 +11,17 @@ import toast from "react-hot-toast";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { api } from "@/features/auth/services/apiClient";
 import { uploadDirectToS3 } from "@/features/upload/services/presignedUpload";
+import { getRentalEligibility } from "@/features/watch/api/rental.service";
+
+// Must match RENTAL_PLANS in wecinema-backend/src/models/videos.js — the
+// backend rejects any price that isn't one of these, and derives the play
+// window from the price alone.
+const RENTAL_PLANS = [
+  { priceCents: 500,  playWindowHours: 1,  label: "1 hour"   },
+  { priceCents: 1000, playWindowHours: 48, label: "48 hours" },
+] as const;
+// The backend keeps 10% (config.PLATFORM_FEE_PERCENT_DECIMAL).
+const PLATFORM_FEE_RATE = 0.1;
 
 // ── Constants ─────────────────────────────────────────────────
 
@@ -366,9 +378,31 @@ export default function UploadVideoPage() {
   const [uploading, setUploading]   = useState(false);
   const [done, setDone]             = useState(false);
 
+  // ── Rentals ──────────────────────────────────────────────
+  // There is no free-form price: the creator picks one of two plans, and the
+  // chosen price is what identifies it to the backend. Held in cents so it can
+  // be sent as-is — no dollars string, no parse step, nothing to validate.
+  const [isRentable, setIsRentable]     = useState(false);
+  const [rentalCents, setRentalCents]   = useState<number>(RENTAL_PLANS[1].priceCents);
+  const [payoutState, setPayoutState]   = useState<"loading" | "eligible" | "blocked">("loading");
+
+  const rentalPlan =
+    RENTAL_PLANS.find((p) => p.priceCents === rentalCents) ?? RENTAL_PLANS[1];
+
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
+
+  // Check payouts up front so the toggle can be disabled before the creator
+  // commits to a 500 MB upload, rather than failing afterwards.
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    let cancelled = false;
+    getRentalEligibility()
+      .then((res) => { if (!cancelled) setPayoutState(res.eligible ? "eligible" : "blocked"); })
+      .catch(() => { if (!cancelled) setPayoutState("blocked"); });
+    return () => { cancelled = true; };
+  }, [status]);
 
   const handleVideoFile = (f: File) => {
     if (f.size > 500 * 1024 * 1024) { toast.error("Video must be under 500 MB"); return; }
@@ -424,23 +458,40 @@ export default function UploadVideoPage() {
 
       setProgress(99);
 
-      await api.post("/video/create", {
-        fileKey: videoAsset.key,
-        ...(thumbnailKey ? { thumbnailKey } : {}),
-        title: title.trim(),
-        description: description.trim(),
-        genre: genres,
-        theme: themes,
-        rating,
-        hasPaid,
-        isForSale,
-        isShort,
-        ...(duration != null ? { duration } : {}),
-      } as Record<string, unknown>);
+      const created = await api.post<{ rentalWarning?: { message?: string } }>(
+        "/video/create",
+        {
+          fileKey: videoAsset.key,
+          ...(thumbnailKey ? { thumbnailKey } : {}),
+          title: title.trim(),
+          description: description.trim(),
+          genre: genres,
+          theme: themes,
+          rating,
+          hasPaid,
+          isForSale,
+          isShort,
+          isRentable,
+          ...(isRentable ? { rentalPriceCents: rentalPlan.priceCents } : {}),
+          ...(duration != null ? { duration } : {}),
+        } as Record<string, unknown>,
+      );
 
       setProgress(100);
       setDone(true);
-      toast.success("Video uploaded successfully!");
+
+      // The upload always succeeds; rentals can still be declined if payouts
+      // aren't ready. Say so rather than silently publishing it as free.
+      if (created?.rentalWarning) {
+        toast.success("Video uploaded successfully!");
+        toast.error(
+          created.rentalWarning.message ??
+            "Renting couldn't be enabled — connect payouts, then turn it on from your video.",
+          { duration: 7000 },
+        );
+      } else {
+        toast.success("Video uploaded successfully!");
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
       setProgress(0);
@@ -461,6 +512,8 @@ export default function UploadVideoPage() {
     setIsShort(false);
     setDuration(null);
     setProgress(0);
+    setIsRentable(false);
+    setRentalCents(RENTAL_PLANS[1].priceCents);
   };
 
   // ── Success screen ────────────────────────────────────────
@@ -770,6 +823,114 @@ export default function UploadVideoPage() {
                   </div>
                 </label>
               ))}
+
+              {/* Rentals — rendered outside the checkbox map because it reveals
+                  a plan picker when enabled. Styling intentionally mirrors the
+                  labels above. */}
+              <div
+                style={{
+                  padding: "14px 16px",
+                  borderRadius: 12,
+                  border: isRentable
+                    ? "1px solid rgba(255,187,0,0.4)"
+                    : "1px solid var(--color-border-secondary)",
+                  backgroundColor: isRentable ? "rgba(255,187,0,0.06)" : "var(--color-bg-primary)",
+                  transition: "all 0.15s",
+                  opacity: payoutState === "blocked" ? 0.75 : 1,
+                }}
+              >
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 12,
+                    cursor: payoutState === "eligible" ? "pointer" : "not-allowed",
+                  }}
+                >
+                  <div style={{ paddingTop: 2 }}>
+                    <input
+                      type="checkbox"
+                      checked={isRentable}
+                      disabled={payoutState !== "eligible"}
+                      onChange={(e) => setIsRentable(e.target.checked)}
+                      style={{
+                        width: 16, height: 16,
+                        accentColor: "var(--color-accent-primary)",
+                        cursor: payoutState === "eligible" ? "pointer" : "not-allowed",
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "var(--color-text-primary)" }}>
+                      Rent this film
+                    </p>
+                    <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--color-text-tertiary)", lineHeight: 1.4 }}>
+                      Viewers pay once to watch. They get 30 days to press play, then the
+                      window you pick below runs from first play.
+                    </p>
+                  </div>
+                </label>
+
+                {payoutState === "blocked" && (
+                  <p style={{ margin: "10px 0 0 28px", fontSize: 12, color: "var(--color-text-tertiary)", lineHeight: 1.5 }}>
+                    Renting needs a payout account so we can send you the money.{" "}
+                    <Link href="/marketplace/dashboard/seller" style={{ color: "var(--color-accent-primary)", fontWeight: 600 }}>
+                      Connect payouts
+                    </Link>{" "}
+                    to enable it.
+                  </p>
+                )}
+
+                {isRentable && payoutState === "eligible" && (
+                  <div style={{ margin: "14px 0 0 28px" }}>
+                    <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 600, color: "var(--color-text-secondary)" }}>
+                      Rental plan
+                    </p>
+
+                    <div
+                      role="radiogroup"
+                      aria-label="Rental plan"
+                      style={{ display: "flex", gap: 8, flexWrap: "wrap" }}
+                    >
+                      {RENTAL_PLANS.map((plan) => {
+                        const active = rentalCents === plan.priceCents;
+                        return (
+                          <button
+                            key={plan.priceCents}
+                            type="button"
+                            role="radio"
+                            aria-checked={active}
+                            onClick={() => setRentalCents(plan.priceCents)}
+                            style={{
+                              padding: "10px 18px",
+                              borderRadius: 12,
+                              textAlign: "left",
+                              cursor: "pointer",
+                              border: active
+                                ? "1px solid var(--color-accent-primary)"
+                                : "1px solid var(--color-border-secondary)",
+                              backgroundColor: active ? "rgba(255,187,0,0.12)" : "transparent",
+                              color: active ? "var(--color-accent-primary)" : "var(--color-text-secondary)",
+                            }}
+                          >
+                            <span style={{ display: "block", fontSize: 15, fontWeight: 800 }}>
+                              ${(plan.priceCents / 100).toFixed(2)}
+                            </span>
+                            <span style={{ display: "block", marginTop: 2, fontSize: 12, fontWeight: 600 }}>
+                              {plan.label} to watch
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <p style={{ margin: "8px 0 0", fontSize: 12, color: "var(--color-text-tertiary)" }}>
+                      You earn ${((rentalPlan.priceCents * (1 - PLATFORM_FEE_RATE)) / 100).toFixed(2)} per rental
+                      after the {Math.round(PLATFORM_FEE_RATE * 100)}% platform fee.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </SectionCard>
 

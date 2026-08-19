@@ -1,9 +1,11 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { api } from "@/features/auth/services/apiClient";
+import { tokenStorage } from "@/features/auth/services/tokenStorage";
+import { getEntitlement, getStreamUrl } from "@/features/watch/api/rental.service";
+import type { RentalSummary } from "@/features/watch/types/rental.types";
 import type { Video, VideoRendition } from "@/types";
 
 interface TranscodingStatusResponse {
@@ -17,8 +19,27 @@ function openAuthEvent(tab: "login" | "signup" = "login") {
   );
 }
 
+// Handled by WatchClient, which owns the rental checkout modal. Same
+// indirection as the auth drawer above, so the player doesn't have to own
+// modal state or pull the Stripe bundle into its own chunk.
+function openRentEvent() {
+  window.dispatchEvent(new CustomEvent("wecinema:open-rent"));
+}
+
+/** "in 41h", "in 2d", "in 18m" — coarse on purpose; the exact second is noise. */
+function formatRemaining(expiresAt: string | null | undefined): string {
+  if (!expiresAt) return "soon";
+  const ms = new Date(expiresAt).getTime() - Date.now();
+  if (ms <= 0) return "now";
+  const mins = Math.floor(ms / 60000);
+  if (mins < 60) return `in ${mins}m`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 48) return `in ${hours}h`;
+  return `in ${Math.floor(hours / 24)}d`;
+}
+
 export function VideoPlayer({ video }: { video: Video }) {
-  const { authUser, isAuthenticated } = useAuth();
+  const { isAuthenticated, status } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const viewTrackedRef = useRef(false);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -35,8 +56,43 @@ export function VideoPlayer({ video }: { video: Video }) {
   const isPending =
     transcodingStatus === "pending" || transcodingStatus === "processing";
 
-  // Only paywalled if the creator marked it for sale AND this user hasn't purchased it
-  const isPaywalled = video.isForSale === true && !video.hasPaid;
+  // The gate is decided by the SERVER, not by flags the client could reason
+  // about. For a rented film the backend simply doesn't send `file`, so the
+  // absence of a playable URL is the lock.
+  //
+  // This replaces `video.isForSale === true && !video.hasPaid`, which was wrong
+  // in both operands: `isForSale` means "listed on the marketplace" and
+  // `hasPaid` means "is HypeMode premium content" (it is a property of the
+  // video, never of the viewer). That expression paywalled marketplace listings
+  // while leaving the signed URL sitting in the same JSON payload.
+  const isRentable = video.isRentable === true;
+
+  // Server-granted playback URL for a gated film, fetched on a deliberate play.
+  const [streamUrl, setStreamUrl] = useState<string | null>(null);
+  const [streamExpiresAt, setStreamExpiresAt] = useState<number | null>(null);
+  const [rental, setRental] = useState<RentalSummary | null>(null);
+  const [unlocking, setUnlocking] = useState(false);
+  const [streamError, setStreamError] = useState<string | null>(null);
+  // null = still checking. Avoids flashing a paywall at someone who paid.
+  const [entitled, setEntitled] = useState<boolean | null>(isRentable ? null : true);
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const playableSrc = video.file ?? streamUrl ?? undefined;
+  const isLocked = isRentable && !playableSrc && entitled !== true;
+
+  const priceLabel =
+    typeof video.rentalPriceCents === "number"
+      ? `$${(video.rentalPriceCents / 100).toFixed(2)}`
+      : null;
+
+  // The 1-hour plan makes pluralisation load-bearing — "1 hours" everywhere the
+  // window is shown, otherwise.
+  const playWindowHours = video.rentalPlayWindowHours ?? 48;
+  const playWindowLabel = `${playWindowHours} ${playWindowHours === 1 ? "hour" : "hours"}`;
+
+  const rentalTerms =
+    `${video.rentalWindowDays ?? 30} days to start watching · ` +
+    `${playWindowLabel} once you press play`;
 
   const trackView = useCallback(() => {
     if (viewTrackedRef.current) return;
@@ -45,6 +101,135 @@ export function VideoPlayer({ video }: { video: Video }) {
       .put(`/video/view/${video._id}`)
       .catch(() => {});
   }, [video._id]);
+
+  // ── Rental entitlement ─────────────────────────────────────
+  // Resolved client-side because the page is rendered without user identity
+  // (the access token lives in memory only, and a per-user URL must never end
+  // up in a shared/CDN-cached HTML response).
+  const checkEntitlement = useCallback(() => {
+    if (!isRentable || video.file) return;
+    getEntitlement(video._id)
+      .then((res) => {
+        setEntitled(res.entitled);
+        setRental(res.rental ?? null);
+      })
+      .catch(() => setEntitled(false));
+  }, [isRentable, video.file, video._id]);
+
+  useEffect(() => {
+    if (status === "loading") return;
+
+    // Anonymous: ask straight away, the answer can't change.
+    if (status !== "authenticated") {
+      checkEntitlement();
+      return;
+    }
+
+    // Authenticated: we must wait for the ACCESS TOKEN, not just for `status`.
+    // AuthContext flips status to "authenticated" optimistically from the user
+    // cached in localStorage, while the token is still being fetched from the
+    // refresh cookie. Asking before the token lands sends an unauthenticated
+    // request, and the endpoint answers 200 "anonymous" — so there's no 401 to
+    // trigger a retry and a paying viewer gets shown the paywall.
+    if (tokenStorage.get()) {
+      checkEntitlement();
+      return;
+    }
+
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries += 1;
+      if (tokenStorage.get()) {
+        clearInterval(timer);
+        checkEntitlement();
+      } else if (tries > 40) {
+        // ~6s: the refresh isn't coming. Ask anyway and take the answer.
+        clearInterval(timer);
+        checkEntitlement();
+      }
+    }, 150);
+
+    return () => clearInterval(timer);
+  }, [checkEntitlement, status]);
+
+  // Re-check after a successful checkout so the paywall swaps for the play
+  // button without a reload. Dispatched by WatchClient.
+  useEffect(() => {
+    function onActivated() {
+      setEntitled(null);
+      checkEntitlement();
+    }
+    window.addEventListener("wecinema:rental-activated", onActivated);
+    return () => window.removeEventListener("wecinema:rental-activated", onActivated);
+  }, [checkEntitlement]);
+
+  /**
+   * Fetch a playable URL. THIS STARTS THE 48-HOUR CLOCK, so it runs only on a
+   * deliberate play — never on mount. A viewer who opens the page and walks
+   * away must not lose their window.
+   */
+  const requestStream = useCallback(
+    async (autoplay: boolean) => {
+      setUnlocking(true);
+      setStreamError(null);
+      try {
+        const res = await getStreamUrl(video._id);
+        setStreamUrl(res.url);
+        setStreamExpiresAt(new Date(res.urlExpiresAt).getTime());
+        if (res.renditions?.length) setRenditions(res.renditions);
+        if (res.rental) setRental(res.rental);
+        setEntitled(true);
+
+        if (autoplay) {
+          // Wait for React to attach the new src before playing.
+          requestAnimationFrame(() => videoRef.current?.play().catch(() => {}));
+        }
+        return res.url;
+      } catch (err) {
+        const e = err as { status?: number; message?: string };
+        if (e?.status === 403) {
+          setEntitled(false);
+          setStreamError(e.message ?? "Your rental is no longer active.");
+        } else {
+          setStreamError("Could not start playback. Please try again.");
+        }
+        return null;
+      } finally {
+        setUnlocking(false);
+      }
+    },
+    [video._id],
+  );
+
+  // Signed stream URLs are short-lived. Refresh a little before expiry and
+  // hot-swap, so a long film doesn't 403 mid-playback.
+  useEffect(() => {
+    if (!streamExpiresAt || !streamUrl) return;
+    const leadMs = 2 * 60 * 1000;
+    const delay = Math.max(5_000, streamExpiresAt - Date.now() - leadMs);
+
+    refreshTimerRef.current = setTimeout(() => {
+      const el = videoRef.current;
+      const wasPlaying = el && !el.paused;
+      getStreamUrl(video._id)
+        .then((res) => {
+          setStreamUrl(res.url);
+          setStreamExpiresAt(new Date(res.urlExpiresAt).getTime());
+          if (el) {
+            const t = el.currentTime;
+            el.src = res.url;
+            el.load();
+            el.currentTime = t;
+            if (wasPlaying) el.play().catch(() => {});
+          }
+        })
+        .catch(() => {});
+    }, delay);
+
+    return () => {
+      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    };
+  }, [streamExpiresAt, streamUrl, video._id]);
 
   useEffect(() => {
     if (!isPending) return;
@@ -78,11 +263,14 @@ export function VideoPlayer({ video }: { video: Video }) {
     const wasPaused = el.paused;
 
     if (quality === "auto") {
-      el.src = video.file;
+      if (!playableSrc) return;
+      el.src = playableSrc;
     } else {
       const rendition = renditions.find((r) => r.quality === quality);
-      if (!rendition) return;
-      el.src = rendition.url ?? rendition.fileKey;
+      // `rendition.fileKey` was never a usable fallback — it's a bare S3 object
+      // key, not a URL. Only a signed `url` can be played.
+      if (!rendition?.url) return;
+      el.src = rendition.url;
     }
 
     setActiveQuality(quality);
@@ -93,9 +281,10 @@ export function VideoPlayer({ video }: { video: Video }) {
     if (!wasPaused) el.play().catch(() => {});
   }
 
-  if (isPaywalled) {
+  if (isLocked) {
     return (
       <div
+        className="paywalled-player"
         style={{
           position: "relative",
           width: "100%",
@@ -163,7 +352,7 @@ export function VideoPlayer({ video }: { video: Video }) {
                 color: "#fff",
               }}
             >
-              Premium Content
+              {priceLabel ? `Rent this film for ${priceLabel}` : "Rent this film"}
             </p>
             <p
               style={{
@@ -173,8 +362,8 @@ export function VideoPlayer({ video }: { video: Video }) {
               }}
             >
               {isAuthenticated
-                ? "This is a paid video. Upgrade your plan to watch."
-                : "Sign in or create a free account to purchase this video."}
+                ? rentalTerms
+                : "Sign in or create a free account to rent this film."}
             </p>
           </div>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
@@ -215,8 +404,12 @@ export function VideoPlayer({ video }: { video: Video }) {
                 </button>
               </>
             ) : (
-              <Link
-                href="/hypemode"
+              // Deliberately NOT a link to /hypemode: a HypeMode subscription
+              // does not grant a rental, and sending renters to a subscription
+              // page they've possibly already paid for is a dead end.
+              <button
+                type="button"
+                onClick={openRentEvent}
                 style={{
                   padding: "10px 28px",
                   borderRadius: 9999,
@@ -226,14 +419,87 @@ export function VideoPlayer({ video }: { video: Video }) {
                   background: "linear-gradient(135deg, #FBBF24, #F59E0B)",
                   color: "#000",
                   cursor: "pointer",
-                  textDecoration: "none",
-                  display: "inline-block",
                 }}
               >
-                Upgrade to Watch
-              </Link>
+                {priceLabel ? `Rent for ${priceLabel}` : "Rent to Watch"}
+              </button>
             )}
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Entitled to a rented film but not playing yet: show a poster with an
+  // explicit play button. We must NOT auto-request a stream URL, because that
+  // call is what starts the 48-hour clock.
+  if (isRentable && entitled === true && !playableSrc) {
+    return (
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          aspectRatio: "16/9",
+          maxHeight: 540,
+          borderRadius: 12,
+          overflow: "hidden",
+          backgroundColor: "#000",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {video.thumbnail && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={video.thumbnail}
+            alt={video.title}
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              opacity: 0.55,
+            }}
+          />
+        )}
+        <div style={{ position: "relative", zIndex: 1, textAlign: "center" }}>
+          <button
+            type="button"
+            onClick={() => requestStream(true)}
+            disabled={unlocking}
+            aria-label="Play film"
+            style={{
+              width: 76,
+              height: 76,
+              borderRadius: "50%",
+              border: "none",
+              cursor: unlocking ? "wait" : "pointer",
+              background: "linear-gradient(135deg, #FBBF24, #F59E0B)",
+              boxShadow: "0 8px 32px rgba(245,158,11,0.45)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto",
+            }}
+          >
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="#000">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </button>
+          <p style={{ margin: "14px 0 0", fontSize: 13, color: "rgba(255,255,255,0.85)" }}>
+            {unlocking
+              ? "Starting playback…"
+              : rental?.firstPlayedAt
+                ? `Your rental ends ${formatRemaining(rental.expiresAt)}`
+                : `Press play to start your ${playWindowHours}-hour window`}
+          </p>
+          {streamError && (
+            <p role="alert" style={{ margin: "8px 0 0", fontSize: 13, color: "#fca5a5" }}>
+              {streamError}
+            </p>
+          )}
         </div>
       </div>
     );
@@ -258,6 +524,25 @@ export function VideoPlayer({ video }: { video: Video }) {
           }}
         >
           Processing…
+        </div>
+      )}
+
+      {rental?.expiresAt && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 56,
+            left: 10,
+            zIndex: 10,
+            backgroundColor: "rgba(0,0,0,0.7)",
+            color: "#fff",
+            fontSize: 11,
+            fontWeight: 600,
+            padding: "4px 10px",
+            borderRadius: 9999,
+          }}
+        >
+          Rental ends {formatRemaining(rental.expiresAt)}
         </div>
       )}
 
@@ -347,9 +632,14 @@ export function VideoPlayer({ video }: { video: Video }) {
       <video
         ref={videoRef}
         controls
-        src={video.file}
+        src={playableSrc}
         poster={video.thumbnail}
         onPlay={trackView}
+        onError={() => {
+          // A gated URL that died mid-session (expired signature) is
+          // recoverable — fetch a fresh one and resume where we were.
+          if (isRentable && streamUrl) requestStream(false);
+        }}
         style={{
           width: "100%",
           maxHeight: 540,

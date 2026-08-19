@@ -52,6 +52,12 @@ export class AppError extends Error {
   constructor(
     public readonly status: number | null,
     message: string,
+    /**
+     * Machine-readable code from the response body (`{ code: "..." }`), when
+     * the backend sends one. Needed wherever a single HTTP status covers more
+     * than one case — e.g. 409 is both ALREADY_RENTED and CHECKOUT_IN_PROGRESS.
+     */
+    public readonly code?: string,
   ) {
     super(message);
     this.name = "AppError";
@@ -139,11 +145,13 @@ async function apiFetch<T>(path: string, opts: FetchOptions = {}): Promise<T> {
 
   if (!res.ok) {
     let msg = `Request failed (${res.status})`;
+    let code: string | undefined;
     try {
       const err = await res.json();
       msg = err.error ?? err.message ?? err.details ?? msg;
+      if (typeof err.code === "string") code = err.code;
     } catch {}
-    throw new AppError(res.status, msg);
+    throw new AppError(res.status, msg, code);
   }
 
   return res.json() as Promise<T>;

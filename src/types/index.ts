@@ -16,7 +16,11 @@ export interface VideoComment {
 
 export interface VideoRendition {
   quality: string;
-  fileKey: string;
+  /**
+   * Raw S3 key. The API does NOT return this — responses carry the signed
+   * `url` instead — so it is optional and must never be used as a src.
+   */
+  fileKey?: string;
   bitrate?: number;
   url?: string;
 }
@@ -25,7 +29,14 @@ export interface Video {
   _id: string;
   title: string;
   description?: string;
-  file: string;
+  /**
+   * Signed, playable URL — ABSENT when the video is rented and this viewer
+   * holds no active rental. The backend strips it (along with `renditions`)
+   * rather than sending a URL the viewer isn't entitled to, so any component
+   * that plays video must handle it being undefined. To play a gated video,
+   * fetch a short-lived URL from GET /rentals/stream/:videoId.
+   */
+  file?: string;
   thumbnail?: string;
   thumbnailSmall?: string;
   slug?: string;
@@ -41,12 +52,26 @@ export interface Video {
   dislikes?: string[];
   renditions?: VideoRendition[];
   transcodingStatus?: "pending" | "processing" | "completed" | "failed";
+  /** "Listed on the marketplace." NOT a paywall flag — see isRentable. */
   isForSale?: boolean;
   red_carpet?: boolean;
   recommended?: boolean;
   published?: boolean;
   duration?: string | number;
   isShort?: boolean;
+
+  // ── Rentals ────────────────────────────────────────────────
+  /** Creator offers this film for paid, time-limited rental. */
+  isRentable?: boolean;
+  /** Rental price in integer CENTS (e.g. 499 = $4.99). Never dollars. */
+  rentalPriceCents?: number;
+  rentalCurrency?: string;
+  /** Days from purchase in which the viewer must start watching. */
+  rentalWindowDays?: number;
+  /** Hours the rental stays open once playback first starts. */
+  rentalPlayWindowHours?: number;
+  /** Set by the server when it withheld `file`/`renditions` from this payload. */
+  rentalRequired?: boolean;
 }
 
 export interface AuthUser {

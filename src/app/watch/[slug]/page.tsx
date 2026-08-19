@@ -128,6 +128,12 @@ export default async function WatchPage({
   const duration = toISO8601Duration(video.duration);
   const genres = Array.isArray(video.genre) ? video.genre : video.genre ? [video.genre] : [];
 
+  // A rented film renders anonymously here (SSR carries no user identity), so
+  // the backend withholds `file` and there is no URL to publish. Emitting the
+  // paywall signals below is what stops Google reading a VideoObject with no
+  // contentUrl as broken markup rather than as intentionally gated.
+  const isGated = video.isRentable === true && !video.file;
+
   // schema.org VideoObject — lets Google Video and AI answer engines extract and
   // cite this film directly. Optional fields are omitted (not null) when absent.
   const jsonLd = {
@@ -139,9 +145,32 @@ export default async function WatchPage({
     // rich-result eligibility once Google refetches it.
     thumbnailUrl: [`${SITE}/og/video/${slug}`],
     uploadDate: video.createdAt,
-    contentUrl: video.file,
+    // NEVER publish a signed URL for gated content — this JSON-LD is served in
+    // the public HTML, so a contentUrl here is a free download link.
+    ...(video.file ? { contentUrl: video.file } : {}),
     embedUrl: `${SITE}/watch/${slug}`,
     url: `${SITE}/watch/${slug}`,
+    ...(isGated
+      ? {
+          isAccessibleForFree: false,
+          hasPart: {
+            "@type": "WebPageElement",
+            isAccessibleForFree: false,
+            cssSelector: ".paywalled-player",
+          },
+          ...(typeof video.rentalPriceCents === "number"
+            ? {
+                offers: {
+                  "@type": "Offer",
+                  price: (video.rentalPriceCents / 100).toFixed(2),
+                  priceCurrency: video.rentalCurrency ?? "USD",
+                  availability: "https://schema.org/InStock",
+                  url: `${SITE}/watch/${slug}`,
+                },
+              }
+            : {}),
+        }
+      : {}),
     ...(duration ? { duration } : {}),
     ...(genres.length ? { genre: genres } : {}),
     ...(authorName ? { author: { "@type": "Person", name: authorName } } : {}),
