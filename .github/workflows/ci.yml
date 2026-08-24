@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # NOTE: 219 pre-existing lint errors (mostly react-hooks/set-state-in-effect
+      # and no-explicit-any) — this repo has never been linted in CI. Blocking on
+      # day one just teaches everyone to ignore the red X. Report now; flip to
+      # blocking once the baseline is cleared.
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Typecheck
+        run: npm run type-check
+
+      - name: Unit tests
+        run: npm test
+
+      # `next build` is the only thing that catches RSC / "use client" boundary
+      # errors — neither tsc nor eslint sees them.
+      - name: Build
+        run: npm run build
+        env:
+          BACKEND_URL: http://localhost:3000
+          NEXT_PUBLIC_SITE_URL: https://wecinema.co
+
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
