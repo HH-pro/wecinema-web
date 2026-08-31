@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle, ChevronRight, FileText, Info, AlignLeft, Tag } from "lucide-react";
+import { AlignLeft, CheckCircle, ClipboardCheck, FileText, Tag } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { api } from "@/features/auth/services/apiClient";
+import { UploadWizard, type WizardStep } from "@/features/upload/components/UploadWizard";
+import {
+  FieldLabel, MultiSelect, PageHero, ReviewRow, TipCard, inputStyle,
+} from "@/features/upload/components/UploadUI";
 
 // ── Constants ─────────────────────────────────────────────────
 
@@ -37,120 +41,18 @@ const MARKETPLACE_TIPS = [
   "Buyers look for scripts with strong voice — let your style shine.",
 ];
 
-// ── UI Components ─────────────────────────────────────────────
+const PLACEHOLDER = `FADE IN:
 
-function SectionCard({
-  icon: Icon,
-  title,
-  children,
-}: {
-  icon: React.ElementType;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      style={{
-        backgroundColor: "var(--color-bg-elevated)",
-        border: "1px solid var(--color-border-secondary)",
-        borderRadius: 20,
-        padding: "24px 28px",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-        <div
-          style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: "rgba(255,187,0,0.12)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
-          <Icon style={{ width: 18, height: 18, color: "var(--color-accent-primary)" }} />
-        </div>
-        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)" }}>
-          {title}
-        </h3>
-      </div>
-      {children}
-    </div>
-  );
-}
+INT. LOCATION — DAY
 
-function TipCard({ title, items }: { title: string; items: string[] }) {
-  return (
-    <div
-      style={{
-        backgroundColor: "var(--color-bg-elevated)",
-        border: "1px solid var(--color-border-secondary)",
-        borderRadius: 16,
-        padding: "18px 20px",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <Info style={{ width: 14, height: 14, color: "var(--color-accent-primary)", flexShrink: 0 }} />
-        <h4 style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "var(--color-text-primary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-          {title}
-        </h4>
-      </div>
-      <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 7 }}>
-        {items.map((item) => (
-          <li key={item} style={{ display: "flex", gap: 7, alignItems: "flex-start" }}>
-            <ChevronRight style={{ width: 12, height: 12, color: "var(--color-accent-primary)", flexShrink: 0, marginTop: 3 }} />
-            <span style={{ fontSize: 12, color: "var(--color-text-tertiary)", lineHeight: 1.5 }}>{item}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
+Describe the scene here. Keep action lines brief and visual.
 
-function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
-  return (
-    <p style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 600, color: "var(--color-text-secondary)" }}>
-      {children}
-      {required && <span style={{ color: "rgb(248,113,113)", marginLeft: 3 }}>*</span>}
-    </p>
-  );
-}
+\t\t\t\tCHARACTER NAME
+\t\t\tDialogue goes here.
 
-function MultiSelect({
-  options,
-  value,
-  onChange,
-}: {
-  options: string[];
-  value: string[];
-  onChange: (v: string[]) => void;
-}) {
-  const toggle = (item: string) =>
-    onChange(value.includes(item) ? value.filter((v) => v !== item) : [...value, item]);
+EXT. ANOTHER LOCATION — NIGHT
 
-  return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-      {options.map((opt) => (
-        <button
-          key={opt}
-          type="button"
-          onClick={() => toggle(opt)}
-          style={{
-            padding: "5px 12px",
-            fontSize: 12,
-            borderRadius: 9999,
-            border: value.includes(opt) ? "1px solid var(--color-accent-primary)" : "1px solid var(--color-border-secondary)",
-            backgroundColor: value.includes(opt) ? "var(--color-accent-primary)" : "transparent",
-            color: value.includes(opt) ? "var(--color-btn-primary-text, #000)" : "var(--color-text-secondary)",
-            cursor: "pointer",
-            transition: "all 0.15s",
-            fontWeight: value.includes(opt) ? 600 : 400,
-          }}
-        >
-          {opt}
-        </button>
-      ))}
-    </div>
-  );
-}
+The story continues...`;
 
 // ── Page ──────────────────────────────────────────────────────
 
@@ -158,6 +60,7 @@ export default function UploadScriptPage() {
   const router = useRouter();
   const { status } = useAuth();
 
+  const [step, setStep] = useState(0);
   const [title, setTitle]       = useState("");
   const [genres, setGenres]     = useState<string[]>([]);
   const [content, setContent]   = useState("");
@@ -165,18 +68,20 @@ export default function UploadScriptPage() {
   const [done, setDone]         = useState(false);
 
   const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
-  const pageEst   = Math.round(wordCount / 185);
+  // One script page runs ~185 words. Anything written at all is at least a
+  // page — rounding a short scene down to "~0 pages" reads like a bug.
+  const pageEst   = wordCount ? Math.max(1, Math.round(wordCount / 185)) : 0;
+  const lengthLabel =
+    pageEst >= 85 && pageEst <= 120 ? "Feature length"
+    : pageEst > 120 ? "Over feature length"
+    : pageEst > 0 ? "Short / Mid-length"
+    : "—";
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim())       { toast.error("Title is required"); return; }
-    if (genres.length === 0) { toast.error("Select at least one genre"); return; }
-    if (!content.trim())     { toast.error("Script content is required"); return; }
-
+  const handleSubmit = async () => {
     setSubmitting(true);
     try {
       await api.post("/video/scripts", {
@@ -195,10 +100,160 @@ export default function UploadScriptPage() {
 
   const reset = () => {
     setDone(false);
+    setStep(0);
     setTitle("");
     setGenres([]);
     setContent("");
   };
+
+  // ── Steps ─────────────────────────────────────────────────
+
+  const steps: WizardStep[] = useMemo(() => [
+    {
+      id: "details",
+      title: "Details",
+      hint: "Name your screenplay and tag it so buyers can find it.",
+      icon: Tag,
+      aside: <TipCard title="Marketplace Tips" items={MARKETPLACE_TIPS} />,
+      validate: () =>
+        !title.trim() ? "A title is required to continue"
+        : genres.length === 0 ? "Select at least one genre to continue"
+        : null,
+      content: (
+        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          <div>
+            <FieldLabel required>Title</FieldLabel>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. The Last Signal, Broken Roads, A Quiet Light..."
+              maxLength={120}
+              style={inputStyle}
+            />
+            <p style={{ margin: "4px 0 0", fontSize: 11, color: "var(--color-text-tertiary)", textAlign: "right" }}>
+              {title.length}/120
+            </p>
+          </div>
+          <div>
+            <FieldLabel required>Genre</FieldLabel>
+            <MultiSelect options={GENRES} value={genres} onChange={setGenres} />
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "screenplay",
+      title: "Screenplay",
+      hint: "Write or paste your script. HTML is supported for basic formatting.",
+      icon: AlignLeft,
+      aside: <TipCard title="Formatting Tips" items={FORMAT_TIPS} />,
+      validate: () => (!content.trim() ? "Add your screenplay to continue" : null),
+      content: (
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 12, flexWrap: "wrap" }}>
+            <FieldLabel required>Script Content</FieldLabel>
+            <div style={{ display: "flex", gap: 14, marginBottom: 8 }}>
+              <span style={{ fontSize: 11, color: "var(--color-text-tertiary)" }}>
+                {wordCount.toLocaleString()} words
+              </span>
+              {pageEst > 0 && (
+                <span style={{ fontSize: 11, color: "var(--color-accent-primary)", fontWeight: 600 }}>
+                  ~{pageEst} page{pageEst !== 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+          </div>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            rows={24}
+            placeholder={PLACEHOLDER}
+            style={{
+              ...inputStyle,
+              padding: "18px 20px",
+              fontSize: 13.5,
+              resize: "vertical",
+              fontFamily: "'Courier New', Courier, monospace",
+              lineHeight: 1.85,
+              minHeight: 420,
+            }}
+          />
+          {/* Bottom stats bar */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 12,
+              flexWrap: "wrap",
+              marginTop: 8,
+              padding: "8px 12px",
+              backgroundColor: "var(--color-bg-primary)",
+              border: "1px solid var(--color-border-secondary)",
+              borderRadius: 8,
+            }}
+          >
+            <span style={{ fontSize: 11, color: "var(--color-text-tertiary)" }}>
+              {content.length.toLocaleString()} characters
+            </span>
+            <span style={{ fontSize: 11, color: "var(--color-text-tertiary)" }}>
+              {wordCount.toLocaleString()} words · ~{pageEst} pages
+              {pageEst >= 85 && pageEst <= 120 && (
+                <span style={{ color: "rgb(74,222,128)", marginLeft: 6 }}>✓ Feature length</span>
+              )}
+              {pageEst > 0 && pageEst < 85 && (
+                <span style={{ color: "rgb(251,191,36)", marginLeft: 6 }}>Short / Mid-length</span>
+              )}
+            </span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "review",
+      title: "Review",
+      hint: "One last look before it goes live on the marketplace.",
+      icon: ClipboardCheck,
+      aside: <TipCard title="Script Structure" items={STRUCTURE_TIPS} />,
+      content: (
+        <div>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", lineHeight: 1.3 }}>
+            {title.trim() || "Untitled"}
+          </h3>
+
+          <div style={{ marginTop: 16 }}>
+            <ReviewRow label="Genre">{genres.length ? genres.join(", ") : "—"}</ReviewRow>
+            <ReviewRow label="Length">
+              {wordCount.toLocaleString()} words · ~{pageEst} page{pageEst !== 1 ? "s" : ""} · {lengthLabel}
+            </ReviewRow>
+            <ReviewRow label="Opening">
+              <pre
+                style={{
+                  margin: 0,
+                  maxHeight: 200,
+                  overflow: "auto",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  fontFamily: "'Courier New', Courier, monospace",
+                  fontSize: 12,
+                  lineHeight: 1.7,
+                  color: "var(--color-text-secondary)",
+                  padding: "12px 14px",
+                  backgroundColor: "var(--color-bg-primary)",
+                  border: "1px solid var(--color-border-secondary)",
+                  borderRadius: 10,
+                }}
+              >
+                {content.trim().slice(0, 600) || "—"}
+                {content.trim().length > 600 ? "\n…" : ""}
+              </pre>
+            </ReviewRow>
+          </div>
+        </div>
+      ),
+    },
+  ], [title, genres, content, wordCount, pageEst, lengthLabel]);
 
   // ── Success screen ────────────────────────────────────────
 
@@ -257,221 +312,27 @@ export default function UploadScriptPage() {
     );
   }
 
-  // ── Form ──────────────────────────────────────────────────
+  // ── Wizard ────────────────────────────────────────────────
 
   return (
     <div style={{ maxWidth: 1080, margin: "0 auto", padding: "32px 16px 64px" }}>
-      {/* Hero header */}
-      <div
-        style={{
-          position: "relative",
-          overflow: "hidden",
-          background: "linear-gradient(135deg, rgba(255,187,0,0.14) 0%, rgba(255,187,0,0.05) 100%)",
-          border: "1px solid rgba(255,187,0,0.2)",
-          borderRadius: 22,
-          padding: "28px 36px",
-          marginBottom: 28,
-        }}
-      >
-        <div
-          style={{
-            position: "absolute", right: -50, top: -50,
-            width: 180, height: 180, borderRadius: "50%",
-            background: "rgba(255,187,0,0.15)",
-            filter: "blur(40px)",
-            pointerEvents: "none",
-          }}
-        />
-        <div style={{ display: "flex", alignItems: "center", gap: 18, position: "relative" }}>
-          <div
-            style={{
-              width: 56, height: 56, borderRadius: 16, flexShrink: 0,
-              background: "linear-gradient(135deg, var(--color-accent-primary), #FFCB33)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 8px 24px rgba(255,187,0,0.35)",
-            }}
-          >
-            <FileText style={{ width: 28, height: 28, color: "var(--color-btn-primary-text, #000)" }} />
-          </div>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-              <span style={{ fontSize: 12, color: "var(--color-text-tertiary)" }}>WeCinema</span>
-              <ChevronRight style={{ width: 12, height: 12, color: "var(--color-text-tertiary)" }} />
-              <span style={{ fontSize: 12, color: "var(--color-accent-primary)", fontWeight: 600 }}>Upload Script</span>
-            </div>
-            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: "var(--color-text-primary)", letterSpacing: "-0.3px" }}>
-              Upload Your Screenplay
-            </h1>
-            <p style={{ margin: "3px 0 0", fontSize: 13, color: "var(--color-text-tertiary)" }}>
-              Share your script with producers, studios, and buyers worldwide
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageHero
+        icon={FileText}
+        crumb="Upload Script"
+        heading="Upload Your Screenplay"
+        sub="Share your script with producers, studios, and buyers worldwide"
+      />
 
-      {/* Two-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_288px] gap-6 items-start">
-        {/* ── Left: form ── */}
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-
-          {/* Section: Script Details */}
-          <SectionCard icon={Tag} title="Script Details">
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div>
-                <FieldLabel required>Title</FieldLabel>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. The Last Signal, Broken Roads, A Quiet Light..."
-                  maxLength={120}
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    backgroundColor: "var(--color-bg-primary)",
-                    border: "1px solid var(--color-border-secondary)",
-                    borderRadius: 12,
-                    color: "var(--color-text-primary)",
-                    fontSize: 14,
-                    outline: "none",
-                    boxSizing: "border-box",
-                  }}
-                />
-                <p style={{ margin: "4px 0 0", fontSize: 11, color: "var(--color-text-tertiary)", textAlign: "right" }}>
-                  {title.length}/120
-                </p>
-              </div>
-              <div>
-                <FieldLabel required>Genre</FieldLabel>
-                <MultiSelect options={GENRES} value={genres} onChange={setGenres} />
-              </div>
-            </div>
-          </SectionCard>
-
-          {/* Section: Screenplay */}
-          <SectionCard icon={AlignLeft} title="Screenplay">
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <FieldLabel required>Script Content</FieldLabel>
-                <div style={{ display: "flex", gap: 14 }}>
-                  <span style={{ fontSize: 11, color: "var(--color-text-tertiary)" }}>
-                    {wordCount.toLocaleString()} words
-                  </span>
-                  {pageEst > 0 && (
-                    <span style={{ fontSize: 11, color: "var(--color-accent-primary)", fontWeight: 600 }}>
-                      ~{pageEst} page{pageEst !== 1 ? "s" : ""}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <p style={{ margin: "0 0 10px", fontSize: 12, color: "var(--color-text-tertiary)", lineHeight: 1.5 }}>
-                Write or paste your screenplay. Standard format: scene headings, action lines, and dialogue.
-                HTML is supported for basic formatting.
-              </p>
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                rows={28}
-                placeholder={`FADE IN:\n\nINT. LOCATION — DAY\n\nDescribe the scene here. Keep action lines brief and visual.\n\n\t\t\t\tCHARACTER NAME\n\t\t\tDialogue goes here.\n\nEXT. ANOTHER LOCATION — NIGHT\n\nThe story continues...`}
-                required
-                style={{
-                  width: "100%",
-                  padding: "18px 20px",
-                  backgroundColor: "var(--color-bg-primary)",
-                  border: "1px solid var(--color-border-secondary)",
-                  borderRadius: 12,
-                  color: "var(--color-text-primary)",
-                  fontSize: 13.5,
-                  outline: "none",
-                  resize: "vertical",
-                  fontFamily: "'Courier New', Courier, monospace",
-                  lineHeight: 1.85,
-                  boxSizing: "border-box",
-                  minHeight: 480,
-                }}
-              />
-              {/* Bottom stats bar */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginTop: 8,
-                  padding: "8px 12px",
-                  backgroundColor: "var(--color-bg-elevated)",
-                  border: "1px solid var(--color-border-secondary)",
-                  borderRadius: 8,
-                }}
-              >
-                <span style={{ fontSize: 11, color: "var(--color-text-tertiary)" }}>
-                  {content.length.toLocaleString()} characters
-                </span>
-                <span style={{ fontSize: 11, color: "var(--color-text-tertiary)" }}>
-                  {wordCount.toLocaleString()} words · ~{pageEst} pages
-                  {pageEst >= 85 && pageEst <= 120 && (
-                    <span style={{ color: "rgb(74,222,128)", marginLeft: 6 }}>✓ Feature length</span>
-                  )}
-                  {pageEst > 0 && pageEst < 85 && (
-                    <span style={{ color: "rgb(251,191,36)", marginLeft: 6 }}>Short / Mid-length</span>
-                  )}
-                </span>
-              </div>
-            </div>
-          </SectionCard>
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={submitting}
-            style={{
-              width: "100%",
-              padding: "15px",
-              background: "linear-gradient(to right, var(--color-accent-primary), #FFCB33)",
-              color: "var(--color-btn-primary-text, #000)",
-              borderRadius: 14,
-              fontSize: 15,
-              fontWeight: 700,
-              border: "none",
-              cursor: submitting ? "not-allowed" : "pointer",
-              opacity: submitting ? 0.5 : 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              transition: "opacity 0.15s",
-              boxShadow: submitting ? "none" : "0 4px 20px rgba(255,187,0,0.4)",
-            }}
-          >
-            {submitting ? (
-              <>
-                <span
-                  className="animate-spin"
-                  style={{
-                    display: "inline-block",
-                    width: 16, height: 16,
-                    borderRadius: "50%",
-                    border: "2px solid rgba(0,0,0,0.25)",
-                    borderTopColor: "var(--color-btn-primary-text, #000)",
-                  }}
-                />
-                Publishing…
-              </>
-            ) : (
-              <>
-                <FileText style={{ width: 17, height: 17 }} />
-                Publish Script
-              </>
-            )}
-          </button>
-        </form>
-
-        {/* ── Right: tips sidebar ── */}
-        <div className="flex flex-col gap-4 lg:sticky lg:top-6">
-          <TipCard title="Formatting Tips" items={FORMAT_TIPS} />
-          <TipCard title="Script Structure" items={STRUCTURE_TIPS} />
-          <TipCard title="Marketplace Tips" items={MARKETPLACE_TIPS} />
-        </div>
-      </div>
+      <UploadWizard
+        steps={steps}
+        index={step}
+        onIndexChange={setStep}
+        onSubmit={handleSubmit}
+        submitLabel="Publish Script"
+        submitIcon={FileText}
+        submitting={submitting}
+        submittingLabel="Publishing…"
+      />
     </div>
   );
 }

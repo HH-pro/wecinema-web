@@ -1,16 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  CheckCircle, ChevronRight, Film, ImageIcon, Info,
-  Settings2, Tag, Upload, Video, X,
+  CheckCircle, ClipboardCheck, Film, ImageIcon,
+  Settings2, Tag, Upload, Video,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { api } from "@/features/auth/services/apiClient";
 import { uploadDirectToS3 } from "@/features/upload/services/presignedUpload";
+import { UploadWizard, type WizardStep } from "@/features/upload/components/UploadWizard";
+import {
+  DropZone, FieldLabel, MultiSelect, PageHero, ProgressBar, ReviewRow, TipCard,
+  formatBytes, formatDuration, inputStyle, useObjectUrl,
+} from "@/features/upload/components/UploadUI";
 import { getRentalEligibility } from "@/features/watch/api/rental.service";
 
 // Must match RENTAL_PLANS in wecinema-backend/src/models/videos.js — the
@@ -43,19 +48,25 @@ const RATINGS = [
   { value: "R",     label: "R",     sub: "Restricted"                  },
 ];
 
-const UPLOAD_TIPS = [
-  "Use MP4 (H.264) for best compatibility across devices.",
-  "Upload a custom thumbnail to increase click-through rates by up to 40%.",
-  "Keep titles concise and descriptive — aim for under 60 characters.",
-  "Tag accurate genres so the right audience finds your content.",
-  "A strong description with keywords boosts search visibility.",
-];
-
 const FORMAT_TIPS = [
   "Video: MP4, MOV, AVI, WebM — up to 500 MB",
   "Thumbnail: any image — auto-converted to WebP on upload",
   "Recommended ratio: 16:9 (1920×1080 for best quality)",
   "Min resolution: 720p for HD badge on your listing",
+];
+
+const TITLE_TIPS = [
+  "Keep titles concise and descriptive — aim for under 60 characters.",
+  "A strong description with keywords boosts search visibility.",
+  "Open the description with a one-line logline, then the detail.",
+  "Credit your cast and crew — it is what collaborators search for.",
+];
+
+const TAGGING_TIPS = [
+  "Tag accurate genres so the right audience finds your content.",
+  "Two or three genres beat ten — precision outranks coverage.",
+  "Themes power the /themes browse rows and related-video rails.",
+  "The rating is shown on your listing and gates age-restricted rows.",
 ];
 
 const GUIDELINES = [
@@ -65,303 +76,20 @@ const GUIDELINES = [
   "For Sale videos are held in escrow until the buyer confirms delivery.",
 ];
 
-// ── UI Components ─────────────────────────────────────────────
-
-function SectionCard({
-  icon: Icon,
-  title,
-  children,
-}: {
-  icon: React.ElementType;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      style={{
-        backgroundColor: "var(--color-bg-elevated)",
-        border: "1px solid var(--color-border-secondary)",
-        borderRadius: 20,
-        padding: "24px 28px",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-        <div
-          style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: "rgba(255,187,0,0.12)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
-          <Icon style={{ width: 18, height: 18, color: "var(--color-accent-primary)" }} />
-        </div>
-        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)" }}>
-          {title}
-        </h3>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function TipCard({ title, items }: { title: string; items: string[] }) {
-  return (
-    <div
-      style={{
-        backgroundColor: "var(--color-bg-elevated)",
-        border: "1px solid var(--color-border-secondary)",
-        borderRadius: 16,
-        padding: "18px 20px",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <Info style={{ width: 14, height: 14, color: "var(--color-accent-primary)", flexShrink: 0 }} />
-        <h4 style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "var(--color-text-primary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-          {title}
-        </h4>
-      </div>
-      <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 7 }}>
-        {items.map((item) => (
-          <li key={item} style={{ display: "flex", gap: 7, alignItems: "flex-start" }}>
-            <ChevronRight style={{ width: 12, height: 12, color: "var(--color-accent-primary)", flexShrink: 0, marginTop: 3 }} />
-            <span style={{ fontSize: 12, color: "var(--color-text-tertiary)", lineHeight: 1.5 }}>{item}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
-  return (
-    <p style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 600, color: "var(--color-text-secondary)" }}>
-      {children}
-      {required && <span style={{ color: "rgb(248,113,113)", marginLeft: 3 }}>*</span>}
-    </p>
-  );
-}
-
-function DropZone({
-  accept,
-  file,
-  onFile,
-  onClear,
-  icon: Icon,
-  label,
-  hint,
-}: {
-  accept: string;
-  file: File | null;
-  onFile: (f: File) => void;
-  onClear: () => void;
-  icon: React.ElementType;
-  label: string;
-  hint: string;
-}) {
-  const ref = useRef<HTMLInputElement>(null);
-
-  return (
-    <div
-      onClick={() => ref.current?.click()}
-      style={{
-        border: `2px dashed ${file ? "rgba(255,187,0,0.6)" : "var(--color-border-secondary)"}`,
-        borderRadius: 14,
-        padding: "24px 16px",
-        textAlign: "center",
-        cursor: "pointer",
-        backgroundColor: file ? "rgba(255,187,0,0.06)" : "rgba(255,255,255,0.01)",
-        transition: "all 0.15s",
-      }}
-    >
-      {file ? (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-          <Icon style={{ width: 18, height: 18, color: "var(--color-accent-primary)", flexShrink: 0 }} />
-          <span style={{ fontSize: 13, color: "var(--color-text-primary)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 140 }}>
-            {file.name}
-          </span>
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onClear(); }}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-text-tertiary)", display: "flex", padding: 0 }}
-          >
-            <X style={{ width: 15, height: 15 }} />
-          </button>
-        </div>
-      ) : (
-        <>
-          <div
-            style={{
-              width: 44, height: 44, borderRadius: 12,
-              background: "rgba(255,187,0,0.08)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 10px",
-            }}
-          >
-            <Icon style={{ width: 22, height: 22, color: "var(--color-text-tertiary)", opacity: 0.6 }} />
-          </div>
-          <p style={{ margin: 0, fontSize: 13, color: "var(--color-text-secondary)", fontWeight: 500 }}>{label}</p>
-          <p style={{ margin: "3px 0 0", fontSize: 11, color: "var(--color-text-tertiary)" }}>{hint}</p>
-        </>
-      )}
-      <input
-        ref={ref}
-        type="file"
-        accept={accept}
-        style={{ display: "none" }}
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); }}
-      />
-    </div>
-  );
-}
-
-function MultiSelect({
-  options,
-  value,
-  onChange,
-  customPlaceholder,
-}: {
-  options: string[];
-  value: string[];
-  onChange: (v: string[]) => void;
-  customPlaceholder?: string;
-}) {
-  const [customInput, setCustomInput] = useState("");
-
-  const toggle = (item: string) =>
-    onChange(value.includes(item) ? value.filter((v) => v !== item) : [...value, item]);
-
-  const remove = (item: string) => onChange(value.filter((v) => v !== item));
-
-  const addCustom = () => {
-    const v = customInput.trim();
-    if (!v) return;
-    if (!value.some((x) => x.toLowerCase() === v.toLowerCase())) {
-      onChange([...value, v]);
-    }
-    setCustomInput("");
-  };
-
-  // Selected items that aren't part of the preset list — rendered as removable chips.
-  const customTags = value.filter((v) => !options.some((o) => o.toLowerCase() === v.toLowerCase()));
-
-  return (
-    <div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-        {options.map((opt) => (
-          <button
-            key={opt}
-            type="button"
-            onClick={() => toggle(opt)}
-            style={{
-              padding: "5px 12px",
-              fontSize: 12,
-              borderRadius: 9999,
-              border: value.includes(opt) ? "1px solid var(--color-accent-primary)" : "1px solid var(--color-border-secondary)",
-              backgroundColor: value.includes(opt) ? "var(--color-accent-primary)" : "transparent",
-              color: value.includes(opt) ? "var(--color-btn-primary-text, #000)" : "var(--color-text-secondary)",
-              cursor: "pointer",
-              transition: "all 0.15s",
-              fontWeight: value.includes(opt) ? 600 : 400,
-            }}
-          >
-            {opt}
-          </button>
-        ))}
-        {customTags.map((tag) => (
-          <span
-            key={tag}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-              padding: "5px 10px 5px 12px",
-              fontSize: 12,
-              fontWeight: 600,
-              borderRadius: 9999,
-              border: "1px solid var(--color-accent-primary)",
-              backgroundColor: "var(--color-accent-primary)",
-              color: "var(--color-btn-primary-text, #000)",
-            }}
-          >
-            {tag}
-            <button
-              type="button"
-              onClick={() => remove(tag)}
-              aria-label={`Remove ${tag}`}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-btn-primary-text, #000)", display: "flex", padding: 0, opacity: 0.7 }}
-            >
-              <X style={{ width: 12, height: 12 }} />
-            </button>
-          </span>
-        ))}
-      </div>
-
-      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-        <input
-          type="text"
-          value={customInput}
-          onChange={(e) => setCustomInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") { e.preventDefault(); addCustom(); }
-          }}
-          placeholder={customPlaceholder ?? "Add your own…"}
-          maxLength={40}
-          style={{
-            flex: 1,
-            padding: "8px 12px",
-            backgroundColor: "var(--color-bg-primary)",
-            border: "1px solid var(--color-border-secondary)",
-            borderRadius: 10,
-            color: "var(--color-text-primary)",
-            fontSize: 12,
-            outline: "none",
-            boxSizing: "border-box",
-          }}
-        />
-        <button
-          type="button"
-          onClick={addCustom}
-          disabled={!customInput.trim()}
-          style={{
-            padding: "8px 14px",
-            fontSize: 12,
-            fontWeight: 600,
-            borderRadius: 10,
-            border: "1px solid var(--color-border-secondary)",
-            backgroundColor: "transparent",
-            color: customInput.trim() ? "var(--color-accent-primary)" : "var(--color-text-tertiary)",
-            cursor: customInput.trim() ? "pointer" : "not-allowed",
-          }}
-        >
-          Add
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function ProgressBar({ value }: { value: number }) {
-  return (
-    <div style={{ width: "100%", height: 6, borderRadius: 9999, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
-      <div
-        style={{
-          height: "100%",
-          width: `${value}%`,
-          background: "linear-gradient(to right, var(--color-accent-primary), #FFCB33)",
-          borderRadius: 9999,
-          transition: "width 0.3s ease",
-        }}
-      />
-    </div>
-  );
-}
+const REVIEW_TIPS = [
+  "Check the thumbnail crop — it is the first thing viewers see.",
+  "Transcoding runs after publish; the video appears once it finishes.",
+  "You can edit the title, description and tags later from your profile.",
+  "Keep this tab open until the upload bar reaches 100%.",
+];
 
 // ── Page ──────────────────────────────────────────────────────
 
 export default function UploadVideoPage() {
   const router = useRouter();
   const { status } = useAuth();
+
+  const [step, setStep] = useState(0);
 
   const [title, setTitle]           = useState("");
   const [description, setDescription] = useState("");
@@ -388,6 +116,11 @@ export default function UploadVideoPage() {
 
   const rentalPlan =
     RENTAL_PLANS.find((p) => p.priceCents === rentalCents) ?? RENTAL_PLANS[1];
+
+  // Object URLs for the in-form previews. Revoked when the file changes so a
+  // creator swapping thumbnails a dozen times doesn't leak a dozen blobs.
+  const thumbUrl = useObjectUrl(thumbFile);
+  const videoUrl = useObjectUrl(videoFile);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -428,21 +161,14 @@ export default function UploadVideoPage() {
     setThumbFile(f);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!videoFile)          { toast.error("Please select a video file"); return; }
-    if (!thumbFile)          { toast.error("Please add a thumbnail image"); return; }
-    if (!title.trim())       { toast.error("Title is required"); return; }
-    if (genres.length === 0) { toast.error("Select at least one genre"); return; }
-    if (!rating)             { toast.error("Please select a rating"); return; }
-
+  const handleSubmit = async () => {
     setUploading(true);
     setProgress(0);
 
     try {
       const videoAsset = await uploadDirectToS3(
         "video",
-        videoFile,
+        videoFile!,
         (pct) => setProgress(Math.round(pct * 0.9)),
       );
 
@@ -502,6 +228,7 @@ export default function UploadVideoPage() {
 
   const reset = () => {
     setDone(false);
+    setStep(0);
     setVideoFile(null);
     setThumbFile(null);
     setTitle("");
@@ -509,12 +236,402 @@ export default function UploadVideoPage() {
     setGenres([]);
     setThemes([]);
     setRating("");
+    setHasPaid(false);
+    setIsForSale(false);
     setIsShort(false);
     setDuration(null);
     setProgress(0);
     setIsRentable(false);
     setRentalCents(RENTAL_PLANS[1].priceCents);
   };
+
+  // ── Steps ─────────────────────────────────────────────────
+
+  const steps: WizardStep[] = useMemo(() => [
+    {
+      id: "media",
+      title: "Media",
+      hint: "Pick the film and the thumbnail viewers will click on.",
+      icon: Upload,
+      aside: <TipCard title="Supported Formats" items={FORMAT_TIPS} />,
+      validate: () =>
+        !videoFile ? "Select a video file to continue"
+        : !thumbFile ? "Add a thumbnail image to continue"
+        : null,
+      content: (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <FieldLabel required>Video File</FieldLabel>
+            <DropZone
+              accept="video/*"
+              file={videoFile}
+              onFile={handleVideoFile}
+              onClear={() => { setVideoFile(null); setDuration(null); }}
+              icon={Video}
+              label="Drop a video here or click to browse"
+              hint="MP4, MOV, AVI · Max 500 MB"
+              preview={
+                videoUrl ? (
+                  <video
+                    src={videoUrl}
+                    muted
+                    playsInline
+                    preload="metadata"
+                    style={{ display: "block", width: "100%", aspectRatio: "16 / 9", objectFit: "cover", backgroundColor: "#000" }}
+                  />
+                ) : undefined
+              }
+            />
+            {duration != null && (
+              <p style={{ margin: "6px 0 0", fontSize: 11, color: "var(--color-text-tertiary)" }}>
+                Duration {formatDuration(duration)}
+                {duration <= 60 && " · qualifies as a Short"}
+              </p>
+            )}
+          </div>
+          <div>
+            <FieldLabel required>Thumbnail</FieldLabel>
+            <DropZone
+              accept="image/*"
+              file={thumbFile}
+              onFile={handleThumbFile}
+              onClear={() => setThumbFile(null)}
+              icon={ImageIcon}
+              label="Drop an image here or click to browse"
+              hint="Any image · Auto-converted to WebP · Recommended 16:9"
+              preview={
+                thumbUrl ? (
+                  // Local blob preview — next/image would proxy it pointlessly.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={thumbUrl}
+                    alt="Selected thumbnail"
+                    style={{ display: "block", width: "100%", aspectRatio: "16 / 9", objectFit: "cover", backgroundColor: "#000" }}
+                  />
+                ) : undefined
+              }
+            />
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "details",
+      title: "Details",
+      hint: "Title and description — this is what search and the cards show.",
+      icon: Film,
+      aside: <TipCard title="Writing Tips" items={TITLE_TIPS} />,
+      validate: () => (!title.trim() ? "A title is required to continue" : null),
+      content: (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div>
+            <FieldLabel required>Title</FieldLabel>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter a compelling title for your video..."
+              maxLength={120}
+              style={inputStyle}
+            />
+            <p style={{ margin: "4px 0 0", fontSize: 11, color: "var(--color-text-tertiary)", textAlign: "right" }}>
+              {title.length}/120
+            </p>
+          </div>
+          <div>
+            <FieldLabel>Description</FieldLabel>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={6}
+              placeholder="Describe your video — what is it about, who made it, what inspired it..."
+              style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit", lineHeight: 1.6 }}
+            />
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "classification",
+      title: "Tags",
+      hint: "Genres, themes and rating decide where your film gets shown.",
+      icon: Tag,
+      aside: <TipCard title="Tagging Tips" items={TAGGING_TIPS} />,
+      validate: () =>
+        genres.length === 0 ? "Select at least one genre to continue"
+        : !rating ? "Select a rating to continue"
+        : null,
+      content: (
+        <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+          <div>
+            <FieldLabel required>Genre</FieldLabel>
+            <MultiSelect options={GENRES} value={genres} onChange={setGenres} customPlaceholder="Add a custom genre…" />
+          </div>
+          <div>
+            <FieldLabel>Themes</FieldLabel>
+            <MultiSelect options={THEMES} value={themes} onChange={setThemes} customPlaceholder="Add a custom theme…" />
+          </div>
+          <div>
+            <FieldLabel required>Rating</FieldLabel>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {RATINGS.map((r) => {
+                const on = rating === r.value;
+                return (
+                  <button
+                    key={r.value}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => setRating(r.value)}
+                    style={{
+                      padding: "10px 8px",
+                      borderRadius: 12,
+                      border: on ? "1.5px solid var(--color-accent-primary)" : "1px solid var(--color-border-secondary)",
+                      backgroundColor: on ? "var(--accent-soft)" : "var(--color-bg-primary)",
+                      color: on ? "var(--color-accent-primary)" : "var(--color-text-secondary)",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>{r.label}</div>
+                    <div style={{ fontSize: 10, opacity: 0.65, marginTop: 2, lineHeight: 1.3 }}>{r.sub}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "distribution",
+      title: "Distribution",
+      hint: "How viewers get access, and how you get paid. All optional.",
+      icon: Settings2,
+      aside: <TipCard title="Content Guidelines" items={GUIDELINES} />,
+      content: (
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {[
+            {
+              label: "HypeMode (Paid Content)",
+              desc: "Your video is gated — viewers pay to access it. Earns higher revenue share.",
+              checked: hasPaid,
+              onChange: setHasPaid,
+            },
+            {
+              label: "List on Marketplace",
+              desc: "Buyers can purchase a license or full rights to this video content.",
+              checked: isForSale,
+              onChange: setIsForSale,
+            },
+            {
+              label: "This is a Short",
+              desc: "Vertical, quick-watch content — shown in the homepage Shorts row instead of regular rows.",
+              checked: isShort,
+              onChange: setIsShort,
+            },
+          ].map(({ label, desc, checked, onChange }) => (
+            <label
+              key={label}
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 12,
+                cursor: "pointer",
+                padding: "14px 16px",
+                borderRadius: 12,
+                border: checked ? "1px solid var(--color-accent-primary)" : "1px solid var(--color-border-secondary)",
+                backgroundColor: checked ? "var(--accent-soft)" : "var(--color-bg-primary)",
+                transition: "all 0.15s",
+              }}
+            >
+              <div style={{ paddingTop: 2 }}>
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={(e) => onChange(e.target.checked)}
+                  style={{ width: 16, height: 16, accentColor: "var(--color-accent-primary)", cursor: "pointer" }}
+                />
+              </div>
+              <div>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "var(--color-text-primary)" }}>{label}</p>
+                <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--color-text-tertiary)", lineHeight: 1.4 }}>{desc}</p>
+              </div>
+            </label>
+          ))}
+
+          {/* Rentals — rendered outside the checkbox map because it reveals
+              a plan picker when enabled. Styling intentionally mirrors the
+              labels above. */}
+          <div
+            style={{
+              padding: "14px 16px",
+              borderRadius: 12,
+              border: isRentable
+                ? "1px solid var(--color-accent-primary)"
+                : "1px solid var(--color-border-secondary)",
+              backgroundColor: isRentable ? "var(--accent-soft)" : "var(--color-bg-primary)",
+              transition: "all 0.15s",
+              opacity: payoutState === "blocked" ? 0.75 : 1,
+            }}
+          >
+            <label
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 12,
+                cursor: payoutState === "eligible" ? "pointer" : "not-allowed",
+              }}
+            >
+              <div style={{ paddingTop: 2 }}>
+                <input
+                  type="checkbox"
+                  checked={isRentable}
+                  disabled={payoutState !== "eligible"}
+                  onChange={(e) => setIsRentable(e.target.checked)}
+                  style={{
+                    width: 16, height: 16,
+                    accentColor: "var(--color-accent-primary)",
+                    cursor: payoutState === "eligible" ? "pointer" : "not-allowed",
+                  }}
+                />
+              </div>
+              <div>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "var(--color-text-primary)" }}>
+                  Rent this film
+                </p>
+                <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--color-text-tertiary)", lineHeight: 1.4 }}>
+                  Viewers pay once to watch. They get 30 days to press play, then the
+                  window you pick below runs from first play.
+                </p>
+              </div>
+            </label>
+
+            {payoutState === "blocked" && (
+              <p style={{ margin: "10px 0 0 28px", fontSize: 12, color: "var(--color-text-tertiary)", lineHeight: 1.5 }}>
+                Renting needs a payout account so we can send you the money.{" "}
+                <Link href="/marketplace/dashboard/seller" style={{ color: "var(--color-accent-primary)", fontWeight: 600 }}>
+                  Connect payouts
+                </Link>{" "}
+                to enable it.
+              </p>
+            )}
+
+            {isRentable && payoutState === "eligible" && (
+              <div style={{ margin: "14px 0 0 28px" }}>
+                <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 600, color: "var(--color-text-secondary)" }}>
+                  Rental plan
+                </p>
+
+                <div role="radiogroup" aria-label="Rental plan" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {RENTAL_PLANS.map((plan) => {
+                    const active = rentalCents === plan.priceCents;
+                    return (
+                      <button
+                        key={plan.priceCents}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        onClick={() => setRentalCents(plan.priceCents)}
+                        style={{
+                          padding: "10px 18px",
+                          borderRadius: 12,
+                          textAlign: "left",
+                          cursor: "pointer",
+                          border: active
+                            ? "1px solid var(--color-accent-primary)"
+                            : "1px solid var(--color-border-secondary)",
+                          backgroundColor: active ? "var(--accent-soft)" : "transparent",
+                          color: active ? "var(--color-accent-primary)" : "var(--color-text-secondary)",
+                        }}
+                      >
+                        <span style={{ display: "block", fontSize: 15, fontWeight: 800 }}>
+                          ${(plan.priceCents / 100).toFixed(2)}
+                        </span>
+                        <span style={{ display: "block", marginTop: 2, fontSize: 12, fontWeight: 600 }}>
+                          {plan.label} to watch
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <p style={{ margin: "8px 0 0", fontSize: 12, color: "var(--color-text-tertiary)" }}>
+                  You earn ${((rentalPlan.priceCents * (1 - PLATFORM_FEE_RATE)) / 100).toFixed(2)} per rental
+                  after the {Math.round(PLATFORM_FEE_RATE * 100)}% platform fee.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "review",
+      title: "Review",
+      hint: "One last look before it goes live.",
+      icon: ClipboardCheck,
+      aside: <TipCard title="Before You Publish" items={REVIEW_TIPS} />,
+      content: (
+        <div>
+          <div style={{ display: "flex", gap: 16, marginBottom: 4, flexWrap: "wrap" }}>
+            <div
+              style={{
+                width: 168, aspectRatio: "16 / 9", flexShrink: 0,
+                borderRadius: 12, overflow: "hidden",
+                backgroundColor: "var(--color-bg-primary)",
+                border: "1px solid var(--color-border-secondary)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+            >
+              {thumbUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={thumbUrl} alt="Thumbnail preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                <ImageIcon style={{ width: 22, height: 22, color: "var(--color-text-tertiary)" }} aria-hidden />
+              )}
+            </div>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "var(--color-text-primary)", lineHeight: 1.3 }}>
+                {title.trim() || "Untitled"}
+              </h3>
+              <p style={{ margin: "6px 0 0", fontSize: 12.5, color: "var(--color-text-tertiary)", lineHeight: 1.6 }}>
+                {description.trim() || "No description added."}
+              </p>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 18 }}>
+            <ReviewRow label="Video file">
+              {videoFile
+                ? `${videoFile.name} · ${formatBytes(videoFile.size)}${duration != null ? ` · ${formatDuration(duration)}` : ""}`
+                : "—"}
+            </ReviewRow>
+            <ReviewRow label="Genre">{genres.length ? genres.join(", ") : "—"}</ReviewRow>
+            <ReviewRow label="Themes">{themes.length ? themes.join(", ") : "None"}</ReviewRow>
+            <ReviewRow label="Rating">{rating || "—"}</ReviewRow>
+            <ReviewRow label="Distribution">
+              {[
+                hasPaid && "HypeMode",
+                isForSale && "On Marketplace",
+                isShort && "Short",
+                isRentable && `Rental $${(rentalPlan.priceCents / 100).toFixed(2)} / ${rentalPlan.label}`,
+              ].filter(Boolean).join(" · ") || "Free to watch"}
+            </ReviewRow>
+            {isRentable && (
+              <ReviewRow label="You earn">
+                ${((rentalPlan.priceCents * (1 - PLATFORM_FEE_RATE)) / 100).toFixed(2)} per rental
+              </ReviewRow>
+            )}
+          </div>
+        </div>
+      ),
+    },
+  ], [
+    videoFile, thumbFile, videoUrl, thumbUrl, duration,
+    title, description, genres, themes, rating,
+    hasPaid, isForSale, isShort, isRentable, rentalCents, rentalPlan, payoutState,
+  ]);
 
   // ── Success screen ────────────────────────────────────────
 
@@ -576,372 +693,35 @@ export default function UploadVideoPage() {
     );
   }
 
-  // ── Form ──────────────────────────────────────────────────
+  // ── Wizard ────────────────────────────────────────────────
 
   return (
     <div style={{ maxWidth: 1080, margin: "0 auto", padding: "32px 16px 64px" }}>
-      {/* Hero header */}
-      <div
-        style={{
-          position: "relative",
-          overflow: "hidden",
-          background: "linear-gradient(135deg, rgba(255,187,0,0.14) 0%, rgba(255,187,0,0.05) 100%)",
-          border: "1px solid rgba(255,187,0,0.2)",
-          borderRadius: 22,
-          padding: "28px 36px",
-          marginBottom: 28,
-        }}
-      >
-        {/* Decorative blur blob */}
-        <div
-          style={{
-            position: "absolute", right: -50, top: -50,
-            width: 180, height: 180, borderRadius: "50%",
-            background: "rgba(255,187,0,0.15)",
-            filter: "blur(40px)",
-            pointerEvents: "none",
-          }}
-        />
-        <div style={{ display: "flex", alignItems: "center", gap: 18, position: "relative" }}>
-          <div
-            style={{
-              width: 56, height: 56, borderRadius: 16, flexShrink: 0,
-              background: "linear-gradient(135deg, var(--color-accent-primary), #FFCB33)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 8px 24px rgba(255,187,0,0.35)",
-            }}
-          >
-            <Video style={{ width: 28, height: 28, color: "var(--color-btn-primary-text, #000)" }} />
-          </div>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-              <span style={{ fontSize: 12, color: "var(--color-text-tertiary)" }}>WeCinema</span>
-              <ChevronRight style={{ width: 12, height: 12, color: "var(--color-text-tertiary)" }} />
-              <span style={{ fontSize: 12, color: "var(--color-accent-primary)", fontWeight: 600 }}>Upload Video</span>
-            </div>
-            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: "var(--color-text-primary)", letterSpacing: "-0.3px" }}>
-              Upload Your Film
-            </h1>
-            <p style={{ margin: "3px 0 0", fontSize: 13, color: "var(--color-text-tertiary)" }}>
-              Share your creative work with the WeCinema community
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageHero
+        icon={Video}
+        crumb="Upload Video"
+        heading="Upload Your Film"
+        sub="Share your creative work with the WeCinema community"
+      />
 
-      {/* Two-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_288px] gap-6 items-start">
-        {/* ── Left: form ── */}
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-
-          {/* Section: Media Files */}
-          <SectionCard icon={Upload} title="Media Files">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <FieldLabel required>Video File</FieldLabel>
-                <DropZone
-                  accept="video/*"
-                  file={videoFile}
-                  onFile={handleVideoFile}
-                  onClear={() => setVideoFile(null)}
-                  icon={Video}
-                  label="Click to select a video"
-                  hint="MP4, MOV, AVI · Max 500 MB"
-                />
-              </div>
-              <div>
-                <FieldLabel required>Thumbnail</FieldLabel>
-                <DropZone
-                  accept="image/*"
-                  file={thumbFile}
-                  onFile={handleThumbFile}
-                  onClear={() => setThumbFile(null)}
-                  icon={ImageIcon}
-                  label="Add a thumbnail image"
-                  hint="Required · Any image · Auto-converted to WebP · Recommended 16:9"
-                />
-              </div>
-            </div>
-          </SectionCard>
-
-          {/* Section: Content Details */}
-          <SectionCard icon={Film} title="Content Details">
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div>
-                <FieldLabel required>Title</FieldLabel>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter a compelling title for your video..."
-                  maxLength={120}
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    backgroundColor: "var(--color-bg-primary)",
-                    border: "1px solid var(--color-border-secondary)",
-                    borderRadius: 12,
-                    color: "var(--color-text-primary)",
-                    fontSize: 14,
-                    outline: "none",
-                    boxSizing: "border-box",
-                  }}
-                />
-                <p style={{ margin: "4px 0 0", fontSize: 11, color: "var(--color-text-tertiary)", textAlign: "right" }}>
-                  {title.length}/120
-                </p>
-              </div>
-              <div>
-                <FieldLabel>Description</FieldLabel>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={4}
-                  placeholder="Describe your video — what is it about, who made it, what inspired it..."
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    backgroundColor: "var(--color-bg-primary)",
-                    border: "1px solid var(--color-border-secondary)",
-                    borderRadius: 12,
-                    color: "var(--color-text-primary)",
-                    fontSize: 14,
-                    outline: "none",
-                    resize: "vertical",
-                    fontFamily: "inherit",
-                    boxSizing: "border-box",
-                    lineHeight: 1.6,
-                  }}
-                />
-              </div>
-            </div>
-          </SectionCard>
-
-          {/* Section: Classification */}
-          <SectionCard icon={Tag} title="Classification">
-            <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-              <div>
-                <FieldLabel required>Genre</FieldLabel>
-                <MultiSelect
-                  options={GENRES}
-                  value={genres}
-                  onChange={setGenres}
-                  customPlaceholder="Add a custom genre…"
-                />
-              </div>
-              <div>
-                <FieldLabel>Themes</FieldLabel>
-                <MultiSelect
-                  options={THEMES}
-                  value={themes}
-                  onChange={setThemes}
-                  customPlaceholder="Add a custom theme…"
-                />
-              </div>
-              <div>
-                <FieldLabel required>Rating</FieldLabel>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(4, 1fr)",
-                    gap: 8,
-                  }}
-                >
-                  {RATINGS.map((r) => (
-                    <button
-                      key={r.value}
-                      type="button"
-                      onClick={() => setRating(r.value)}
-                      style={{
-                        padding: "10px 8px",
-                        borderRadius: 12,
-                        border: rating === r.value ? "1.5px solid var(--color-accent-primary)" : "1px solid var(--color-border-secondary)",
-                        backgroundColor: rating === r.value ? "rgba(255,187,0,0.12)" : "var(--color-bg-primary)",
-                        color: rating === r.value ? "var(--color-accent-primary)" : "var(--color-text-secondary)",
-                        cursor: "pointer",
-                        textAlign: "left",
-                        transition: "all 0.15s",
-                      }}
-                    >
-                      <div style={{ fontSize: 14, fontWeight: 700 }}>{r.label}</div>
-                      <div style={{ fontSize: 10, opacity: 0.65, marginTop: 2, lineHeight: 1.3 }}>{r.sub}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </SectionCard>
-
-          {/* Section: Settings */}
-          <SectionCard icon={Settings2} title="Distribution Settings">
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {[
-                {
-                  label: "HypeMode (Paid Content)",
-                  desc: "Your video is gated — viewers pay to access it. Earns higher revenue share.",
-                  checked: hasPaid,
-                  onChange: setHasPaid,
-                },
-                {
-                  label: "List on Marketplace",
-                  desc: "Buyers can purchase a license or full rights to this video content.",
-                  checked: isForSale,
-                  onChange: setIsForSale,
-                },
-                {
-                  label: "This is a Short",
-                  desc: "Vertical, quick-watch content — shown in the homepage Shorts row instead of regular rows.",
-                  checked: isShort,
-                  onChange: setIsShort,
-                },
-              ].map(({ label, desc, checked, onChange }) => (
-                <label
-                  key={label}
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: 12,
-                    cursor: "pointer",
-                    padding: "14px 16px",
-                    borderRadius: 12,
-                    border: checked ? "1px solid rgba(255,187,0,0.4)" : "1px solid var(--color-border-secondary)",
-                    backgroundColor: checked ? "rgba(255,187,0,0.06)" : "var(--color-bg-primary)",
-                    transition: "all 0.15s",
-                  }}
-                >
-                  <div style={{ paddingTop: 2 }}>
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={(e) => onChange(e.target.checked)}
-                      style={{ width: 16, height: 16, accentColor: "var(--color-accent-primary)", cursor: "pointer" }}
-                    />
-                  </div>
-                  <div>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "var(--color-text-primary)" }}>{label}</p>
-                    <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--color-text-tertiary)", lineHeight: 1.4 }}>{desc}</p>
-                  </div>
-                </label>
-              ))}
-
-              {/* Rentals — rendered outside the checkbox map because it reveals
-                  a plan picker when enabled. Styling intentionally mirrors the
-                  labels above. */}
-              <div
-                style={{
-                  padding: "14px 16px",
-                  borderRadius: 12,
-                  border: isRentable
-                    ? "1px solid rgba(255,187,0,0.4)"
-                    : "1px solid var(--color-border-secondary)",
-                  backgroundColor: isRentable ? "rgba(255,187,0,0.06)" : "var(--color-bg-primary)",
-                  transition: "all 0.15s",
-                  opacity: payoutState === "blocked" ? 0.75 : 1,
-                }}
-              >
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: 12,
-                    cursor: payoutState === "eligible" ? "pointer" : "not-allowed",
-                  }}
-                >
-                  <div style={{ paddingTop: 2 }}>
-                    <input
-                      type="checkbox"
-                      checked={isRentable}
-                      disabled={payoutState !== "eligible"}
-                      onChange={(e) => setIsRentable(e.target.checked)}
-                      style={{
-                        width: 16, height: 16,
-                        accentColor: "var(--color-accent-primary)",
-                        cursor: payoutState === "eligible" ? "pointer" : "not-allowed",
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "var(--color-text-primary)" }}>
-                      Rent this film
-                    </p>
-                    <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--color-text-tertiary)", lineHeight: 1.4 }}>
-                      Viewers pay once to watch. They get 30 days to press play, then the
-                      window you pick below runs from first play.
-                    </p>
-                  </div>
-                </label>
-
-                {payoutState === "blocked" && (
-                  <p style={{ margin: "10px 0 0 28px", fontSize: 12, color: "var(--color-text-tertiary)", lineHeight: 1.5 }}>
-                    Renting needs a payout account so we can send you the money.{" "}
-                    <Link href="/marketplace/dashboard/seller" style={{ color: "var(--color-accent-primary)", fontWeight: 600 }}>
-                      Connect payouts
-                    </Link>{" "}
-                    to enable it.
-                  </p>
-                )}
-
-                {isRentable && payoutState === "eligible" && (
-                  <div style={{ margin: "14px 0 0 28px" }}>
-                    <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 600, color: "var(--color-text-secondary)" }}>
-                      Rental plan
-                    </p>
-
-                    <div
-                      role="radiogroup"
-                      aria-label="Rental plan"
-                      style={{ display: "flex", gap: 8, flexWrap: "wrap" }}
-                    >
-                      {RENTAL_PLANS.map((plan) => {
-                        const active = rentalCents === plan.priceCents;
-                        return (
-                          <button
-                            key={plan.priceCents}
-                            type="button"
-                            role="radio"
-                            aria-checked={active}
-                            onClick={() => setRentalCents(plan.priceCents)}
-                            style={{
-                              padding: "10px 18px",
-                              borderRadius: 12,
-                              textAlign: "left",
-                              cursor: "pointer",
-                              border: active
-                                ? "1px solid var(--color-accent-primary)"
-                                : "1px solid var(--color-border-secondary)",
-                              backgroundColor: active ? "rgba(255,187,0,0.12)" : "transparent",
-                              color: active ? "var(--color-accent-primary)" : "var(--color-text-secondary)",
-                            }}
-                          >
-                            <span style={{ display: "block", fontSize: 15, fontWeight: 800 }}>
-                              ${(plan.priceCents / 100).toFixed(2)}
-                            </span>
-                            <span style={{ display: "block", marginTop: 2, fontSize: 12, fontWeight: 600 }}>
-                              {plan.label} to watch
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <p style={{ margin: "8px 0 0", fontSize: 12, color: "var(--color-text-tertiary)" }}>
-                      You earn ${((rentalPlan.priceCents * (1 - PLATFORM_FEE_RATE)) / 100).toFixed(2)} per rental
-                      after the {Math.round(PLATFORM_FEE_RATE * 100)}% platform fee.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </SectionCard>
-
-          {/* Upload progress */}
-          {uploading && (
+      <UploadWizard
+        steps={steps}
+        index={step}
+        onIndexChange={setStep}
+        onSubmit={handleSubmit}
+        submitLabel="Publish Video"
+        submitIcon={Upload}
+        submitting={uploading}
+        submittingLabel="Uploading…"
+        footer={
+          uploading ? (
             <div
               style={{
                 backgroundColor: "var(--color-bg-elevated)",
-                border: "1px solid rgba(255,187,0,0.25)",
+                border: "1px solid var(--color-accent-primary)",
                 borderRadius: 16,
                 padding: "20px 24px",
+                marginTop: 18,
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
@@ -952,7 +732,7 @@ export default function UploadVideoPage() {
                       display: "inline-block",
                       width: 14, height: 14,
                       borderRadius: "50%",
-                      border: "2px solid rgba(255,187,0,0.3)",
+                      border: "2px solid var(--accent-ring)",
                       borderTopColor: "var(--color-accent-primary)",
                     }}
                   />
@@ -967,61 +747,9 @@ export default function UploadVideoPage() {
                 Please keep this page open until the upload completes.
               </p>
             </div>
-          )}
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={uploading || !videoFile || !thumbFile}
-            style={{
-              width: "100%",
-              padding: "15px",
-              background: "linear-gradient(to right, var(--color-accent-primary), #FFCB33)",
-              color: "var(--color-btn-primary-text, #000)",
-              borderRadius: 14,
-              fontSize: 15,
-              fontWeight: 700,
-              border: "none",
-              cursor: uploading || !videoFile || !thumbFile ? "not-allowed" : "pointer",
-              opacity: uploading || !videoFile || !thumbFile ? 0.5 : 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              transition: "opacity 0.15s",
-              boxShadow: uploading || !videoFile || !thumbFile ? "none" : "0 4px 20px rgba(255,187,0,0.4)",
-            }}
-          >
-            {uploading ? (
-              <>
-                <span
-                  className="animate-spin"
-                  style={{
-                    display: "inline-block",
-                    width: 16, height: 16,
-                    borderRadius: "50%",
-                    border: "2px solid rgba(0,0,0,0.25)",
-                    borderTopColor: "var(--color-btn-primary-text, #000)",
-                  }}
-                />
-                Uploading…
-              </>
-            ) : (
-              <>
-                <Upload style={{ width: 17, height: 17 }} />
-                Publish Video
-              </>
-            )}
-          </button>
-        </form>
-
-        {/* ── Right: tips sidebar ── */}
-        <div className="flex flex-col gap-4 lg:sticky lg:top-6">
-          <TipCard title="Upload Tips" items={UPLOAD_TIPS} />
-          <TipCard title="Supported Formats" items={FORMAT_TIPS} />
-          <TipCard title="Content Guidelines" items={GUIDELINES} />
-        </div>
-      </div>
+          ) : null
+        }
+      />
     </div>
   );
 }
