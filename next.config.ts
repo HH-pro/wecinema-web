@@ -29,6 +29,14 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+
+  // Production installs run `--omit=dev`, so vitest's types are absent. The
+  // build config excludes test files from the type-check; tsconfig.json (used by
+  // `npm run type-check`, CI and the editor) still covers them.
+  typescript: {
+    tsconfigPath: "tsconfig.build.json",
+  },
+
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
   compress: true,

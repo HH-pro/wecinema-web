@@ -1,0 +1,28 @@
+{
+  // `next build` type-checks with this config instead of tsconfig.json
+  // (wired up via `typescript.tsconfigPath` in next.config.ts).
+  //
+  // Production deploys install with `--omit=dev`, so vitest and friends are not
+  // on disk. tsconfig.json includes `**/*.ts`, which drags vitest.config.ts and
+  // every *.test.ts into the build's type-check and fails it with TS2307. Test
+  // code is not shipped, so the build has no reason to look at it — `npm run
+  // type-check`, CI, and the editor still use tsconfig.json and cover it all.
+  "extends": "./tsconfig.json",
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "**/*.mts"
+  ],
+  "exclude": [
+    "node_modules",
+    "vitest.config.ts",
+    "vitest.setup.ts",
+    "e2e/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/__tests__/**"
+  ]
+}
