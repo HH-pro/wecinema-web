@@ -59,9 +59,11 @@ export function Field({ label, error, children, delay = 0 }: FieldProps) {
 interface InputWithIconProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon: React.ReactNode;
   error?: boolean;
+  /** Optional element rendered inside the input on the right (e.g. a show-password toggle). */
+  endAdornment?: React.ReactNode;
 }
 
-export function InputWithIcon({ icon, error, ...props }: InputWithIconProps) {
+export function InputWithIcon({ icon, error, endAdornment, ...props }: InputWithIconProps) {
   return (
     <div className="relative">
       <span
@@ -70,8 +72,13 @@ export function InputWithIcon({ icon, error, ...props }: InputWithIconProps) {
       >
         {icon}
       </span>
+      {endAdornment && (
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 z-10 flex items-center">
+          {endAdornment}
+        </span>
+      )}
       <input
-        className="w-full pl-10 pr-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
+        className={`w-full pl-10 ${endAdornment ? "pr-11" : "pr-4"} py-3 rounded-xl text-sm outline-none transition-all duration-200`}
         style={{
           background: "var(--color-input-bg)",
           border: `1.5px solid ${error ? "var(--color-danger)" : "var(--color-input-border)"}`,

@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle,
   ChevronRight,
+  Eye,
+  EyeOff,
   Mail,
   AlertCircle,
   Loader2,
@@ -516,6 +518,7 @@ function LoginFormInner({
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -592,9 +595,22 @@ function LoginFormInner({
           </Field>
           <Field label="Password" error={errors.password} delay={0.1}>
             <InputWithIcon icon={<FaLock className="w-3.5 h-3.5" />}
-              type="password" value={password} placeholder="••••••••"
-              error={!!errors.password} required
-              onChange={(e) => setPassword(e.target.value)} />
+              type={showPassword ? "text" : "password"} value={password} placeholder="••••••••"
+              error={!!errors.password} required autoComplete="current-password"
+              onChange={(e) => setPassword(e.target.value)}
+              endAdornment={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                  title={showPassword ? "Hide password" : "Show password"}
+                  className="p-1 rounded-md transition-colors hover:!text-[var(--color-text-primary)]"
+                  style={{ color: "var(--color-text-tertiary)" }}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              } />
           </Field>
           <div className="flex justify-between text-xs pt-0.5">
             <button type="button" onClick={onForgot}
