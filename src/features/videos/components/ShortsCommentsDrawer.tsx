@@ -37,17 +37,19 @@ interface NormalizedComment {
 }
 
 function normalizeComment(c: VideoComment): NormalizedComment {
+  // Feed payloads and replies carry an unpopulated `userId`; fall back to the
+  // username/avatar stored on the comment itself.
   const user =
     typeof c.userId === "object" && c.userId !== null
       ? c.userId
-      : { _id: c.userId as string, username: "User", avatar: undefined };
+      : { _id: c.userId as string, username: undefined, avatar: undefined };
   return {
     _id: c._id,
     text: c.text,
     createdAt: c.createdAt,
     userId: user._id,
-    username: user.username,
-    avatar: user.avatar,
+    username: user.username || c.username || "User",
+    avatar: user.avatar || c.avatar,
     replies: (c.replies ?? []).map(normalizeComment),
   };
 }
@@ -95,12 +97,12 @@ function CommentRow({
   comment,
   videoId,
   authUserId,
-  onReplyAdded,
+  onCommentsUpdated,
 }: {
   comment: NormalizedComment;
   videoId: string;
   authUserId?: string;
-  onReplyAdded: (commentId: string, reply: NormalizedComment) => void;
+  onCommentsUpdated: (comments: VideoComment[]) => void;
 }) {
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyText, setReplyText] = useState("");
@@ -112,13 +114,12 @@ function CommentRow({
     if (replyText.trim().length < 2) return;
     setSubmitting(true);
     try {
+      // The API answers with the video's full, updated comment list — not just the new reply.
       const data = await api.post<CommentResponse>(
         `/video/${videoId}/comment/${comment._id}`,
         { userId: authUserId, text: replyText.trim() },
       );
-      const rawReplies = data.comments ?? [];
-      const lastRaw = rawReplies[rawReplies.length - 1];
-      if (lastRaw) onReplyAdded(comment._id, normalizeComment(lastRaw));
+      if (data.comments) onCommentsUpdated(data.comments);
       setReplyText("");
       setReplyOpen(false);
     } catch {
@@ -212,18 +213,29 @@ interface ShortsCommentsDrawerProps {
   video: Video | null;
   open: boolean;
   onClose: () => void;
-  onCountChange: (videoId: string, count: number) => void;
+  /** Latest comments for `video` held by the caller; falls back to `video.comments`. */
+  comments?: VideoComment[];
+  onCommentsChange: (videoId: string, comments: VideoComment[]) => void;
 }
 
-// Caller must pass `key={video?._id}` so this remounts (resetting comments/text)
+// Caller must pass `key={video?._id}` so this remounts (resetting the draft text)
 // whenever it's re-pointed at a different video, instead of syncing via effect.
-export function ShortsCommentsDrawer({ video, open, onClose, onCountChange }: ShortsCommentsDrawerProps) {
+// Comments live in the caller so posts survive switching between shorts.
+export function ShortsCommentsDrawer({
+  video,
+  open,
+  onClose,
+  comments: rawComments,
+  onCommentsChange,
+}: ShortsCommentsDrawerProps) {
   const { authUser } = useAuth();
-  const [comments, setComments] = useState<NormalizedComment[]>(() =>
-    (video?.comments ?? []).map(normalizeComment),
-  );
+  const comments = (rawComments ?? video?.comments ?? []).map(normalizeComment);
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  function applyComments(next: VideoComment[]) {
+    if (video) onCommentsChange(video._id, next);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -236,21 +248,13 @@ export function ShortsCommentsDrawer({ video, open, onClose, onCountChange }: Sh
         userId: authUser._id,
         text: text.trim(),
       });
-      const normalized = (data.comments ?? []).map(normalizeComment);
-      setComments(normalized);
-      onCountChange(video._id, normalized.length);
+      if (data.comments) applyComments(data.comments);
       setText("");
     } catch {
       toast.error("Couldn't post comment. Try again.");
     } finally {
       setSubmitting(false);
     }
-  }
-
-  function handleReplyAdded(commentId: string, reply: NormalizedComment) {
-    setComments((prev) =>
-      prev.map((c) => (c._id === commentId ? { ...c, replies: [...c.replies, reply] } : c)),
-    );
   }
 
   return (
@@ -344,7 +348,7 @@ export function ShortsCommentsDrawer({ video, open, onClose, onCountChange }: Sh
                     comment={comment}
                     videoId={video._id}
                     authUserId={authUser?._id}
-                    onReplyAdded={handleReplyAdded}
+                    onCommentsUpdated={applyComments}
                   />
                 ))
               )}

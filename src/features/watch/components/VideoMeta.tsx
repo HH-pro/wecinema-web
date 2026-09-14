@@ -107,7 +107,7 @@ export function VideoMeta({ video }: { video: Video }) {
     try {
       const data = await api.post<LikeActionResponse>(`/video/like/${video._id}`, {
         userId: authUser._id,
-        action: "like",
+        action: prevLiked ? "unlike" : "like",
       });
       setLikesCount(data.likesCount ?? likesCount);
       setDislikesCount(data.dislikesCount ?? dislikesCount);
@@ -136,7 +136,7 @@ export function VideoMeta({ video }: { video: Video }) {
     try {
       const data = await api.post<LikeActionResponse>(`/video/like/${video._id}`, {
         userId: authUser._id,
-        action: "dislike",
+        action: prevDisliked ? "undislike" : "dislike",
       });
       setLikesCount(data.likesCount ?? likesCount);
       setDislikesCount(data.dislikesCount ?? dislikesCount);

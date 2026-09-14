@@ -4,13 +4,14 @@ import { useRef, useEffect, useState, useCallback, useMemo, type ReactNode } fro
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Heart, MessageCircle, Share2, Volume2, VolumeX, Eye, Play, Pause } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, Heart, MessageCircle, Share2, Volume2, VolumeX, Eye, Play, Pause } from "lucide-react";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { api } from "@/features/auth/services/apiClient";
 import { toast } from "@/lib/toast";
 import { HypemodeAuthDrawer } from "@/app/hypemode/HypemodeAuthDrawer";
 import { ShortsCommentsDrawer } from "@/features/videos/components/ShortsCommentsDrawer";
-import type { Video } from "@/types";
+import { Avatar } from "@/components/ui/Avatar";
+import type { Video, VideoComment } from "@/types";
 
 function openAuthEvent(tab: "login" | "signup" = "login") {
   window.dispatchEvent(
@@ -102,6 +103,12 @@ function ShortItem({
   const [likesCount, setLikesCount] = useState(video.likes?.length ?? 0);
   const [likeLoading, setLikeLoading] = useState(false);
   const [tapIcon, setTapIcon] = useState<"play" | "pause" | null>(null);
+  const [viewsCount, setViewsCount] = useState(video.views ?? 0);
+  const viewTrackedRef = useRef(false);
+  const [buffering, setBuffering] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+
+  const author = typeof video.author === "object" && video.author !== null ? video.author : null;
 
   const thumb = video.thumbnailSmall ?? video.thumbnail ?? "";
   const isDataThumb = thumb.startsWith("data:");
@@ -138,8 +145,20 @@ function ShortItem({
     timerRef.current = setTimeout(() => setTapIcon(null), 700);
   }, []);
 
+  // Views count once per short per page visit, after 2s of playback. The API only
+  // records signed-in viewers (it dedupes via watch history), same as the watch page.
+  const handleTimeUpdate = useCallback(() => {
+    const el = videoRef.current;
+    if (!el || viewTrackedRef.current || !authUser || el.currentTime < 2) return;
+    viewTrackedRef.current = true;
+    api
+      .put<{ views?: number }>(`/video/view/${video._id}`)
+      .then((data) => { if (typeof data?.views === "number") setViewsCount(data.views); })
+      .catch(() => {});
+  }, [authUser, video._id]);
+
   const share = useCallback(async () => {
-    const url = `${window.location.origin}/watch/${video.slug ?? video._id}`;
+    const url = `${window.location.origin}/shorts?v=${encodeURIComponent(video.slug ?? video._id)}`;
     try {
       if (navigator.share) {
         await navigator.share({ title: video.title, url });
@@ -163,7 +182,7 @@ function ShortItem({
     try {
       const data = await api.post<{ likesCount?: number }>(`/video/like/${video._id}`, {
         userId: authUser._id,
-        action: "like",
+        action: prevLiked ? "unlike" : "like",
       });
       if (data.likesCount !== undefined) setLikesCount(data.likesCount);
     } catch {
@@ -215,6 +234,11 @@ function ShortItem({
         preload={preload}
         onPlay={() => setPaused(false)}
         onPause={() => setPaused(true)}
+        onWaiting={() => setBuffering(true)}
+        onPlaying={() => { setBuffering(false); setLoadError(false); }}
+        onCanPlay={() => setBuffering(false)}
+        onError={() => { setBuffering(false); setLoadError(true); }}
+        onTimeUpdate={handleTimeUpdate}
         onClick={togglePlay}
         style={{
           position: "absolute",
@@ -224,8 +248,43 @@ function ShortItem({
           objectFit: "cover",
           cursor: "pointer",
           zIndex: 1,
+          visibility: loadError ? "hidden" : "visible",
         }}
       />
+      )}
+
+      {/* Buffering spinner / playback failure (poster stays visible behind) */}
+      {isActive && (buffering || loadError || !video.file) && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            zIndex: 5,
+            pointerEvents: "none",
+          }}
+        >
+          {loadError || !video.file ? (
+            <span
+              style={{
+                padding: "8px 14px",
+                borderRadius: 9999,
+                background: "rgba(0,0,0,0.6)",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+            >
+              This short can&apos;t be played right now
+            </span>
+          ) : (
+            <span className="shorts-spinner" aria-label="Loading" />
+          )}
+        </div>
       )}
 
       {/* Tap-to-play / pause flash icon */}
@@ -334,7 +393,7 @@ function ShortItem({
           <Share2 size={26} color="#fff" />
         </ActionBtn>
 
-        <ActionBtn label={fmtCount(video.views)}>
+        <ActionBtn label={fmtCount(viewsCount)}>
           <Eye size={24} color="#fff" />
         </ActionBtn>
 
@@ -357,6 +416,34 @@ function ShortItem({
           zIndex: 10,
         }}
       >
+        {author?.username && (
+          <Link
+            href={`/user/${author._id}`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 8,
+              textDecoration: "none",
+              maxWidth: "100%",
+            }}
+          >
+            <Avatar src={author.avatar} username={author.username} size={30} />
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: "#fff",
+                textShadow: "0 1px 4px rgba(0,0,0,0.6)",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              @{author.username}
+            </span>
+          </Link>
+        )}
         <Link
           href={`/watch/${video.slug ?? video._id}`}
           style={{ textDecoration: "none" }}
@@ -425,7 +512,8 @@ export function ShortsPlayer({ videos }: { videos: Video[] }) {
   // is kept set (not nulled) after close so the exit animation has content to show.
   const [commentsVideo, setCommentsVideo] = useState<Video | null>(null);
   const [commentsOpen, setCommentsOpen] = useState(false);
-  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
+  // Latest comment list per video, so posts/replies survive reopening the drawer.
+  const [commentsById, setCommentsById] = useState<Record<string, VideoComment[]>>({});
 
   const openComments = useCallback((video: Video) => {
     setCommentsVideo(video);
@@ -473,6 +561,23 @@ export function ShortsPlayer({ videos }: { videos: Video[] }) {
     return () => items.forEach((el) => { if (el) obs.unobserve(el); });
   }, []);
 
+  // Keep ?v= in step with the visible short, so refresh / copy-link reopens it.
+  // replaceState (not router.replace) avoids a server round-trip per swipe.
+  const activeVideo = videos[activeIndex];
+  useEffect(() => {
+    if (!activeVideo) return;
+    const url = new URL(window.location.href);
+    const v = activeVideo.slug ?? activeVideo._id;
+    if (url.searchParams.get("v") === v) return;
+    url.searchParams.set("v", v);
+    window.history.replaceState(window.history.state, "", url);
+  }, [activeVideo]);
+
+  const scrollToIndex = useCallback((i: number) => {
+    const target = Math.min(Math.max(i, 0), videos.length - 1);
+    itemRefs.current[target]?.scrollIntoView({ behavior: "smooth" });
+  }, [videos.length]);
+
   // Keyboard nav: ↑↓ or j/k — suppressed while typing in the comments/auth
   // drawers so arrow keys move the caret instead of scrolling the feed.
   useEffect(() => {
@@ -482,17 +587,15 @@ export function ShortsPlayer({ videos }: { videos: Video[] }) {
       if (tag === "INPUT" || tag === "TEXTAREA") return;
       if (e.key === "ArrowDown" || e.key === "j") {
         e.preventDefault();
-        const next = Math.min(activeIndex + 1, videos.length - 1);
-        itemRefs.current[next]?.scrollIntoView({ behavior: "smooth" });
+        scrollToIndex(activeIndex + 1);
       } else if (e.key === "ArrowUp" || e.key === "k") {
         e.preventDefault();
-        const prev = Math.max(activeIndex - 1, 0);
-        itemRefs.current[prev]?.scrollIntoView({ behavior: "smooth" });
+        scrollToIndex(activeIndex - 1);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [activeIndex, videos.length, commentsOpen, authDrawerOpen]);
+  }, [activeIndex, scrollToIndex, commentsOpen, authDrawerOpen]);
 
   if (videos.length === 0) {
     return (
@@ -549,7 +652,48 @@ export function ShortsPlayer({ videos }: { videos: Video[] }) {
           height: 100%;
           overflow: hidden;
         }
+        @keyframes shorts-spin { to { transform: rotate(360deg); } }
+        .shorts-spinner {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          border: 3px solid rgba(255, 255, 255, 0.25);
+          border-top-color: #fff;
+          animation: shorts-spin 0.8s linear infinite;
+        }
+        .shorts-nav {
+          display: none;
+        }
         @media (min-width: 768px) {
+          .shorts-nav {
+            position: absolute;
+            right: 28px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+          }
+          .shorts-nav button {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+          }
+          .shorts-nav button:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.22);
+          }
+          .shorts-nav button:disabled {
+            opacity: 0.3;
+            cursor: default;
+          }
           .shorts-frame {
             width: min(calc(100dvh * 9 / 16), 440px);
             height: min(100%, calc(440px * 16 / 9));
@@ -651,11 +795,31 @@ export function ShortsPlayer({ videos }: { videos: Video[] }) {
                 isActive={i === activeIndex}
                 muted={muted}
                 onMuteToggle={() => setMuted((m) => !m)}
-                commentCount={commentCounts[video._id] ?? video.comments?.length ?? 0}
+                commentCount={(commentsById[video._id] ?? video.comments ?? []).length}
                 onOpenComments={openComments}
               />
             </div>
           ))}
+        </div>
+
+        {/* Desktop up/down (mobile swipes) */}
+        <div className="shorts-nav">
+          <button
+            type="button"
+            aria-label="Previous short"
+            disabled={activeIndex === 0}
+            onClick={() => scrollToIndex(activeIndex - 1)}
+          >
+            <ChevronUp size={22} />
+          </button>
+          <button
+            type="button"
+            aria-label="Next short"
+            disabled={activeIndex >= videos.length - 1}
+            onClick={() => scrollToIndex(activeIndex + 1)}
+          >
+            <ChevronDown size={22} />
+          </button>
         </div>
 
         <ShortsCommentsDrawer
@@ -663,8 +827,9 @@ export function ShortsPlayer({ videos }: { videos: Video[] }) {
           video={commentsVideo}
           open={commentsOpen}
           onClose={() => setCommentsOpen(false)}
-          onCountChange={(videoId, count) =>
-            setCommentCounts((prev) => ({ ...prev, [videoId]: count }))
+          comments={commentsVideo ? commentsById[commentsVideo._id] : undefined}
+          onCommentsChange={(videoId, comments) =>
+            setCommentsById((prev) => ({ ...prev, [videoId]: comments }))
           }
         />
 

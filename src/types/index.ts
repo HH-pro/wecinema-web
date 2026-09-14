@@ -11,6 +11,9 @@ export interface VideoComment {
   text: string;
   createdAt: string;
   userId: { _id: string; username: string; avatar?: string } | string;
+  /** Denormalised at write time; the only author info when `userId` isn't populated (e.g. replies, feed payloads). */
+  username?: string;
+  avatar?: string;
   replies?: VideoComment[];
 }
 
