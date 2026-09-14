@@ -338,6 +338,12 @@ export function UserProfileClient({ userId }: UserProfileClientProps) {
     }
   }, [id]);
 
+  // For the owner, the auth user is the source of truth, so switches made elsewhere
+  // (e.g. the sidebar) show up here too.
+  const authUserType = authUser?.userType;
+  const activeMode: UserType =
+    isOwner && (authUserType === "buyer" || authUserType === "seller") ? authUserType : marketplaceMode;
+
   useEffect(() => {
     loadUser();
   }, [loadUser]);
@@ -459,12 +465,14 @@ export function UserProfileClient({ userId }: UserProfileClientProps) {
   // ── Marketplace mode toggle ────────────────────────────────
   async function handleModeToggle() {
     if (!user || changingMode) return;
-    const next: UserType = marketplaceMode === "buyer" ? "seller" : "buyer";
+    const next: UserType = activeMode === "buyer" ? "seller" : "buyer";
     setChangingMode(true);
     try {
       await changeUserType(id, next);
       setMarketplaceMode(next);
       setUser((prev) => (prev ? { ...prev, userType: next } : prev));
+      // Sidebar, marketplace tabs and the cached session all read the auth user.
+      await refreshUser();
     } catch {
       // revert silently
     } finally {
@@ -1226,7 +1234,7 @@ export function UserProfileClient({ userId }: UserProfileClientProps) {
                       }}
                     >
                       <span style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>
-                        {marketplaceMode === "buyer" ? "🛒 Buyer" : "🏪 Seller"}
+                        {activeMode === "buyer" ? "🛒 Buyer" : "🏪 Seller"}
                       </span>
                       <button
                         onClick={handleModeToggle}
@@ -1238,7 +1246,7 @@ export function UserProfileClient({ userId }: UserProfileClientProps) {
                           borderRadius: 9999,
                           border: "none",
                           backgroundColor:
-                            marketplaceMode === "seller"
+                            activeMode === "seller"
                               ? "var(--color-accent-primary)"
                               : "var(--color-border-secondary)",
                           cursor: changingMode ? "wait" : "pointer",
@@ -1250,7 +1258,7 @@ export function UserProfileClient({ userId }: UserProfileClientProps) {
                           style={{
                             position: "absolute",
                             top: 3,
-                            left: marketplaceMode === "seller" ? 26 : 4,
+                            left: activeMode === "seller" ? 26 : 4,
                             width: 20,
                             height: 20,
                             borderRadius: "50%",
