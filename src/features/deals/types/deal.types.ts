@@ -212,7 +212,8 @@ export interface DealStatsResponse {
 
 export interface DealPaymentIntentResponse {
   success: true;
-  data: { clientSecret: string; paymentIntentId: string; amountCents: number };
+  /** `testMode`: test-payment accounts get no client secret; confirm the id directly. */
+  data: { clientSecret: string | null; paymentIntentId: string; amountCents: number; testMode?: boolean };
 }
 
 export interface ConfirmDealPaymentResponse {

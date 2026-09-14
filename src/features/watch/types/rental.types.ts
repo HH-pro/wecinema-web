@@ -44,7 +44,10 @@ export interface EntitlementResponse {
 export interface RentalCheckoutResponse {
   success: boolean;
   rentalId: string;
-  clientSecret: string;
+  /** Null for test-account checkouts, which skip Stripe. */
+  clientSecret: string | null;
+  /** Test-payment account: no card form; confirming activates the rental. */
+  testMode?: boolean;
   amountCents: number;
   currency: string;
   video: { _id: string; title: string };

@@ -54,6 +54,11 @@ async function captureOrder(orderId: string): Promise<CaptureOrderResponse> {
   return api.post<CaptureOrderResponse>("/payments/capture-order", { orderId });
 }
 
+/** Test accounts: the backend skips PayPal, so the plan goes with the capture. */
+async function captureTestOrder(orderId: string, planId: PlanId, userType: UserMode): Promise<CaptureOrderResponse> {
+  return api.post<CaptureOrderResponse>("/payments/capture-order", { orderId, planId, userType });
+}
+
 // ─── Static data ───────────────────────────────────────────────
 
 const PLANS = [
@@ -171,10 +176,49 @@ function PayPalButtonsInner({
 
 // ─── PayPal wrapper (fetches client ID) ─────���─────────────────
 
-function PayPalPayment({
-  userId, planId, userType, onSuccess, onError, onSkip,
+function TestPaymentButton({
+  planId, userType, onSuccess, onError,
 }: {
-  userId: string; planId: PlanId; userType: UserMode;
+  planId: PlanId; userType: UserMode;
+  onSuccess: () => void; onError: (msg: string) => void;
+}) {
+  const [processing, setProcessing] = useState(false);
+
+  const pay = async () => {
+    setProcessing(true);
+    try {
+      const orderId = await createOrder(planId, userType);
+      const result = await captureTestOrder(orderId, planId, userType);
+      if (result?.success) onSuccess();
+      else onError(result?.message || "Test payment failed.");
+    } catch (e) {
+      onError(e instanceof AppError ? e.message : "Test payment failed.");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <div>
+      <p style={{ margin: "0 0 10px", padding: "8px 10px", borderRadius: 10, fontSize: 12, fontWeight: 600, background: "rgba(245,158,11,0.12)", color: "#B45309", border: "1px solid rgba(245,158,11,0.35)" }}>
+        TEST MODE — no real payment will be taken.
+      </p>
+      <button
+        type="button"
+        onClick={pay}
+        disabled={processing}
+        style={{ width: "100%", padding: "12px 0", borderRadius: 12, border: "none", fontSize: 15, fontWeight: 700, cursor: processing ? "wait" : "pointer", opacity: processing ? 0.7 : 1, background: "linear-gradient(135deg,#FBBF24,#F59E0B)", color: "#000" }}
+      >
+        {processing ? "Processing…" : "Complete test payment"}
+      </button>
+    </div>
+  );
+}
+
+function PayPalPayment({
+  userId, planId, userType, testMode = false, onSuccess, onError, onSkip,
+}: {
+  userId: string; planId: PlanId; userType: UserMode; testMode?: boolean;
   onSuccess: () => void; onError: (msg: string) => void; onSkip: () => void;
 }) {
   const [clientId, setClientId] = useState("");
@@ -202,7 +246,9 @@ function PayPalPayment({
         <p style={{ margin: "0 0 4px", fontSize: 18, fontWeight: 700, color: "var(--color-text-primary)" }}>Total: ${plan.amount}</p>
         <p style={{ margin: "0 0 20px", fontSize: 12, color: "var(--color-text-tertiary)" }}>Secure payment powered by PayPal</p>
 
-        {loading ? (
+        {testMode ? (
+          <TestPaymentButton planId={planId} userType={userType} onSuccess={onSuccess} onError={onError} />
+        ) : loading ? (
           <p style={{ textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 13 }}>Loading payment options…</p>
         ) : !clientId ? (
           <p style={{ textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 13 }}>Payment not configured. Contact support.</p>
@@ -290,7 +336,8 @@ function ExploreContentInner({ appUrl: _appUrl }: { appUrl: string }) {
 
     getSubscriptionStatus(authUser._id)
       .then((status) => {
-        if (status.hasPaid && !status.isExpired) {
+        // Test accounts are always "paid", but still need to reach checkout to test it.
+        if (status.hasPaid && !status.isExpired && !authUser.isTestAccount) {
           setPhase("already_premium");
         } else if (selectedPlan && phase === "plans") {
           setPhase("payment");
@@ -308,7 +355,7 @@ function ExploreContentInner({ appUrl: _appUrl }: { appUrl: string }) {
       applyLogin(res);
 
       const status = await getSubscriptionStatus(res.user._id).catch(() => null);
-      if (status?.hasPaid && !status.isExpired) {
+      if (status?.hasPaid && !status.isExpired && !res.user.isTestAccount) {
         setPhase("already_premium");
         return;
       }
@@ -374,6 +421,7 @@ function ExploreContentInner({ appUrl: _appUrl }: { appUrl: string }) {
           userId={userId}
           planId={selectedPlan}
           userType={mode}
+          testMode={!!authUser?.isTestAccount}
           onSuccess={handlePaymentSuccess}
           onError={(msg) => { setErrorMsg(msg); setShowError(true); }}
           onSkip={() => router.replace("/")}

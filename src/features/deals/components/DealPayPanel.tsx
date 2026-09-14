@@ -49,12 +49,15 @@ export function DealPayPanel({ deal, onPaid }: DealPayPanelProps) {
     <>
       <button
         type="button"
-        onClick={() => start()}
+        onClick={async () => {
+          const data = await start();
+          if (data?.testMode) onPaid();
+        }}
         disabled={starting || !!clientSecret}
         className="mp-btn mp-btn-primary !h-9 !text-xs"
       >
         {starting ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <CreditCard size={14} aria-hidden="true" />}
-        Pay {formatCents(deal.terms.amountCents)}
+        Pay {formatCents(deal.terms.amountCents)}{authUser?.isTestAccount ? " (test)" : ""}
       </button>
 
       {clientSecret && (

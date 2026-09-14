@@ -280,6 +280,12 @@ export function useDealPayment(dealId: string | undefined) {
     setStarting(true);
     try {
       const res = await dealService.createDealPaymentIntent(dealId);
+      if (res.data.testMode) {
+        // Test-payment account: no Stripe — confirm the fake payment straight away.
+        await dealService.confirmDealPayment(dealId, res.data.paymentIntentId);
+        toast.success("Test payment complete — no real money was charged");
+        return res.data;
+      }
       setClientSecret(res.data.clientSecret);
       return res.data;
     } catch (err) {

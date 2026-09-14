@@ -158,6 +158,79 @@ function RentForm({
   );
 }
 
+// ─── Test-account checkout (no Stripe) ───────────────────────
+
+function TestRentForm({
+  rentalId,
+  amountCents,
+  currency,
+  onSuccess,
+}: {
+  rentalId: string;
+  amountCents: number;
+  currency: string;
+  onSuccess: () => void;
+}) {
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function complete() {
+    setSubmitting(true);
+    setError(null);
+    try {
+      await confirmRental(rentalId);
+      onSuccess();
+    } catch (err) {
+      setError((err as { message?: string })?.message ?? "Test payment failed. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div>
+      <p
+        style={{
+          margin: "0 0 12px",
+          padding: "8px 10px",
+          borderRadius: 10,
+          fontSize: 12,
+          fontWeight: 600,
+          background: "rgba(245,158,11,0.12)",
+          color: "#B45309",
+          border: "1px solid rgba(245,158,11,0.35)",
+        }}
+      >
+        TEST MODE — no real payment will be taken.
+      </p>
+      {error && (
+        <p role="alert" style={{ margin: "0 0 12px", fontSize: 13, color: "#ef4444" }}>
+          {error}
+        </p>
+      )}
+      <button
+        type="button"
+        onClick={complete}
+        disabled={submitting}
+        style={{
+          width: "100%",
+          padding: "12px 20px",
+          borderRadius: 9999,
+          border: "none",
+          fontWeight: 800,
+          fontSize: 15,
+          cursor: submitting ? "wait" : "pointer",
+          opacity: submitting ? 0.7 : 1,
+          background: "linear-gradient(135deg, #FBBF24, #F59E0B)",
+          color: "#000",
+        }}
+      >
+        {submitting ? "Processing…" : `Complete test payment (${money(amountCents, currency)})`}
+      </button>
+    </div>
+  );
+}
+
 // ─── Shell ───────────────────────────────────────────────────
 
 export default function RentModal({
@@ -173,6 +246,7 @@ export default function RentModal({
   const [currency, setCurrency] = useState("USD");
   const [terms, setTerms] = useState<RentalTerms>({ windowDays: 30, playWindowHours: 48 });
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [testMode, setTestMode] = useState(false);
   const startedRef = useRef(false);
 
   useEffect(() => {
@@ -188,6 +262,7 @@ export default function RentModal({
     startRentalCheckout(videoId)
       .then((res) => {
         setClientSecret(res.clientSecret);
+        setTestMode(!!res.testMode);
         setRentalId(res.rentalId);
         setAmountCents(res.amountCents);
         setCurrency(res.currency ?? "USD");
@@ -299,7 +374,16 @@ export default function RentModal({
           </p>
         )}
 
-        {!loadError && !clientSecret && (
+        {testMode && rentalId && (
+          <TestRentForm
+            rentalId={rentalId}
+            amountCents={amountCents}
+            currency={currency}
+            onSuccess={onSuccess}
+          />
+        )}
+
+        {!loadError && !clientSecret && !testMode && (
           <p style={{ fontSize: 14, color: "var(--color-text-tertiary)" }}>
             Setting up secure checkout…
           </p>

@@ -86,6 +86,8 @@ export interface AuthUser {
   subscriptionType?: string | null;
   subscriptionExpiresAt?: string | null;
   trialEndsAt?: string | null;
+  /** Temporary test-payment account: paid features unlocked, payments are fake. */
+  isTestAccount?: boolean;
 }
 
 export interface VideosResponse {
