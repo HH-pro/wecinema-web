@@ -1,4 +1,4 @@
-import { api } from "./apiClient";
+import { api, refreshSession as sharedRefreshSession, type RefreshResult } from "./apiClient";
 import type { AuthUser } from "@/types";
 import { getFirebaseAuth } from "@/lib/firebase/config";
 import { toBody } from "@/lib/api/serialize";
@@ -95,16 +95,7 @@ export async function loginWithGoogle(): Promise<LoginResponse> {
   return api.post<LoginResponse>("/user/google-auth", { idToken });
 }
 
-export async function refreshSession(): Promise<{ token: string; user?: AuthUser } | null> {
-  try {
-    const res = await fetch(`${BASE}/user/refresh`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-    });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
+/** Shares the in-flight refresh with apiClient so parallel calls can't trip reuse detection. */
+export function refreshSession(): Promise<RefreshResult<AuthUser> | null> {
+  return sharedRefreshSession<AuthUser>();
 }

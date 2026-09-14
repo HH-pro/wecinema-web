@@ -4,7 +4,9 @@
  * - Attaches Bearer token from tokenStorage on every request.
  * - withCredentials: sends httpOnly refresh cookie automatically (credentials: "include").
  * - On 401: silently calls POST /api/user/refresh, retries once, then calls _onUnauthorized.
- * - Request queue prevents multiple simultaneous refresh calls.
+ * - All refresh callers (this client and AuthContext's session restore) share one in-flight
+ *   request. The backend rotates the refresh token on every call, so two parallel calls
+ *   carrying the same cookie look like token reuse and revoke every session.
  */
 
 import { tokenStorage } from "./tokenStorage";
@@ -14,19 +16,19 @@ const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 // ─── Silent refresh state ────────────────────────────────────
 
 let _onUnauthorized: (() => void) | null = null;
-let _refreshing = false;
-let _queue: Array<(token: string | null) => void> = [];
 
 export function setUnauthorizedHandler(fn: () => void) {
   _onUnauthorized = fn;
 }
 
-function drainQueue(token: string | null) {
-  _queue.forEach((cb) => cb(token));
-  _queue = [];
+export interface RefreshResult<U = unknown> {
+  token: string;
+  user?: U;
 }
 
-async function silentRefresh(): Promise<string | null> {
+let _refreshInFlight: Promise<RefreshResult | null> | null = null;
+
+async function doRefresh(): Promise<RefreshResult | null> {
   try {
     const res = await fetch(`${BASE}/user/refresh`, {
       method: "POST",
@@ -35,15 +37,23 @@ async function silentRefresh(): Promise<string | null> {
     });
     if (!res.ok) return null;
     const data = await res.json();
-    if (data.token) {
-      tokenStorage.set(data.token);
-      if (data.user) tokenStorage.setUser(data.user);
-      return data.token;
-    }
-    return null;
+    if (!data?.token) return null;
+    tokenStorage.set(data.token);
+    if (data.user) tokenStorage.setUser(data.user);
+    return data as RefreshResult;
   } catch {
     return null;
   }
+}
+
+/** Refresh the session. Concurrent callers share a single request. */
+export function refreshSession<U = unknown>(): Promise<RefreshResult<U> | null> {
+  if (!_refreshInFlight) {
+    _refreshInFlight = doRefresh().finally(() => {
+      _refreshInFlight = null;
+    });
+  }
+  return _refreshInFlight as Promise<RefreshResult<U> | null>;
 }
 
 // ─── AppError ────────────────────────────────────────────────
@@ -118,34 +128,22 @@ async function apiFetch<T>(path: string, opts: FetchOptions = {}): Promise<T> {
       throw new AppError(401, "Session expired. Please log in.");
     }
 
-    if (_refreshing) {
-      return new Promise((resolve, reject) => {
-        _queue.push(async (newToken) => {
-          if (!newToken) {
-            reject(new AppError(401, "Session expired. Please log in."));
-          } else {
-            try {
-              resolve(await apiFetch<T>(path, { ...opts, _retry: true }));
-            } catch (e) {
-              reject(e);
-            }
-          }
-        });
-      });
-    }
-
-    _refreshing = true;
-    const newToken = await silentRefresh();
-    _refreshing = false;
-
-    if (newToken) {
-      drainQueue(newToken);
+    // The token was renewed while this request was in flight (e.g. it went out
+    // before the page-load session restore finished) — just retry with it.
+    const current = tokenStorage.get();
+    if (current && current !== token) {
       return apiFetch<T>(path, { ...opts, _retry: true });
-    } else {
-      drainQueue(null);
-      _onUnauthorized?.();
-      throw new AppError(401, "Session expired. Please log in.");
     }
+
+    // Only the caller that started the refresh fires the unauthorized handler, so a
+    // burst of concurrent 401s logs out once rather than once per request.
+    const startedRefresh = _refreshInFlight === null;
+    const refreshed = await refreshSession();
+    if (refreshed?.token) {
+      return apiFetch<T>(path, { ...opts, _retry: true });
+    }
+    if (startedRefresh) _onUnauthorized?.();
+    throw new AppError(401, "Session expired. Please log in.");
   }
 
   if (!res.ok) {
