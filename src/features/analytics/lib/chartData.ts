@@ -73,19 +73,24 @@ export function ensureCanonical(raw: GraphData | null, canonical: readonly strin
   return merged;
 }
 
-export function buildCategoryEntries(raw: GraphData): CategoryEntry[] {
+/** Fixed per-key colors (e.g. `RATING_META`), so a key keeps its color regardless of rank. */
+export type FixedColors = Readonly<Record<string, { color: string }>>;
+
+export function buildCategoryEntries(raw: GraphData, fixedColors?: FixedColors): CategoryEntry[] {
   return aggregateTotals(raw).map((item, idx) => ({
     key: item.key,
     total: item.total,
-    color: idx < TOP_LINE_COUNT ? LINE_COLORS[idx % LINE_COLORS.length] ?? null : null,
+    color: idx < TOP_LINE_COUNT
+      ? fixedColors?.[item.key]?.color ?? LINE_COLORS[idx % LINE_COLORS.length] ?? null
+      : null,
   }));
 }
 
-export function buildDoughnutEntries(raw: GraphData): CategoryEntry[] {
+export function buildDoughnutEntries(raw: GraphData, fixedColors?: FixedColors): CategoryEntry[] {
   return aggregateTotals(raw).map((item, idx) => ({
     key: item.key,
     total: item.total,
-    color: DONUT_COLORS[idx % DONUT_COLORS.length] ?? null,
+    color: fixedColors?.[item.key]?.color ?? DONUT_COLORS[idx % DONUT_COLORS.length] ?? null,
   }));
 }
 
@@ -179,7 +184,7 @@ export function buildLineOptions(mobile: boolean, maxTicks: number): ChartOption
         borderColor: "rgba(148,163,184,0.12)",
         borderWidth: 1,
         callbacks: {
-          label: (ctx) => ` ${ctx.dataset.label}: ${(ctx.parsed.y ?? 0).toLocaleString()} views`,
+          label: (ctx) => ` ${ctx.dataset.label}: ${(ctx.parsed.y ?? 0).toLocaleString()} videos`,
         },
       },
     },
@@ -225,7 +230,7 @@ export function buildDoughnutOptions(): ChartOptions<"doughnut"> {
         padding: 12,
         cornerRadius: 8,
         callbacks: {
-          label: (ctx) => ` ${ctx.label}: ${ctx.parsed.toLocaleString()} views`,
+          label: (ctx) => ` ${ctx.label}: ${ctx.parsed.toLocaleString()} videos`,
         },
       },
     },

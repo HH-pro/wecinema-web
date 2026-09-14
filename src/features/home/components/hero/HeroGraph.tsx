@@ -5,13 +5,14 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { TrendingUp, ArrowRight } from "lucide-react";
 import type { AnalyticsGraphs } from "@/features/home/api/analyticsGraphs";
-import { CATEGORIES, THEMES, RATINGS } from "@/lib/constants";
+import { CATEGORIES, THEMES, RATINGS, RATING_META } from "@/lib/constants";
 import {
   buildCategoryEntries,
   buildLineData,
   buildHeroLineOptions,
   dateRangeDays,
   ensureCanonical,
+  type FixedColors,
 } from "@/features/analytics/lib/chartData";
 
 // chart.js (~290 KB) is code-split. The chunk is warmed at page load via
@@ -53,9 +54,15 @@ function useHeroGraphViews(graphs: AnalyticsGraphs): HeroGraphView[] {
   return useMemo(() => {
     const fallbackDates = dateRangeDays(graphs.range);
 
-    function buildView(raw: typeof graphs.genres, canonical: readonly string[], key: string, title: string): HeroGraphView {
+    function buildView(
+      raw: typeof graphs.genres,
+      canonical: readonly string[],
+      key: string,
+      title: string,
+      fixedColors?: FixedColors,
+    ): HeroGraphView {
       const merged = ensureCanonical(raw, canonical);
-      const entries = buildCategoryEntries(merged);
+      const entries = buildCategoryEntries(merged, fixedColors);
       return {
         key,
         title,
@@ -68,7 +75,7 @@ function useHeroGraphViews(graphs: AnalyticsGraphs): HeroGraphView[] {
     return [
       buildView(graphs.genres, CATEGORIES, "genre", "Genre trends"),
       buildView(graphs.themes, THEMES, "theme", "Theme trends"),
-      buildView(graphs.ratings, RATINGS, "rating", "Rating trends"),
+      buildView(graphs.ratings, RATINGS, "rating", "Rating trends", RATING_META),
     ];
   }, [graphs]);
 }

@@ -19,7 +19,7 @@ import {
   type ChartData,
 } from "chart.js";
 import type { GraphData, GraphDateParams } from "@/types";
-import { CATEGORIES, THEMES, RATINGS } from "@/lib/constants";
+import { CATEGORIES, THEMES, RATINGS, RATING_META } from "@/lib/constants";
 import {
   type CategoryEntry,
   defaultDateRange,
@@ -483,7 +483,7 @@ const Charts: React.FC<ChartsProps> = ({ isMobile = false, dateRange, preloaded 
 
   const genreEntries = useMemo(() => buildCategoryEntries(genreMerged), [genreMerged]);
   const themeEntries = useMemo(() => buildCategoryEntries(themeMerged), [themeMerged]);
-  const ratingEntries = useMemo(() => buildDoughnutEntries(ratingMerged), [ratingMerged]);
+  const ratingEntries = useMemo(() => buildDoughnutEntries(ratingMerged, RATING_META), [ratingMerged]);
 
   const genreData = useMemo(
     () => buildLineData(genreMerged, fallbackDates, genreEntries),
@@ -521,7 +521,7 @@ const Charts: React.FC<ChartsProps> = ({ isMobile = false, dateRange, preloaded 
           title="Genre Trends"
           icon="🎬"
           accentColor="#FFBB00"
-          subtitle="Views over time by genre"
+          subtitle="Uploads over time by genre"
           data={genreData}
           isMobile={false}
           entries={genreEntries}
@@ -531,7 +531,7 @@ const Charts: React.FC<ChartsProps> = ({ isMobile = false, dateRange, preloaded 
           title="Theme Analysis"
           icon="🎯"
           accentColor="#22C55E"
-          subtitle="Views over time by theme"
+          subtitle="Uploads over time by theme"
           data={themeData}
           isMobile={false}
           entries={themeEntries}
@@ -556,7 +556,7 @@ const Charts: React.FC<ChartsProps> = ({ isMobile = false, dateRange, preloaded 
       title="Genre Trends"
       icon="🎬"
       accentColor="#FFBB00"
-      subtitle="Views by genre"
+      subtitle="Uploads by genre"
       data={genreData}
       isMobile
       isActive={slide === 0}
@@ -568,7 +568,7 @@ const Charts: React.FC<ChartsProps> = ({ isMobile = false, dateRange, preloaded 
       title="Theme Analysis"
       icon="🎯"
       accentColor="#22C55E"
-      subtitle="Views by theme"
+      subtitle="Uploads by theme"
       data={themeData}
       isMobile
       isActive={slide === 1}
