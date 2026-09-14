@@ -11,7 +11,7 @@ import {
 } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import { getListings } from '@/features/marketplace/api/marketplace.service';
-import { makeOffer, createDirectPayment } from '@/features/marketplace/api/offer.service';
+import { createDirectPayment } from '@/features/marketplace/api/offer.service';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import type {
   BillingDetails,
@@ -19,8 +19,8 @@ import type {
   PaymentStatus,
 } from '@/features/marketplace/components/buyer/PaymentModal';
 
-// These three modals are only ever shown after a user interaction (play a
-// preview, make an offer, pay), and PaymentModal alone pulls in the ~230KB
+// These modals are only ever shown after a user interaction (play a
+// preview, pay), and PaymentModal alone pulls in the ~230KB
 // Stripe Elements SDK. Loading them eagerly (they were previously always
 // mounted, just hidden via a `show` prop) meant that JS shipped on every
 // visit to this page even for users who never open a modal. Dynamic import
@@ -28,7 +28,6 @@ import type {
 // until the user actually triggers it.
 const VideoPlayerModal = dynamic(() => import('@/features/marketplace/components/shared/VideoPlayerModal'), { ssr: false });
 const PaymentModal = dynamic(() => import('@/features/marketplace/components/buyer/PaymentModal'), { ssr: false });
-const OfferModal = dynamic(() => import('@/features/marketplace/components/buyer/OfferModal'), { ssr: false });
 
 // Constants for placeholder images
 const VIDEO_PLACEHOLDER = '/wecinema.webp';
@@ -56,9 +55,8 @@ const Browse: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [showOfferModal, setShowOfferModal] = useState<boolean>(false);
   const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
-  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  const [, setSelectedListing] = useState<Listing | null>(null);
   const [clientSecret, setClientSecret] = useState<string>('');
   const [offerData, setOfferData] = useState<OfferData | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('idle');
@@ -84,8 +82,6 @@ const Browse: React.FC = () => {
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   // Own-listing error popup
   const [showOwnListingError, setShowOwnListingError] = useState(false);
-  // Duplicate offer error popup
-  const [showDuplicateOfferError, setShowDuplicateOfferError] = useState(false);
   const router = useRouter();
 
   const [filters, setFilters] = useState({
@@ -93,13 +89,6 @@ const Browse: React.FC = () => {
     minPrice: '',
     maxPrice: '',
     sortBy: 'latest'
-  });
-
-  const [offerForm, setOfferForm] = useState({
-    amount: '',
-    message: '',
-    requirements: '',
-    expectedDelivery: ''
   });
 
   // Video player ref
@@ -211,16 +200,20 @@ const Browse: React.FC = () => {
     router.push(`/marketplace/listings/${listingId}`);
   };
 
+  // Offers are negotiated in the Deals flow — nothing is charged until both
+  // sides agree on terms, so there's no payment step here.
   const handleMakeOffer = (listing: Listing) => {
-    setSelectedListing(listing);
-    setOfferForm({
-      amount: listing.price.toString(),
-      message: '',
-      requirements: '',
-      expectedDelivery: ''
-    });
-    setShowOfferModal(true);
-    setError('');
+    if (!isAuthenticated) {
+      router.push('/login');
+      return;
+    }
+    const sellerId =
+      listing.seller?._id ?? (typeof listing.sellerId === 'string' ? listing.sellerId : listing.sellerId?._id);
+    if (authUser && sellerId === authUser._id) {
+      setShowOwnListingError(true);
+      return;
+    }
+    router.push(`/marketplace/deals/new?listing=${listing._id}`);
   };
 
   const handleVideoClick = (videoUrl: string, title: string, listing: Listing) => {
@@ -356,67 +349,6 @@ const Browse: React.FC = () => {
         month: 'short',
         year: diffDays > 365 ? 'numeric' : undefined
       });
-    }
-  };
-
-  const handleOfferFormChange = (field: string, value: string) => {
-    setOfferForm(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleSubmitOffer = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!selectedListing) return;
-
-    try {
-      setPaymentStatus('processing');
-      setError('');
-
-      const response = await makeOffer({
-        listingId: selectedListing._id,
-        amount: parseFloat(offerForm.amount),
-        message: offerForm.message,
-        requirements: offerForm.requirements,
-        expectedDelivery: offerForm.expectedDelivery
-      });
-
-      if (!response.data?.clientSecret) {
-        throw new Error('No client secret received from server. Please try again.');
-      }
-
-      setClientSecret(response.data.clientSecret);
-
-      setOfferData({
-        type: 'offer',
-        amount: parseFloat(offerForm.amount),
-        tempOfferId: response.data.tempOfferId,
-        clientSecret: response.data.clientSecret,
-      });
-
-      setShowOfferModal(false);
-      setShowPaymentModal(true);
-      setPaymentStatus('idle');
-
-    } catch (error: any) {
-      console.error('❌ Error submitting offer with payment:', error);
-      setPaymentStatus('failed');
-
-      if (error?.status === 403 && error?.message?.toLowerCase().includes('own listing')) {
-        setShowOfferModal(false);
-        setShowOwnListingError(true);
-        return;
-      }
-
-      if (error?.status === 409) {
-        setShowOfferModal(false);
-        setShowDuplicateOfferError(true);
-        return;
-      }
-
-      setError(error.message || error.error || 'Failed to submit offer');
     }
   };
 
@@ -990,7 +922,7 @@ const Browse: React.FC = () => {
                           style={{ width: "100%", height: 40, justifyContent: "center" }}
                         >
                           <FiDollarSign size={15} aria-hidden="true" />
-                          Buy Now — {formatCurrency(listing.price)}
+                          Make an Offer · {formatCurrency(listing.price)}
                         </button>
                       </div>
 
@@ -1086,21 +1018,6 @@ const Browse: React.FC = () => {
         />
       )}
 
-      {/* Offer Modal */}
-      {showOfferModal && (
-        <OfferModal
-          show={showOfferModal}
-          selectedListing={selectedListing}
-          offerForm={offerForm}
-          onClose={() => setShowOfferModal(false)}
-          onSubmit={handleSubmitOffer}
-          onOfferFormChange={handleOfferFormChange}
-          paymentStatus={paymentStatus}
-          error={error}
-          getThumbnailUrl={getThumbnailUrl}
-        />
-      )}
-
       {/* Own-listing error popup */}
       {showOwnListingError && (
         <div
@@ -1132,48 +1049,6 @@ const Browse: React.FC = () => {
             >
               Got it
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* Duplicate offer error popup */}
-      {showDuplicateOfferError && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-          onClick={() => setShowDuplicateOfferError(false)}
-        >
-          <div
-            className="bg-card-bg border border-border rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col items-center text-center theme-transition"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="w-16 h-16 rounded-full bg-info/10 flex items-center justify-center mb-4">
-              <svg className="w-8 h-8 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-            </div>
-
-            <h3 className="text-lg font-bold text-text-primary mb-2 theme-transition">
-              Offer Already Submitted
-            </h3>
-            <p className="text-sm text-text-secondary theme-transition">
-              You already have an active offer on this listing. You can view and manage it from <strong className="text-text-primary">My Offers</strong>.
-            </p>
-
-            <div className="mt-6 flex gap-3 w-full">
-              <button
-                onClick={() => setShowDuplicateOfferError(false)}
-                className="flex-1 py-2.5 rounded-xl border border-border bg-btn-secondary-bg text-btn-secondary-text text-sm font-medium hover:bg-btn-secondary-hover transition-colors theme-transition"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => { setShowDuplicateOfferError(false); router.push('/marketplace/offers'); }}
-                className="flex-1 py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-btn-primary-text text-sm font-semibold transition-colors"
-              >
-                View My Offers
-              </button>
-            </div>
           </div>
         </div>
       )}

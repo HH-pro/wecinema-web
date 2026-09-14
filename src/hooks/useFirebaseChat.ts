@@ -29,7 +29,8 @@ import { getFirebaseFirestore } from "@/lib/firebase/config";
 
 // ─── Types ───────────────────────────────────────────────────
 
-export type MessageType = "text" | "system" | "image" | "file";
+/** "deal" = negotiation event posted by the backend; metadata carries the deal summary. */
+export type MessageType = "text" | "system" | "image" | "file" | "deal";
 
 export interface Message {
   id: string;

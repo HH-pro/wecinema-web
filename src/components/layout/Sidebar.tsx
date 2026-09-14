@@ -206,13 +206,14 @@ const MarketplaceSection = ({
             <NavItem href="/marketplace/listings/new"      icon={<RiAddCircleLine />} label="Create Listing" expand={expand} active={pathname === "/marketplace/listings/new"} />
             <NavItem href="/marketplace/dashboard/seller"  icon={<RiListCheck />}     label="Dashboard"      expand={expand} active={pathname === "/marketplace/dashboard/seller"} />
             <NavItem href="/marketplace/orders"            icon={<RiShoppingBagLine />} label="My Orders"    expand={expand} active={pathname === "/marketplace/orders"} />
+            <NavItem href="/marketplace/deals"             icon={<MdLocalOffer />}    label="My Deals"       expand={expand} active={pathname.startsWith("/marketplace/deal")} />
             <NavItem href="/marketplace/analytics"         icon={<RiMovie2Line />}    label="Analytics"      expand={expand} active={pathname === "/marketplace/analytics"} />
           </>
         ) : (
           <>
             <NavItem href="/marketplace/dashboard/buyer"   icon={<RiListCheck />}     label="Dashboard"      expand={expand} active={pathname === "/marketplace/dashboard/buyer"} />
             <NavItem href="/marketplace/orders"            icon={<RiShoppingBagLine />} label="My Orders"    expand={expand} active={pathname === "/marketplace/orders"} />
-            <NavItem href="/marketplace/offers"            icon={<MdLocalOffer />}    label="My Offers"      expand={expand} active={pathname === "/marketplace/offers"} />
+            <NavItem href="/marketplace/deals"             icon={<MdLocalOffer />}    label="My Deals"       expand={expand} active={pathname.startsWith("/marketplace/deal")} />
             <NavItem href="/marketplace/listings/new"      icon={<RiAddCircleLine />} label="Create Listing" expand={expand} active={pathname === "/marketplace/listings/new"} />
           </>
         )}
@@ -370,8 +371,9 @@ const ProfilePopup = ({ isOpen, onClose, anchorRef, userMode, onModeChange }: Pr
               View Profile
             </Link>
 
-            {/* Marketplace mode switcher */}
-            {hasRole && (
+            {/* Marketplace mode switcher — also for paid users with no role yet
+                (e.g. userType "normalUser"), otherwise they can never unlock Marketplace. */}
+            {(hasRole || hasPaid) && (
               <div style={{ padding: "6px 4px" }}>
                 <p style={{ margin: "0 0 6px 6px", fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--color-text-tertiary)" }}>
                   Marketplace Mode

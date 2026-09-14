@@ -58,6 +58,11 @@ export class AppError extends Error {
      * than one case — e.g. 409 is both ALREADY_RENTED and CHECKOUT_IN_PROGRESS.
      */
     public readonly code?: string,
+    /**
+     * The parsed error body, for endpoints that return structured context next to
+     * the message — e.g. DEAL_EXISTS carries `existingDealId`.
+     */
+    public readonly body?: Record<string, unknown>,
   ) {
     super(message);
     this.name = "AppError";
@@ -146,12 +151,17 @@ async function apiFetch<T>(path: string, opts: FetchOptions = {}): Promise<T> {
   if (!res.ok) {
     let msg = `Request failed (${res.status})`;
     let code: string | undefined;
+    let body: Record<string, unknown> | undefined;
     try {
       const err = await res.json();
-      msg = err.error ?? err.message ?? err.details ?? msg;
+      // Joi validation failures come back as a generic "Validation failed" with
+      // the real reason in details[] — surface that instead of hiding it.
+      const detail = Array.isArray(err.details) ? err.details[0]?.message : undefined;
+      msg = (typeof detail === "string" && detail) || err.error || err.message || msg;
       if (typeof err.code === "string") code = err.code;
+      if (err && typeof err === "object") body = err as Record<string, unknown>;
     } catch {}
-    throw new AppError(res.status, msg, code);
+    throw new AppError(res.status, msg, code, body);
   }
 
   return res.json() as Promise<T>;

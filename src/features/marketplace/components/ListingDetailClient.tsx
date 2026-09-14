@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { toast } from '@/lib/toast';
 import {
   FaArrowLeft, FaSpinner, FaExclamationCircle, FaTag,
-  FaStar, FaEye, FaHeart, FaShoppingCart, FaChevronLeft, FaChevronRight,
+  FaStar, FaEye, FaHeart, FaShoppingCart, FaChevronLeft, FaChevronRight, FaHandshake,
 } from 'react-icons/fa';
 
 import MarketplaceLayout from '@/features/marketplace/components/MarketplaceLayout';
@@ -338,6 +338,15 @@ const ListingDetailClient: React.FC = () => {
                     ? <><FaSpinner className="animate-spin" /> Processing…</>
                     : <><FaShoppingCart /> Buy Now — ${(listing.price ?? 0).toFixed(2)}</>
                   }
+                </button>
+              )}
+
+              {!isOwnListing && listing.status === 'active' && (
+                <button
+                  onClick={() => router.push(authUser ? `/marketplace/deals/new?listing=${listing._id}` : '/login')}
+                  className="w-full flex items-center justify-center gap-2 py-3 border border-accent text-accent hover:bg-accent/10 font-semibold rounded-xl transition-colors"
+                >
+                  <FaHandshake /> Make an Offer
                 </button>
               )}
 

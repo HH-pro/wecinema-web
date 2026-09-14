@@ -404,8 +404,8 @@ function ForgotStep2({
           </div>
           <Field label="New Password" error={errors.password} delay={0.08}>
             <InputWithIcon icon={<FaLock className="w-3.5 h-3.5" />}
-              type="password" value={newPassword} placeholder="Min. 6 characters"
-              error={!!errors.password} required minLength={6}
+              type="password" value={newPassword} placeholder="8+ chars, A-Z, a-z, 0-9"
+              error={!!errors.password} required minLength={8}
               onChange={(e) => setNewPassword(e.target.value)} />
           </Field>
           <SubmitButton loading={loading} loadingText="Resetting…">

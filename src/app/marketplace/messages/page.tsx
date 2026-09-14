@@ -4,14 +4,28 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   FiMessageSquare, FiSearch, FiRefreshCw, FiX,
-  FiShoppingBag, FiAlertCircle, FiArchive,
+  FiShoppingBag, FiAlertCircle, FiArchive, FiPlus,
 } from 'react-icons/fi';
+import Link from 'next/link';
 
 import MarketplaceLayout from '@/features/marketplace/components/MarketplaceLayout';
 import FirebaseChatInterface from '@/components/chat/FirebaseChatInterface';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { useMyChats, useChatActions } from '@/features/marketplace/api/chat.service';
+import { toast } from '@/lib/toast';
+import { DealOfferChatCard } from '@/features/deals/components/DealOfferChatCard';
+import { DealStatusBadge } from '@/features/deals/components/DealStatusBadge';
+import { formatCents, parseDealMeta } from '@/features/deals/lib/dealFormat';
+import type { Message as FirebaseMessage } from '@/hooks/useFirebaseChat';
 import type { Chat, ChatUser } from '@/types/chat.types';
+
+const ACCENT_OUTLINE = {
+  borderColor: 'var(--color-accent-primary)',
+  color: 'var(--color-accent-primary)',
+} as const;
+
+/** Deal statuses that still have an active negotiation or order behind them. */
+const LIVE_DEAL_STATUSES = new Set(['pending', 'negotiating', 'accepted', 'paid']);
 
 // ─── Helpers ─────────────────────────────────────────────────
 
@@ -121,7 +135,9 @@ const ChatItem: React.FC<{
             <p className="text-xs text-text-tertiary truncate">{chat.lastMessage}</p>
           )}
 
-          {chat.order && (
+          {chat.deal ? (
+            <DealStatusBadge status={chat.deal.status} className="mt-1.5 !px-1.5 !py-0.5 !text-[10px]" />
+          ) : chat.order && (
             <span className={`inline-flex items-center mt-1.5 px-1.5 py-0.5 rounded text-[10px] font-medium ${
               ORDER_STATUS_CLASSES[chat.order.status] ?? 'text-gray-400 bg-gray-400/10'
             }`}>
@@ -177,6 +193,7 @@ const Messages: React.FC = () => {
   const [searchQuery,  setSearchQuery]  = useState('');
 
   const hasProcessedUrl = useRef(false);
+  const dealRetried     = useRef(false);
   const lastChatId      = useRef<string | null>(null);
 
   // Update document title with unread count
@@ -189,26 +206,40 @@ const Messages: React.FC = () => {
 
   // Auto-select chat from URL params (once, after chats load)
   useEffect(() => {
-    if (hasProcessedUrl.current || loading || !chats.length) return;
-
     const urlChatId = searchParams.get('chat');
     const orderId   = searchParams.get('order');
+    const dealId    = searchParams.get('deal');
 
-    if (!urlChatId && !orderId) { hasProcessedUrl.current = true; return; }
+    if (hasProcessedUrl.current || loading) return;
+    if (!chats.length && !dealId) return;
+
+    if (!urlChatId && !orderId && !dealId) { hasProcessedUrl.current = true; return; }
     if (urlChatId && urlChatId === lastChatId.current) { hasProcessedUrl.current = true; return; }
-
-    hasProcessedUrl.current = true;
-    lastChatId.current = urlChatId;
 
     const found = urlChatId
       ? chats.find(c => c.firebaseChatId === urlChatId) ?? null
-      : chats.find(c => c.order?._id === orderId)       ?? null;
+      : orderId
+        ? chats.find(c => c.order?._id === orderId) ?? null
+        : chats.find(c => c.deal?._id === dealId || c.dealId === dealId || c.firebaseChatId === `deal_${dealId}`) ?? null;
+
+    // A deal's conversation is created server-side alongside the deal. Arriving
+    // straight from the Deal Room, the list can predate it — reload once.
+    if (!found && dealId && !dealRetried.current) {
+      dealRetried.current = true;
+      refetch();
+      return;
+    }
+
+    hasProcessedUrl.current = true;
+    lastChatId.current = urlChatId ?? found?.firebaseChatId ?? null;
 
     if (found) {
       setSelectedChat(found);
-      if (urlChatId) setSearchParams({ chat: urlChatId }, { replace: true });
+      if (urlChatId || dealId) setSearchParams({ chat: found.firebaseChatId }, { replace: true });
+    } else if (dealId) {
+      toast.error('This deal conversation is not available yet. Please try again shortly.');
     }
-  }, [chats, loading, searchParams, setSearchParams]);
+  }, [chats, loading, searchParams, setSearchParams, refetch]);
 
   // Reset on unmount
   useEffect(() => () => {
@@ -241,6 +272,30 @@ const Messages: React.FC = () => {
       (chat.lastMessage?.toLowerCase() ?? '').includes(q)
     );
   });
+
+  // "Start Deal" goes to the open deal for this conversation if there is one,
+  // otherwise to a new offer on the conversation's listing (buyers only).
+  const selectedDeal = selectedChat?.deal ?? null;
+  const hasLiveDeal  = !!selectedDeal && LIVE_DEAL_STATUSES.has(selectedDeal.status);
+  const startDealHref = hasLiveDeal
+    ? `/marketplace/deal/${selectedDeal!._id}`
+    : selectedChat?.listing?._id && selectedDeal?.viewerRole !== 'seller'
+      ? `/marketplace/deals/new?listing=${selectedChat.listing._id}`
+      : '/marketplace/browse';
+
+  const renderDealMessage = useCallback((msg: FirebaseMessage) => {
+    if (msg.messageType !== 'deal') return null;
+    const meta = parseDealMeta(msg.metadata);
+    if (!meta) return null;
+    return (
+      <DealOfferChatCard
+        meta={meta}
+        deal={selectedChat?.deal?._id === meta.dealId ? selectedChat.deal : null}
+        currentUserId={authUser?._id}
+        timestamp={msg.timestamp}
+      />
+    );
+  }, [selectedChat, authUser?._id]);
 
   // ── Loading ────────────────────────────────────────────────
   if (loading && !chats.length) {
@@ -279,7 +334,7 @@ const Messages: React.FC = () => {
               <div className="space-y-1">
                 <h1 className="text-4xl md:text-5xl font-bold text-text-primary theme-transition">Messages</h1>
                 <p className="text-text-secondary text-lg theme-transition">
-                  Communicate with buyers and sellers about your orders
+                  Communicate with buyers and sellers about your deals.
                 </p>
               </div>
 
@@ -297,6 +352,14 @@ const Messages: React.FC = () => {
                   <FiRefreshCw className={loading ? 'animate-spin' : ''} size={14} />
                   Refresh
                 </button>
+                <Link
+                  href={startDealHref}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all hover:bg-accent/10"
+                  style={ACCENT_OUTLINE}
+                >
+                  <FiPlus size={14} />
+                  {hasLiveDeal ? 'Open Deal' : 'Start Deal'}
+                </Link>
               </div>
             </div>
 
@@ -398,7 +461,14 @@ const Messages: React.FC = () => {
                           </div>
                           <div className="flex items-center gap-2 text-xs text-text-secondary mt-0.5 flex-wrap">
                             <span className="font-medium truncate max-w-[200px]">{selectedChat.listing.title}</span>
-                            {(selectedChat.order?.amount ?? selectedChat.listing.price) && (
+                            {selectedChat.deal ? (
+                              <>
+                                <span>•</span>
+                                <span className="font-semibold text-text-primary">
+                                  {formatCents(selectedChat.deal.amountCents)}
+                                </span>
+                              </>
+                            ) : (selectedChat.order?.amount ?? selectedChat.listing.price) && (
                               <>
                                 <span>•</span>
                                 <span className="font-semibold text-text-primary">
@@ -439,6 +509,29 @@ const Messages: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* Pinned deal summary */}
+                    {selectedChat.deal && (
+                      <div
+                        className="flex items-center justify-between gap-3 px-5 py-2 border-b border-border flex-shrink-0"
+                        style={{ backgroundColor: 'color-mix(in srgb, var(--color-accent-primary) 6%, transparent)' }}
+                      >
+                        <div className="flex items-center gap-2 min-w-0 text-xs">
+                          <DealStatusBadge status={selectedChat.deal.status} />
+                          <span className="truncate text-text-secondary">{selectedChat.deal.title}</span>
+                          <span className="font-semibold text-text-primary flex-shrink-0">
+                            {formatCents(selectedChat.deal.amountCents)}
+                          </span>
+                        </div>
+                        <Link
+                          href={`/marketplace/deal/${selectedChat.deal._id}`}
+                          className="mp-btn mp-btn-sm !h-7 !text-[11px] flex-shrink-0"
+                          style={ACCENT_OUTLINE}
+                        >
+                          View Deal Room
+                        </Link>
+                      </div>
+                    )}
+
                     {/* Firebase chat interface */}
                     <div className="flex-1 relative overflow-hidden">
                       <div className="absolute inset-0">
@@ -447,6 +540,8 @@ const Messages: React.FC = () => {
                           currentUser={currentUser}
                           otherUser={selectedChat.otherUser}
                           orderId={selectedChat.order?._id}
+                          dealId={selectedChat.deal?._id}
+                          renderMessage={renderDealMessage}
                           className="h-full"
                         />
                       </div>

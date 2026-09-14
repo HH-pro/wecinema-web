@@ -27,6 +27,7 @@ import type { Stripe, StripeAddressElementChangeEvent } from '@stripe/stripe-js'
 // @ts-ignore
 import { loadStripe } from '@stripe/stripe-js';
 import { confirmOfferPayment } from '@/features/marketplace/api/offer.service';
+import { confirmDealPayment } from '@/features/deals/api/deal.service';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import type { Listing } from '@/types/marketplace.types';
 
@@ -98,7 +99,16 @@ export interface DirectPurchaseData {
   listing: Listing;
 }
 
-export type OfferData = OfferPaymentData | DirectPurchaseData;
+/** Buyer paying the agreed amount on an accepted deal (escrow, manual capture). */
+export interface DealPaymentData {
+  type: 'deal';
+  dealId: string;
+  /** Dollars, for display. */
+  amount: number;
+  clientSecret: string;
+}
+
+export type OfferData = OfferPaymentData | DirectPurchaseData | DealPaymentData;
 
 export interface PaymentModalProps {
   show: boolean;
@@ -139,6 +149,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   if (!show || !offerData) return null;
 
   const isDirectPurchase = offerData.type === 'direct_purchase';
+  const isDeal = offerData.type === 'deal';
   const listing = isDirectPurchase ? (offerData as DirectPurchaseData).listing : null;
   const thumbnailUrl = listing ? getThumbnailUrl(listing) : '';
 
@@ -161,7 +172,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
             </div>
             <div>
               <h3 id="payment-modal-title" className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>
-                {isDirectPurchase ? 'Complete Purchase' : 'Complete Offer Payment'}
+                {isDirectPurchase ? 'Complete Purchase' : isDeal ? 'Secure Your Deal' : 'Complete Offer Payment'}
               </h3>
               <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-tertiary)' }}>
                 Payment secured by Stripe · Funds held in escrow
@@ -195,7 +206,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
               </div>
               <div>
                 <p className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>
-                  {isDirectPurchase ? 'Purchase Amount' : 'Offer Amount'}
+                  {isDirectPurchase ? 'Purchase Amount' : isDeal ? 'Agreed Deal Amount' : 'Offer Amount'}
                 </p>
                 <p className="text-2xl font-bold tabular-nums" style={{ color: 'var(--color-text-primary)' }}>
                   {formatCurrency(offerData.amount)}
@@ -381,6 +392,10 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
             paymentIntentId: paymentIntent.id,
             tempOfferId: offerData.tempOfferId,
           });
+        } else if (offerData.type === 'deal') {
+          // The Stripe webhook also finalizes deal payments, so a redirect-based
+          // flow (3DS) that never returns here still creates the order.
+          await confirmDealPayment(offerData.dealId, paymentIntent.id);
         }
 
         setPaymentStatus('success');

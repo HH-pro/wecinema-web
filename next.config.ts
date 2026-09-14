@@ -52,6 +52,18 @@ const nextConfig: NextConfig = {
     root: path.join(__dirname),
   },
 
+  async redirects() {
+    return [
+      // "My Offers" was replaced by the Deals negotiation flow. Temporary so the
+      // path can be reused later without browsers having cached a 308.
+      {
+        source: "/marketplace/offers",
+        destination: "/marketplace/deals",
+        permanent: false,
+      },
+    ];
+  },
+
   async rewrites() {
     return [
       {

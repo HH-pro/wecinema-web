@@ -3,6 +3,8 @@
 // Mirrors backend marketplace/chatRoutes.js
 // ============================================================
 
+import type { ChatDealSummary } from "@/features/deals/types/deal.types";
+
 export type ChatStatus = "active" | "archived";
 
 // ─── Sub-docs ────────────────────────────────────────────────
@@ -53,6 +55,9 @@ export interface Chat {
   status: ChatStatus;
   createdAt: string;
   updatedAt: string;
+  /** Set for chats opened from a deal negotiation (they may have no order yet). */
+  dealId?: string | null;
+  deal?: ChatDealSummary | null;
 }
 
 /** Shape returned by /by-firebase-id/:id and /by-order/:orderId */

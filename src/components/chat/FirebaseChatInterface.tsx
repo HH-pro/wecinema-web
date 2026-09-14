@@ -35,7 +35,14 @@ interface FirebaseChatInterfaceProps {
   currentUser: ChatUser | null;
   otherUser?: Pick<ChatUser, "_id" | "username" | "avatar">;
   orderId?: string;
+  /** Deal this conversation belongs to, when it was opened from a negotiation. */
+  dealId?: string;
   onSendMessage?: (message: string) => void;
+  /**
+   * Custom renderer for Firestore messages (e.g. deal cards). Return null to fall
+   * back to the default bubble. Keeps this component free of feature imports.
+   */
+  renderMessage?: (message: FirebaseMessage) => React.ReactNode | null;
   className?: string;
 }
 
@@ -112,7 +119,8 @@ const MessageBubble: React.FC<{
   isOwn: boolean;
   otherUser: Pick<ChatUser, "_id" | "username" | "avatar"> | undefined;
 }> = ({ message, isOwn, otherUser }) => {
-  if (isSystemMessage(message)) {
+  // Deal events without a custom renderer degrade to the system pill (their text is a summary).
+  if (isSystemMessage(message) || message.messageType === "deal") {
     return (
       <div style={{ display: "flex", justifyContent: "center", margin: "8px 0" }}>
         <span style={{ fontSize: 11, color: "var(--color-text-tertiary)", fontStyle: "italic", background: "var(--color-bg-tertiary)", padding: "2px 12px", borderRadius: 9999 }}>
@@ -150,7 +158,7 @@ const MessageBubble: React.FC<{
 // ─── Main Component ──────────────────────────────────────────
 
 const FirebaseChatInterface: React.FC<FirebaseChatInterfaceProps> = ({
-  chatId, currentUser, otherUser: propOtherUser, orderId, onSendMessage, className = "",
+  chatId, currentUser, otherUser: propOtherUser, orderId, dealId, onSendMessage, renderMessage, className = "",
 }) => {
   const otherUser = propOtherUser ?? { _id: "unknown", username: "User", avatar: "" };
 
@@ -200,7 +208,7 @@ const FirebaseChatInterface: React.FC<FirebaseChatInterfaceProps> = ({
         participantAvatars: { [currentUser._id]: currentUser.avatar ?? "", [otherUser._id]: otherUser.avatar ?? "" },
         unreadCount: { [currentUser._id]: 0, [otherUser._id]: 0 },
         isActive: true,
-        metadata: { orderId, createdFromOrder: !!orderId, initializedAt: new Date().toISOString(), platform: "marketplace" },
+        metadata: { orderId, ...(dealId ? { dealId } : {}), createdFromOrder: !!orderId, initializedAt: new Date().toISOString(), platform: "marketplace" },
       });
       try {
         await setDoc(doc(collection(fs, "chats", chatId, "messages")), {
@@ -217,7 +225,7 @@ const FirebaseChatInterface: React.FC<FirebaseChatInterfaceProps> = ({
       setInitError(msg);
       toast.error("Failed to initialize chat. Please try again.");
     }
-  }, [chatId, currentUser, otherUser, orderId, chatInitialized, chatExists]);
+  }, [chatId, currentUser, otherUser, orderId, dealId, chatInitialized, chatExists]);
 
   useEffect(() => {
     if (!chatId || !currentUser?._id || !otherUser._id) return;
@@ -360,14 +368,19 @@ const FirebaseChatInterface: React.FC<FirebaseChatInterfaceProps> = ({
             </p>
           </div>
         )}
-        {allMessages.map((msg, i) => (
-          <MessageBubble
-            key={"id" in msg ? msg.id : i}
-            message={msg}
-            isOwn={!isSystemMessage(msg) && "senderId" in msg && msg.senderId === currentUser._id}
-            otherUser={otherUser}
-          />
-        ))}
+        {allMessages.map((msg, i) => {
+          const key = "id" in msg ? msg.id : i;
+          const custom = renderMessage && !isSystemMessage(msg) ? renderMessage(msg) : null;
+          if (custom) return <React.Fragment key={key}>{custom}</React.Fragment>;
+          return (
+            <MessageBubble
+              key={key}
+              message={msg}
+              isOwn={!isSystemMessage(msg) && "senderId" in msg && msg.senderId === currentUser._id}
+              otherUser={otherUser}
+            />
+          );
+        })}
         <div ref={messagesEndRef} />
       </div>
 
