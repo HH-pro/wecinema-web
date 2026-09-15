@@ -95,7 +95,10 @@ export async function loginWithGoogle(): Promise<LoginResponse> {
   return api.post<LoginResponse>("/user/google-auth", { idToken });
 }
 
-/** Shares the in-flight refresh with apiClient so parallel calls can't trip reuse detection. */
+/**
+ * Shares the in-flight refresh with apiClient so parallel calls can't trip reuse detection.
+ * Resolves null when the session is over; throws when the server couldn't be reached.
+ */
 export function refreshSession(): Promise<RefreshResult<AuthUser> | null> {
   return sharedRefreshSession<AuthUser>();
 }

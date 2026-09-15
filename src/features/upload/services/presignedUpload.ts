@@ -1,6 +1,6 @@
 "use client";
 
-import { tokenStorage } from "@/features/auth/services/tokenStorage";
+import { api } from "@/features/auth/services/apiClient";
 import { convertToWebP } from "@/utils/imageToWebP";
 
 export type PresignKind = "avatar" | "cover" | "thumbnail" | "video" | "blog" | "listing";
@@ -12,8 +12,6 @@ interface PresignResponse {
   requiredHeaders?: Record<string, string>;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
-
 export async function uploadDirectToS3(
   kind: PresignKind,
   file: File,
@@ -22,37 +20,17 @@ export async function uploadDirectToS3(
   // Convert images to WebP before upload
   file = await convertToWebP(file);
 
-  const token = tokenStorage.get();
-
-  const presignRes = await fetch(`${API_BASE}/uploads/presign`, {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify({
+  // Through the API client so an expired access token is refreshed (single-flight)
+  // instead of failing the upload with "session expired".
+  const { uploadUrl, key, publicUrl, requiredHeaders = {} } = await api.post<PresignResponse>(
+    "/uploads/presign",
+    {
       kind,
       contentType: file.type,
       filename: file.name,
       sizeBytes: file.size,
-    }),
-  });
-
-  if (!presignRes.ok) {
-    let msg = `Presign failed (${presignRes.status})`;
-    try {
-      const err = await presignRes.json();
-      msg = err.error ?? err.message ?? msg;
-    } catch {
-      // ignore
-    }
-    throw new Error(msg);
-  }
-
-  const { uploadUrl, key, publicUrl, requiredHeaders = {} }: PresignResponse =
-    await presignRes.json();
+    },
+  );
 
   // Step 2: PUT directly to S3 (no auth header — S3 rejects it)
   await new Promise<void>((resolve, reject) => {

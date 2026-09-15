@@ -15,7 +15,7 @@ import { getFirebaseFirestore } from "@/lib/firebase/config";
 import { useFirebaseChat, type Message as FirebaseMessage } from "@/hooks/useFirebaseChat";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useChatActions } from "@/features/marketplace/api/chat.service";
-import { tokenStorage } from "@/features/auth/services/tokenStorage";
+import { api } from "@/features/auth/services/apiClient";
 import type { ChatUser } from "@/types/chat.types";
 
 // ─── Types ───────────────────────────────────────────────────
@@ -235,13 +235,10 @@ const FirebaseChatInterface: React.FC<FirebaseChatInterfaceProps> = ({
   const fetchSystemMessages = useCallback(async () => {
     if (!orderId || !currentUser?._id) return;
     try {
-      const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
-      const token = tokenStorage.get();
-      const res = await fetch(`${base}/marketplace/chat/messages/${orderId}`, {
-        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), "Content-Type": "application/json" },
-      });
-      if (!res.ok) return;
-      const data = await res.json() as Array<{ _id: string; message: string; createdAt: string; metadata?: { isSystemMessage?: boolean; orderId?: string } }>;
+      // Through the API client so an expired access token is renewed, not a silent failure.
+      const data = await api.get<Array<{ _id: string; message: string; createdAt: string; metadata?: { isSystemMessage?: boolean; orderId?: string } }>>(
+        `/marketplace/chat/messages/${orderId}`,
+      );
       setSystemMessages(
         data.filter(m => m.metadata?.isSystemMessage).map(m => ({
           id: m._id, content: m.message, timestamp: new Date(m.createdAt),

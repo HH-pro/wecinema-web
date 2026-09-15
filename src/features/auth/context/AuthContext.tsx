@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { tokenStorage } from "@/features/auth/services/tokenStorage";
-import { setUnauthorizedHandler } from "@/features/auth/services/apiClient";
+import { setUnauthorizedHandler, startSessionKeeper } from "@/features/auth/services/apiClient";
 import * as authService from "@/features/auth/services/authService";
 import type { AuthUser } from "@/types";
 
@@ -47,9 +47,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const cachedUser = tokenStorage.getUser<AuthUser>();
     let cancelled = false;
+    let stopRetry: (() => void) | null = null;
+
+    // The server couldn't be reached. That says nothing about the session, so keep the
+    // cached user signed in and try again when the connection is back.
+    const retryWhenPossible = () => {
+      stopRetry?.();
+      const again = () => {
+        stopRetry?.();
+        if (!cancelled && !tokenStorage.get()) void restore();
+      };
+      const timer = setTimeout(again, 10_000);
+      window.addEventListener("online", again);
+      stopRetry = () => {
+        clearTimeout(timer);
+        window.removeEventListener("online", again);
+        stopRetry = null;
+      };
+    };
 
     const restore = async () => {
-      const data = await authService.refreshSession();
+      let data: Awaited<ReturnType<typeof authService.refreshSession>>;
+      try {
+        data = await authService.refreshSession();
+      } catch {
+        if (cancelled) return;
+        setUnauthorizedHandler(logout);
+        if (!cachedUser && !tokenStorage.get()) setStatus("unauthenticated");
+        retryWhenPossible();
+        return;
+      }
       if (cancelled) return;
 
       // If applyLogin() was called while refreshSession was in-flight,
@@ -87,8 +114,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     restore();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      stopRetry?.();
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Renew the access token before it expires for as long as the user is signed in.
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    return startSessionKeeper();
+  }, [status]);
 
   const applyLogin = useCallback(
     (response: authService.LoginResponse) => {
