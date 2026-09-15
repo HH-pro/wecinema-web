@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { ThumbsUp, ThumbsDown, Bookmark } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { ThumbsUp, ThumbsDown, Bookmark, Share2 } from "lucide-react";
+import { toast } from "@/lib/toast";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { api } from "@/features/auth/services/apiClient";
 import type { Video } from "@/types";
@@ -54,6 +55,23 @@ export function VideoMeta({ video }: { video: Video }) {
   const [likeLoading, setLikeLoading] = useState(false);
   const [dislikeLoading, setDislikeLoading] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
+
+  // Description is clamped to 2 lines; "...more" shows only when it overflows.
+  const descRef = useRef<HTMLParagraphElement>(null);
+  // Keyed by video id so switching videos collapses it again.
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const descExpanded = expandedId === video._id;
+  const [descClamped, setDescClamped] = useState(false);
+
+  useEffect(() => {
+    const el = descRef.current;
+    if (!el || descExpanded) return;
+    const measure = () => setDescClamped(el.scrollHeight > el.clientHeight + 1);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [video.description, descExpanded]);
 
   useEffect(() => {
     api
@@ -147,6 +165,21 @@ export function VideoMeta({ video }: { video: Video }) {
       setDislikesCount(prevDislikes);
     } finally {
       setDislikeLoading(false);
+    }
+  }
+
+  async function handleShare() {
+    const url = `${window.location.origin}/watch/${encodeURIComponent(video.slug ?? video._id)}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: video.title, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied to clipboard");
+      }
+    } catch (err) {
+      // AbortError = the user closed the share sheet.
+      if ((err as Error)?.name !== "AbortError") toast.error("Couldn't share this video");
     }
   }
 
@@ -293,20 +326,73 @@ export function VideoMeta({ video }: { video: Video }) {
             />
             {bookmarked ? "Saved" : "Save"}
           </button>
+
+          <button
+            type="button"
+            onClick={handleShare}
+            aria-label="Share this video"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "7px 14px",
+              borderRadius: 9999,
+              fontSize: 13,
+              fontWeight: 600,
+              border: "1px solid var(--color-border-secondary)",
+              backgroundColor: "var(--color-bg-elevated)",
+              color: "var(--color-text-secondary)",
+              cursor: "pointer",
+              transition: "all 0.15s",
+            }}
+          >
+            <Share2 size={15} />
+            Share
+          </button>
         </div>
       </div>
 
       {video.description && (
-        <p
-          style={{
-            marginTop: 14,
-            fontSize: 14,
-            lineHeight: 1.65,
-            color: "var(--color-text-secondary)",
-          }}
-        >
-          {video.description}
-        </p>
+        <div style={{ marginTop: 14 }}>
+          <p
+            ref={descRef}
+            style={{
+              margin: 0,
+              fontSize: 14,
+              lineHeight: 1.65,
+              color: "var(--color-text-secondary)",
+              whiteSpace: "pre-line",
+              overflowWrap: "anywhere",
+              ...(descExpanded ? {} : {
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }),
+            }}
+          >
+            {video.description}
+          </p>
+          {(descClamped || descExpanded) && (
+            <button
+              type="button"
+              onClick={() => setExpandedId(descExpanded ? null : video._id)}
+              aria-expanded={descExpanded}
+              style={{
+                marginTop: 4,
+                padding: 0,
+                border: "none",
+                background: "none",
+                fontSize: 13.5,
+                fontWeight: 700,
+                color: "var(--color-text-primary)",
+                cursor: "pointer",
+              }}
+            >
+              {descExpanded ? "Show less" : "...more"}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
