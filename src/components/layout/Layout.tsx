@@ -11,6 +11,7 @@ import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
 import { SiteFooter } from "@/features/home/components/SiteFooter";
 import { SIDEBAR_COLLAPSED_W, SIDEBAR_EXPANDED_W } from "@/lib/constants";
+import { UploadPill } from "@/features/upload/components/UploadPill";
 
 const BOTTOM_NAV_H = 58;
 
@@ -118,6 +119,8 @@ export default function Layout({ children, hasHeader = true }: LayoutProps) {
           <SiteFooter />
         </main>
       </div>
+
+      <UploadPill bottomOffset={navHidden ? 0 : BOTTOM_NAV_H} />
 
       {/* Mobile bottom navigation — CSS-gated (<=768px), always in the DOM so
           it's correct on the very first paint, no JS/resize race. Slides

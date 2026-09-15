@@ -5,6 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { Avatar } from "@/components/ui/Avatar";
 import { uploadDirectToS3 } from "@/features/upload/services/presignedUpload";
+import { ThumbnailPicker } from "@/features/upload/components/ThumbnailPicker";
+import { DraftsGrid } from "@/features/upload/components/DraftCards";
+import { listDrafts, type VideoDraft } from "@/features/upload/api/drafts";
 import {
   getUserById,
   editProfile,
@@ -117,6 +120,7 @@ interface VideoEditModalProps {
 function VideoEditModal({ video, onClose, onSaved }: VideoEditModalProps) {
   const [title, setTitle] = useState(video.title ?? "");
   const [description, setDescription] = useState(video.description ?? "");
+  const [thumbFile, setThumbFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -124,8 +128,22 @@ function VideoEditModal({ video, onClose, onSaved }: VideoEditModalProps) {
     setSaving(true);
     setError("");
     try {
-      await editVideo(video._id, { title, description });
-      onSaved({ ...video, title, description });
+      const thumbnailKey = thumbFile
+        ? (await uploadDirectToS3("thumbnail", thumbFile)).key
+        : undefined;
+      const res = await editVideo(video._id, {
+        title,
+        description,
+        ...(thumbnailKey ? { thumbnailKey } : {}),
+      });
+      onSaved({
+        ...video,
+        title,
+        description,
+        ...(thumbnailKey && res?.video
+          ? { thumbnail: res.video.thumbnail, thumbnailSmall: res.video.thumbnailSmall }
+          : {}),
+      });
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -153,7 +171,9 @@ function VideoEditModal({ video, onClose, onSaved }: VideoEditModalProps) {
           borderRadius: 16,
           padding: "28px 24px",
           width: "100%",
-          maxWidth: 480,
+          maxWidth: 640,
+          maxHeight: "calc(100vh - 40px)",
+          overflowY: "auto",
           border: "1px solid var(--color-border-secondary)",
         }}
         onClick={(e) => e.stopPropagation()}
@@ -180,6 +200,13 @@ function VideoEditModal({ video, onClose, onSaved }: VideoEditModalProps) {
           onChange={(e) => setDescription(e.target.value)}
           rows={4}
           style={{ ...inputStyle, resize: "vertical" }}
+        />
+        <label style={{ ...labelStyle, marginTop: 12 }}>Thumbnail</label>
+        <ThumbnailPicker
+          videoSrc={video.file}
+          currentUrl={video.thumbnail}
+          value={thumbFile}
+          onChange={setThumbFile}
         />
         {error && (
           <p style={{ color: "#ef4444", fontSize: 13, margin: "8px 0 0" }}>
@@ -288,6 +315,15 @@ export function UserProfileClient({ userId }: UserProfileClientProps) {
   const [changingMode, setChangingMode] = useState(false);
 
   const [editingVideo, setEditingVideo] = useState<ProfileVideo | null>(null);
+
+  // Owner-only: the Videos tab can switch to unpublished drafts.
+  const [videoView, setVideoView] = useState<"published" | "drafts">("published");
+  const [drafts, setDrafts] = useState<VideoDraft[] | null>(null);
+
+  useEffect(() => {
+    if (!isOwner || videoView !== "drafts" || drafts) return;
+    listDrafts().then(setDrafts).catch(() => setDrafts([]));
+  }, [isOwner, videoView, drafts]);
 
   const [formData, setFormData] = useState({
     username: "",
@@ -1388,7 +1424,47 @@ export function UserProfileClient({ userId }: UserProfileClientProps) {
           {/* ── Tab: Videos ──────────────────────────────── */}
           {activeTab === "videos" && (
             <div>
-              {videos.length === 0 ? (
+              {isOwner && (
+                <div role="tablist" aria-label="Video filter" style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                  {([
+                    { id: "published", label: "Published" },
+                    { id: "drafts", label: drafts ? `Drafts (${drafts.length})` : "Drafts" },
+                  ] as const).map((chip) => {
+                    const on = videoView === chip.id;
+                    return (
+                      <button
+                        key={chip.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={on}
+                        onClick={() => setVideoView(chip.id)}
+                        style={{
+                          padding: "6px 14px",
+                          borderRadius: 9999,
+                          fontSize: 13,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          border: on ? "1px solid var(--color-accent-primary)" : "1px solid var(--color-border-secondary)",
+                          backgroundColor: on ? "var(--color-accent-primary)" : "transparent",
+                          color: on ? "var(--color-btn-primary-text, #000)" : "var(--color-text-secondary)",
+                        }}
+                      >
+                        {chip.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {isOwner && videoView === "drafts" ? (
+                drafts === null ? null : drafts.length === 0 ? (
+                  <EmptyState icon="📝" label="No drafts — uploads you haven't published show up here" />
+                ) : (
+                  <DraftsGrid
+                    drafts={drafts}
+                    onDeleted={(draftId) => setDrafts((prev) => (prev ?? []).filter((d) => d._id !== draftId))}
+                  />
+                )
+              ) : videos.length === 0 ? (
                 <EmptyState icon="🎬" label="No videos yet" />
               ) : (
                 <div

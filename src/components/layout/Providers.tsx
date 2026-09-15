@@ -5,11 +5,13 @@ import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { AuthProvider } from "@/features/auth/context/AuthContext";
 import { TestModeBanner } from "@/components/layout/TestModeBanner";
+import { UploadManagerProvider } from "@/features/upload/context/UploadManagerProvider";
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider>
       <AuthProvider>
+        <UploadManagerProvider>
         {children}
         <TestModeBanner />
         <Toaster
@@ -26,6 +28,7 @@ export function Providers({ children }: { children: ReactNode }) {
             },
           }}
         />
+        </UploadManagerProvider>
       </AuthProvider>
     </ThemeProvider>
   );

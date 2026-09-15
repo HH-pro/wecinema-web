@@ -12,7 +12,9 @@ import { Search, X, Sun, Moon, ChevronDown, LogOut, User, Settings, Upload, File
 import { CATEGORIES, RATINGS, RATING_META } from "@/lib/constants";
 import { useTheme } from "@/components/layout/ThemeProvider";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { Avatar } from "@/components/ui/Avatar";
+import { AvatarProgress } from "@/components/ui/AvatarProgress";
+import { useUploads } from "@/features/upload/context/UploadManagerProvider";
+import { UploadsMenuSection } from "@/features/upload/components/UploadsMenu";
 import SearchBar from "@/features/search/SearchBar";
 
 interface HeaderProps {
@@ -142,6 +144,7 @@ const Header: FC<HeaderProps> = ({ toggleSidebar }) => {
   const pathname = usePathname();
   const { isDark, toggleTheme } = useTheme();
   const { authUser, isAuthenticated, isLoading, logout } = useAuth();
+  const { jobs: uploadJobs, totalProgress, ringState } = useUploads();
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [genreOpen, setGenreOpen] = useState(false);
@@ -275,7 +278,13 @@ const Header: FC<HeaderProps> = ({ toggleSidebar }) => {
                     className={userMenuOpen ? "hdr-user-btn open" : "hdr-user-btn"}
                     aria-label="User menu"
                   >
-                    <Avatar src={authUser.avatar} username={authUser.username} size={30} />
+                    <AvatarProgress
+                      src={authUser.avatar}
+                      username={authUser.username}
+                      size={30}
+                      progress={totalProgress}
+                      state={ringState}
+                    />
                     <span className="hdr-username" style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-text-primary)", maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {authUser.username}
                     </span>
@@ -283,11 +292,12 @@ const Header: FC<HeaderProps> = ({ toggleSidebar }) => {
                   </button>
 
                   {userMenuOpen && (
-                    <div className="hdr-drop" style={{ right: 0, minWidth: 200 }}>
+                    <div className="hdr-drop" style={{ right: 0, minWidth: uploadJobs.length ? 320 : 200, maxWidth: "calc(100vw - 24px)" }}>
                       <div style={{ padding: "12px 16px 10px", borderBottom: "1px solid var(--color-divider)" }}>
                         <p style={{ margin: 0, fontSize: "0.8125rem", fontWeight: 700, color: "var(--color-text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{authUser.username}</p>
                         <p style={{ margin: "2px 0 0", fontSize: "0.75rem", color: "var(--color-text-tertiary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{authUser.email}</p>
                       </div>
+                      <UploadsMenuSection onNavigate={() => setUserMenuOpen(false)} />
                       <div style={{ padding: 4 }}>
                         <Link href={`/user/${authUser._id}`} className="hdr-row" onClick={() => setUserMenuOpen(false)}>
                           <User size={15} style={{ flexShrink: 0 }} />

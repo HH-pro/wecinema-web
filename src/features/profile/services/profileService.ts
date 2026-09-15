@@ -9,6 +9,8 @@ export interface ProfileVideo {
   description?: string;
   thumbnail?: string;
   thumbnailSmall?: string;
+  /** Signed playable URL — present for the owner, used to pick thumbnail frames. */
+  file?: string;
   slug?: string;
   genre?: string;
   views?: number;
@@ -155,8 +157,8 @@ export function deleteVideo(id: string): Promise<void> {
 export function editVideo(
   id: string,
   payload: Record<string, unknown>,
-): Promise<void> {
-  return api.put<void>(`/video/edit/${id}`, payload);
+): Promise<{ video?: ProfileVideo }> {
+  return api.put<{ video?: ProfileVideo }>(`/video/edit/${id}`, payload);
 }
 
 // ─── Scripts ─────────────────────────────────────────────────
