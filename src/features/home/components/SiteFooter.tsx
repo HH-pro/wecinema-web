@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CookieSettingsButton } from "@/features/consent/components/CookieSettingsButton";
 import { FaXTwitter, FaInstagram, FaYoutube, FaFacebookF } from "react-icons/fa6";
 
 interface FooterLink {
@@ -38,6 +39,7 @@ const COLUMNS: { heading: string; links: FooterLink[] }[] = [
     links: [
       { label: "Terms", href: "/terms-and-conditions" },
       { label: "Privacy Policy", href: "/privacy-policy" },
+      { label: "Cookie Policy", href: "/cookie-policy" },
       { label: "Marketplace Policies", href: "/marketplace/resources" },
     ],
   },
@@ -123,6 +125,10 @@ export function SiteFooter() {
               wecinema.co
             </a>
           </p>
+          <CookieSettingsButton
+            className="hover:!text-[var(--color-accent-primary)] hover:underline underline-offset-2 transition-colors"
+            style={{ background: "none", border: 0, padding: 0, cursor: "pointer", fontSize: 12.5, color: "var(--color-text-tertiary)" }}
+          />
           <div style={{ display: "flex", gap: 10 }}>
             {SOCIALS.map((s) => (
               <a

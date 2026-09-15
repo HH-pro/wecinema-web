@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   },
 };
 
-const EFFECTIVE_DATE = "May 17, 2026";
+const EFFECTIVE_DATE = "September 15, 2026";
 const NEXT_REVIEW   = "November 17, 2026";
 
 const Section: React.FC<{ id?: string; title: string; children: React.ReactNode }> = ({ id, title, children }) => (
@@ -210,8 +210,8 @@ export default function PrivacyPolicyPage() {
                   ["IP Address & Device Info",    "Browser type, operating system, screen resolution, device identifiers."],
                   ["Log Data",                    "Pages visited, features used, timestamps, referring URLs, error logs."],
                   ["Video Playback Telemetry",    "Watch duration, buffering events, quality selection — used to improve streaming."],
-                  ["Cookies & Local Storage",     "Session tokens, theme preferences, sidebar state. See Section 8."],
-                  ["Analytics",                   "Aggregated usage patterns via privacy-respecting analytics tools."],
+                  ["Cookies & Local Storage",     "A secure sign-in cookie, your cookie choices and your preferences. Optional cookies only with your consent — see Section 8."],
+                  ["Analytics",                   "Usage and page-speed measurement through Google Analytics, only if you allow analytics cookies."],
                 ].map(([label, detail]) => (
                   <Li key={label}>
                     <Badge>{label}</Badge>{" "}{detail}
@@ -305,6 +305,18 @@ export default function PrivacyPolicyPage() {
                     data: "Recipient email, OTP codes, notification content. No persistent storage.",
                     link: "emailjs.com/legal/privacy-policy",
                   },
+                  {
+                    name: "Google Analytics",
+                    role: "Usage Analytics (only with your consent)",
+                    data: "Pages viewed, device and browser type, approximate location and page-load timings. Advertising features are turned off.",
+                    link: "policies.google.com/privacy",
+                  },
+                  {
+                    name: "Meta Platforms",
+                    role: "Ad Measurement — Meta Pixel (only with your consent)",
+                    data: "Public pages visited and a browser identifier, used to measure our Facebook and Instagram ads.",
+                    link: "www.facebook.com/privacy/policy",
+                  },
                 ].map((sp) => (
                   <div key={sp.name} className="flex gap-4 p-4 rounded-xl bg-bg-secondary border border-border-secondary">
                     <div className="w-2 rounded-full shrink-0" style={{ backgroundColor: "var(--color-accent-primary)" }} />
@@ -336,7 +348,7 @@ export default function PrivacyPolicyPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                 {[
                   { icon: "🔐", title: "Password Hashing",       desc: "All passwords are hashed using Argon2id — the current OWASP-recommended algorithm. Plaintext passwords are never stored." },
-                  { icon: "🔑", title: "JWT Authentication",     desc: "Access tokens expire in 15 minutes. Refresh tokens (7 days) are stored in httpOnly, Secure, SameSite=Strict cookies — inaccessible to JavaScript." },
+                  { icon: "🔑", title: "JWT Authentication",     desc: "Access tokens expire in 15 minutes and are kept in memory only. Refresh tokens (30 days, rotated on every use) live in a __Host- prefixed, httpOnly, Secure, SameSite cookie — inaccessible to JavaScript." },
                   { icon: "🛡️", title: "Transport Encryption",   desc: "All traffic between your browser and our servers is encrypted with TLS 1.2+. HSTS is enforced." },
                   { icon: "📦", title: "Storage Encryption",     desc: "Shipping addresses: AES-256-CBC. AWS S3 objects: server-side encryption (SSE-S3). Video delivery via short-lived presigned URLs (24-hour TTL)." },
                   { icon: "🚫", title: "Input Sanitisation",     desc: "All user input is validated and sanitised. MongoDB operators are stripped. Prototype pollution is actively blocked via middleware." },
@@ -380,7 +392,8 @@ export default function PrivacyPolicyPage() {
                       ["Video content",                 "Until creator deletes",    "Content hosting agreement"],
                       ["Security & access logs",        "12 months",                "Security monitoring"],
                       ["OTP codes",                     "10 minutes",               "One-time use — auto-expired"],
-                      ["JWT refresh tokens",            "7 days",                   "Authentication lifecycle"],
+                      ["JWT refresh tokens",            "30 days",                  "Authentication lifecycle"],
+                      ["Cookie consent records",        "3 years",                  "Proof of consent (GDPR)"],
                     ].map(([type, period, reason]) => (
                       <tr key={type} className="border-b border-divider/50">
                         <td className="py-2.5 pr-4 font-medium text-text-primary">{type}</td>
@@ -420,26 +433,32 @@ export default function PrivacyPolicyPage() {
 
             {/* ── 8 ── */}
             <Section id="cookies" title="8. Cookies & Tracking">
-              <P>WeCinema uses the following types of cookies and browser storage mechanisms:</P>
+              <P>WeCinema asks before using any cookie that isn&apos;t strictly necessary. Until you choose, only strictly necessary cookies are used, and you can change your choice at any time from <strong>Cookie settings</strong> in the site footer.</P>
               <div className="space-y-2.5 mt-3">
                 {[
                   {
                     type: "Strictly Necessary",
                     color: "var(--color-success)",
                     bg: "var(--color-success-bg)",
-                    desc: "Session management, CSRF protection, httpOnly refresh token cookie. Cannot be disabled — required for the platform to function.",
+                    desc: "Keep you signed in (a Secure, httpOnly refresh cookie), remember your cookie choices and the preferences you set yourself, such as light or dark mode, and let checkout work — Stripe and PayPal set fraud-prevention cookies when a payment form opens. Always on.",
                   },
                   {
                     type: "Functional",
                     color: "var(--color-info)",
                     bg: "var(--color-info-bg)",
-                    desc: "Theme preference (light/dark), sidebar state, locale. Stored in localStorage. Removing them will reset your UI preferences.",
+                    desc: "Remember your recent searches. Off unless you allow it.",
                   },
                   {
                     type: "Analytics",
                     color: "var(--color-warning)",
                     bg: "var(--color-warning-bg)",
-                    desc: "Aggregated usage analytics to understand how features are used. Data is anonymised — not linked to your identity.",
+                    desc: "Google Analytics measures how the site is used and how fast pages load, with Google's advertising features turned off. Off unless you allow it.",
+                  },
+                  {
+                    type: "Marketing",
+                    color: "var(--color-danger)",
+                    bg: "var(--color-danger-bg)",
+                    desc: "The Meta Pixel measures how our ads on Facebook and Instagram perform, on public pages only. Off unless you allow it.",
                   },
                 ].map((c) => (
                   <div key={c.type} className="flex gap-3 p-4 rounded-xl items-start" style={{ backgroundColor: c.bg }}>
@@ -478,7 +497,7 @@ export default function PrivacyPolicyPage() {
                   ["Contract",               "Processing necessary to provide you with platform services (account, orders, payments)."],
                   ["Legitimate Interests",   "Fraud prevention, security monitoring, platform improvement — balanced against your rights."],
                   ["Legal Obligation",       "Financial record-keeping, responding to lawful requests from authorities."],
-                  ["Consent",                "Marketing communications, optional analytics — withdrawable at any time."],
+                  ["Consent",                "Marketing emails, and analytics and marketing cookies — withdrawable at any time from Cookie settings."],
                 ].map(([basis, detail]) => (
                   <Li key={basis}><strong>{basis}:</strong> {detail}</Li>
                 ))}

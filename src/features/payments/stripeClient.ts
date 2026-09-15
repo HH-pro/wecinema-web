@@ -10,7 +10,10 @@
  * per checkout surface.
  */
 
-import { loadStripe, type Stripe } from "@stripe/stripe-js";
+// The /pure entry doesn't inject Stripe.js at import time; it loads on the first
+// loadStripe() call, so Stripe's fraud-prevention cookies only appear once checkout opens.
+import { loadStripe } from "@stripe/stripe-js/pure";
+import type { Stripe } from "@stripe/stripe-js";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 

@@ -35,6 +35,7 @@ const PUBLIC_PREFIXES = [
   "/watch", // /watch/[slug]
   "/user", // /user/[id] public profile (account sub-tabs carved out below)
   "/privacy-policy",
+  "/cookie-policy",
   "/terms-and-conditions",
   "/support",
   "/report",

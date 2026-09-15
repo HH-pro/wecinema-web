@@ -24,8 +24,9 @@ import {
 } from '@stripe/react-stripe-js';
 // @ts-ignore
 import type { Stripe, StripeAddressElementChangeEvent } from '@stripe/stripe-js';
+// Loads Stripe.js on first use rather than at import (see features/payments/stripeClient.ts).
 // @ts-ignore
-import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe } from '@stripe/stripe-js/pure';
 import { confirmOfferPayment } from '@/features/marketplace/api/offer.service';
 import { confirmDealPayment } from '@/features/deals/api/deal.service';
 import { useAuth } from '@/features/auth/context/AuthContext';

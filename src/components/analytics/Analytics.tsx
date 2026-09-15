@@ -2,9 +2,14 @@
 
 import Script from "next/script";
 import { useReportWebVitals } from "next/web-vitals";
+import { useConsentState } from "@/features/consent/ConsentProvider";
 
 /**
  * Google Analytics 4 + Core Web Vitals RUM.
+ *
+ * Loads only once the visitor allows Analytics cookies (see features/consent). Google's
+ * advertising storage is declared denied through Consent Mode, since GA here is for
+ * usage measurement only.
  *
  * Defaults to the live WeCinema GA4 property; override per-environment by
  * setting NEXT_PUBLIC_GA_ID. A GA Measurement ID is public (it ships in the
@@ -14,6 +19,8 @@ import { useReportWebVitals } from "next/web-vitals";
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? "G-5F9XF5QE3Z";
 
 export function Analytics() {
+  const { categories } = useConsentState();
+
   // Hook must run unconditionally; it no-ops until gtag exists.
   useReportWebVitals((metric) => {
     if (!GA_ID) return;
@@ -29,7 +36,7 @@ export function Analytics() {
     });
   });
 
-  if (!GA_ID) return null;
+  if (!GA_ID || !categories.analytics) return null;
 
   return (
     <>
@@ -40,6 +47,7 @@ export function Analytics() {
       <Script id="ga4-init" strategy="afterInteractive">
         {`window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
+gtag('consent', 'default', { analytics_storage: 'granted', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' });
 gtag('js', new Date());
 gtag('config', '${GA_ID}', { send_page_view: true });`}
       </Script>
