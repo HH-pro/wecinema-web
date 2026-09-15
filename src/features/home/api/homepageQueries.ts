@@ -2,7 +2,7 @@ import { apiFetch, ApiError } from "@/lib/fetch/serverFetch";
 import type { Video } from "@/types";
 
 /**
- * How many videos the homepage's video-grid rows (currently just Trending)
+ * How many videos the homepage's video-grid rows (Latest and Trending)
  * show, expressed as rows at the desktop 3-column layout. Bump this when
  * ready to show more — it's intentionally kept low for now.
  */
@@ -16,7 +16,7 @@ const HOMEPAGE_ROW_LIMIT = HOMEPAGE_ROWS * HOMEPAGE_COLUMNS;
  * The homepage used to make several separate `/video/category/:genre` calls.
  * We now fetch `/video/all` ONCE (server-side, ISR-cached) and derive
  * everything the page needs in memory: the hero "featured" films, the
- * trending row, and the stat counters.
+ * latest and trending rows, and the stat counters.
  */
 
 interface VideoListResponse {
@@ -40,6 +40,7 @@ export interface HomepageStats {
 
 export interface HomepageData {
   featured: Video[];
+  latest: Video[];
   trending: Video[];
   shorts: Video[];
   stats: HomepageStats;
@@ -47,6 +48,7 @@ export interface HomepageData {
 
 const EMPTY: HomepageData = {
   featured: [],
+  latest: [],
   trending: [],
   shorts: [],
   stats: { totalFilms: 0, totalCreators: 0 },
@@ -67,13 +69,21 @@ function isPublishable(v: Video): boolean {
   return v.published !== false;
 }
 
+/**
+ * Newest first. Publishing a draft resets createdAt to the publish time
+ * (backend services/videoDraft.service.js), so this is publish order.
+ */
+function newestFirst(a: Video, b: Video): number {
+  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+}
+
 /** trending sort: red_carpet first, then most viewed, then newest. */
 function trendingSort(a: Video, b: Video): number {
   const rc = Number(b.red_carpet ?? false) - Number(a.red_carpet ?? false);
   if (rc !== 0) return rc;
   const views = (b.views ?? 0) - (a.views ?? 0);
   if (views !== 0) return views;
-  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  return newestFirst(a, b);
 }
 
 export async function getHomepageData(): Promise<HomepageData> {
@@ -110,6 +120,12 @@ export async function getHomepageData(): Promise<HomepageData> {
     ? [pinned, ...featuredBase.filter((v) => v._id !== pinned._id)]
     : featuredBase;
 
+  // ── Latest: every new upload, newest first. Shorts have their own row. ──
+  const latest = all
+    .filter((v) => !v.isShort)
+    .sort(newestFirst)
+    .slice(0, HOMEPAGE_ROW_LIMIT);
+
   // ── Trending: recommended OR red_carpet, sorted, deduped ──
   const trending = all
     .filter((v) => v.recommended || v.red_carpet)
@@ -133,6 +149,7 @@ export async function getHomepageData(): Promise<HomepageData> {
 
   return {
     featured,
+    latest,
     trending: trendingResolved,
     shorts,
     stats: { totalFilms: all.length, totalCreators: creators.size },

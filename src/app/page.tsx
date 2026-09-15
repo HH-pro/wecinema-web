@@ -9,6 +9,7 @@ import { getLatestScripts } from "@/features/scripts/api/scriptsQueries";
 import { HeroSplit, type HeroFeatured } from "@/features/home/components/HeroSplit";
 import { ThemePills } from "@/features/videos";
 import { ContinueWatchingRow } from "@/features/home/components/ContinueWatchingRow";
+import { LatestRow } from "@/features/home/components/LatestRow";
 import { TrendingRow } from "@/features/home/components/TrendingRow";
 import { ShortsRow } from "@/features/home/components/ShortsRow";
 import { MarketplaceSpotlight } from "@/features/home/components/MarketplaceSpotlight";
@@ -148,6 +149,7 @@ export default async function HomePage() {
         <ContinueWatchingRow />
 
         {/* Content first — discovery before pitch (premium / industry-scale) */}
+        <LatestRow videos={home.latest} />
         <TrendingRow videos={home.trending} />
         <ShortsRow videos={home.shorts} />
 
