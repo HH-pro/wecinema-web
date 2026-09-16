@@ -46,6 +46,10 @@ export interface Video {
   genre: string | string[];
   theme?: string | string[];
   rating?: string;
+  /** Creator tags, display form and no '#'. Rendered as #hashtags when single-word. */
+  tags?: string[];
+  /** Canonical lowercase keys for `tags`, index-aligned with it. Used by /tags/:slug. */
+  tagSlugs?: string[];
   author: Author | string;
   views?: number;
   hasPaid?: boolean;

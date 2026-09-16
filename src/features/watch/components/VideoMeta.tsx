@@ -5,6 +5,7 @@ import { ThumbsUp, ThumbsDown, Bookmark, Share2 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { api } from "@/features/auth/services/apiClient";
+import { HashtagChips, HashtagText } from "@/features/videos/components/HashtagText";
 import type { Video } from "@/types";
 
 function openAuthEvent(tab: "login" | "signup" = "login") {
@@ -45,6 +46,10 @@ interface BookmarksResponse {
 
 export function VideoMeta({ video }: { video: Video }) {
   const { authUser } = useAuth();
+
+  // Older videos predate the tags field; hashtags in their description still
+  // render as links, they just have no chip row.
+  const tags = video.tags ?? [];
 
   const [viewsCount, setViewsCount] = useState<number>(video.views ?? 0);
   const [likesCount, setLikesCount] = useState(0);
@@ -371,7 +376,7 @@ export function VideoMeta({ video }: { video: Video }) {
               }),
             }}
           >
-            {video.description}
+            <HashtagText text={video.description} />
           </p>
           {(descClamped || descExpanded) && (
             <button
@@ -392,6 +397,12 @@ export function VideoMeta({ video }: { video: Video }) {
               {descExpanded ? "Show less" : "...more"}
             </button>
           )}
+        </div>
+      )}
+
+      {tags.length > 0 && (
+        <div style={{ marginTop: 14 }}>
+          <HashtagChips tags={tags} max={descExpanded ? undefined : 8} size="sm" />
         </div>
       )}
     </div>

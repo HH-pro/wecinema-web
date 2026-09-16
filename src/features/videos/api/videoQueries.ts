@@ -180,3 +180,75 @@ export async function getRelatedVideos(
     return [];
   }
 }
+
+// ── Tags / hashtags ────────────────────────────────────────────
+
+export interface TagSummary {
+  /** Canonical slug — what the URL carries. */
+  tag: string;
+  /** The spelling creators used, for display. */
+  label: string;
+  count: number;
+  views?: number;
+}
+
+export interface TagFeed {
+  tag: string;
+  label: string;
+  videos: Video[];
+  total: number;
+  hasMore: boolean;
+}
+
+interface TagFeedResponse extends VideoListResponse {
+  tag?: string;
+  label?: string;
+  total?: number;
+  hasMore?: boolean;
+}
+
+/**
+ * Videos carrying a hashtag. The slug is resolved server-side, so "Sci-Fi",
+ * "scifi" and "SciFi" all land on the same feed.
+ */
+export async function getVideosByTag(tag: string, limit = 48): Promise<TagFeed> {
+  const empty: TagFeed = { tag, label: tag, videos: [], total: 0, hasMore: false };
+  try {
+    const data = await apiFetch<TagFeedResponse>(
+      `/video/tags/${encodeURIComponent(tag)}?limit=${limit}`,
+      { revalidate: CACHE_TTL, tags: [`videos:tag:${tag.toLowerCase()}`] },
+    );
+    return {
+      tag: data.tag ?? tag,
+      label: data.label ?? tag,
+      videos: extractList(data),
+      total: data.total ?? 0,
+      hasMore: data.hasMore ?? false,
+    };
+  } catch (err) {
+    if (err instanceof ApiError) {
+      console.warn(`[videos] tag=${tag} ${err.status} ${err.statusText}`);
+    } else {
+      console.error(`[videos] tag=${tag}`, err);
+    }
+    return empty;
+  }
+}
+
+/** Most-used hashtags across the catalogue, for rails and related-tag rows. */
+export async function getTrendingTags(limit = 20, days = 30): Promise<TagSummary[]> {
+  try {
+    const data = await apiFetch<{ tags?: TagSummary[] }>(
+      `/video/tags/trending?limit=${limit}&days=${days}`,
+      { revalidate: CACHE_TTL, tags: ["videos:tags:trending"] },
+    );
+    return data.tags ?? [];
+  } catch (err) {
+    if (err instanceof ApiError) {
+      console.warn(`[videos] trending tags ${err.status} ${err.statusText}`);
+    } else {
+      console.error("[videos] trending tags", err);
+    }
+    return [];
+  }
+}

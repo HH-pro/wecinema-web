@@ -14,6 +14,8 @@ export interface VideoDraft {
   genre: string[];
   theme: string[];
   rating: string;
+  /** Display forms, no '#'. The API normalises and dedupes whatever is sent. */
+  tags: string[];
   thumbnail: string | null;
   thumbnailKey: string | null;
   /** Signed playable URL — only once the upload has finished. */
@@ -44,6 +46,7 @@ export interface DraftChanges {
   genre?: string[];
   theme?: string[];
   rating?: string;
+  tags?: string[];
   thumbnailKey?: string;
   duration?: number;
   isShort?: boolean;

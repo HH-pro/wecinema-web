@@ -20,6 +20,7 @@ import { uploadDirectToS3 } from "@/features/upload/services/presignedUpload";
 import { uploadStore } from "@/features/upload/engine/uploadStore";
 import { useUploads, sameFile } from "@/features/upload/context/UploadManagerProvider";
 import { ThumbnailPicker } from "@/features/upload/components/ThumbnailPicker";
+import { TagsInput } from "@/features/upload/components/TagsInput";
 import {
   FieldLabel, MultiSelect, ProgressBar, formatBytes, formatDuration, inputStyle, useObjectUrl,
 } from "@/features/upload/components/UploadUI";
@@ -29,6 +30,7 @@ import {
 import {
   DEFAULT_RENTAL_CENTS, GENRES, PLATFORM_FEE_RATE, RATINGS, RENTAL_PLANS, THEMES, VIDEO_ACCEPT,
 } from "@/features/upload/lib/videoOptions";
+import { extractHashtags } from "@/lib/tags";
 
 // ── Form model ────────────────────────────────────────────────
 
@@ -38,6 +40,7 @@ interface FormValues {
   genre: string[];
   theme: string[];
   rating: string;
+  tags: string[];
   isShort: boolean;
   hasPaid: boolean;
   isForSale: boolean;
@@ -46,7 +49,7 @@ interface FormValues {
 }
 
 const FORM_KEYS: (keyof FormValues)[] = [
-  "title", "description", "genre", "theme", "rating",
+  "title", "description", "genre", "theme", "rating", "tags",
   "isShort", "hasPaid", "isForSale", "isRentable", "rentalPriceCents",
 ];
 
@@ -61,6 +64,7 @@ function valuesFromDraft(d: VideoDraft): FormValues {
     genre: d.genre ?? [],
     theme: d.theme ?? [],
     rating: d.rating ?? "",
+    tags: d.tags ?? [],
     isShort: d.isShort,
     hasPaid: d.hasPaid,
     isForSale: d.isForSale,
@@ -696,6 +700,15 @@ export function DraftEditor({ draftId }: { draftId: string }) {
                     <div>
                       <FieldLabel>Themes</FieldLabel>
                       <MultiSelect options={THEMES} value={values.theme} onChange={(v) => update("theme", v)} customPlaceholder="Add a custom theme…" />
+                    </div>
+
+                    <div>
+                      <FieldLabel>Tags &amp; hashtags</FieldLabel>
+                      <TagsInput
+                        value={values.tags}
+                        onChange={(v) => update("tags", v)}
+                        inherited={extractHashtags(values.description)}
+                      />
                     </div>
 
                     <div>

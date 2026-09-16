@@ -11,6 +11,8 @@ import { toast } from "@/lib/toast";
 import { HypemodeAuthDrawer } from "@/app/hypemode/HypemodeAuthDrawer";
 import { ShortsCommentsDrawer } from "@/features/videos/components/ShortsCommentsDrawer";
 import { Avatar } from "@/components/ui/Avatar";
+import { HashtagText } from "@/features/videos/components/HashtagText";
+import { displayTag, extractHashtags, slugifyTag, tagHref } from "@/lib/tags";
 import type { Video, VideoComment } from "@/types";
 
 function openAuthEvent(tab: "login" | "signup" = "login") {
@@ -109,6 +111,10 @@ function ShortItem({
   const [loadError, setLoadError] = useState(false);
 
   const author = typeof video.author === "object" && video.author !== null ? video.author : null;
+
+  // Tags already visible as hashtags in the caption would be shown twice.
+  const inCaption = new Set(extractHashtags(video.description).map(slugifyTag));
+  const captionTags = (video.tags ?? []).filter((t) => !inCaption.has(slugifyTag(t)));
 
   const thumb = video.thumbnailSmall ?? video.thumbnail ?? "";
   const isDataThumb = thumb.startsWith("data:");
@@ -479,8 +485,30 @@ function ShortItem({
               textShadow: "0 1px 3px rgba(0,0,0,0.5)",
             }}
           >
-            {video.description}
+            <HashtagText text={video.description} color="#fff" />
           </p>
+        )}
+        {/* Hashtag row, TikTok-style: the tags the creator set, minus any they
+            already wrote into the caption above. */}
+        {captionTags.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
+            {captionTags.slice(0, 4).map((tag) => (
+              <Link
+                key={tag}
+                href={tagHref(tag)}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#fff",
+                  textDecoration: "none",
+                  textShadow: "0 1px 4px rgba(0,0,0,0.6)",
+                }}
+              >
+                {displayTag(tag)}
+              </Link>
+            ))}
+          </div>
         )}
       </div>
       </div>
