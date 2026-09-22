@@ -15,6 +15,7 @@ import {
 import { createListing } from '@/features/marketplace/api/marketplace.service';
 import MarketplaceLayout from '@/features/marketplace/components/MarketplaceLayout';
 import type { CreateListingPayload, ListingType } from '@/types/marketplace.types';
+import { trackListingCreated } from '@/lib/analytics/track';
 
 // ─── Constants ────────────────────────────────────────────────
 
@@ -197,6 +198,7 @@ const CreateListing: React.FC = () => {
 
       createListing(payload, updateProgress)
         .then(() => {
+          trackListingCreated({ type: payload.type, price: payload.price });
           window.dispatchEvent(new CustomEvent('listing-created'));
           finishUpload();
         })
@@ -210,6 +212,7 @@ const CreateListing: React.FC = () => {
 
       createListing(payload)
         .then(() => {
+          trackListingCreated({ type: payload.type, price: payload.price });
           router.push('/marketplace');
         })
         .catch((err: unknown) => {

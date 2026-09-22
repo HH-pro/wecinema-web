@@ -446,7 +446,10 @@ const Browse: React.FC = () => {
 
   if (loading) {
     return (
-      <MarketplaceLayout>
+      <MarketplaceLayout
+        title="Browse Independent Films & Scripts for Sale"
+        subtitle="Every active listing on the WeCinema marketplace — films, scripts, licensing and adaptation rights, sold directly by their creators."
+      >
         <div className="mp-loading-state" style={{ minHeight: "60vh" }}>
           <div className="mp-spinner" style={{ marginBottom: 20 }} />
           <p style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)", margin: "0 0 6px", fontFamily: "var(--font-heading)" }}>Loading Marketplace</p>
@@ -457,7 +460,10 @@ const Browse: React.FC = () => {
   }
 
   return (
-    <MarketplaceLayout>
+    <MarketplaceLayout
+      title="Browse Independent Films & Scripts for Sale"
+      subtitle="Every active listing on the WeCinema marketplace — films, scripts, licensing and adaptation rights, sold directly by their creators."
+    >
       <div style={{ minHeight: "100vh", backgroundColor: "var(--color-bg-secondary)" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" style={{ paddingTop: 8, paddingBottom: 48 }}>
           {/* Error Banner */}

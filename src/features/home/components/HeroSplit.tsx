@@ -92,8 +92,9 @@ export function HeroSplit({
   ];
 
   // Always start on the first slide (index 0 — the live trending charts) on
-  // every load/reload. Its <h1> ("What's trending on WeCinema") is the one a
-  // crawler or no-JS client sees. On desktop the slider does not auto-advance
+  // every load/reload. Its <h1> ("Trending independent films on WeCinema") is
+  // the one a crawler or no-JS client sees, so it carries the terms the page
+  // is actually trying to rank for — not just the brand name. On desktop the slider does not auto-advance
   // (see the interval effect below), so it holds here until the user navigates.
   const [slideIndex, setSlideIndex] = useState(0);
   const [visible, setVisible] = useState(true);
@@ -305,7 +306,7 @@ export function HeroSplit({
                 textShadow: "0 2px 28px rgba(0,0,0,0.5)",
               }}
             >
-              What&apos;s trending on <span style={{ color: "var(--color-accent-primary,#FFBB00)" }}>WeCinema</span>
+              Trending <span style={{ color: "var(--color-accent-primary,#FFBB00)" }}>independent films</span> on WeCinema
             </h1>
 
             <div className={rise(3)}>

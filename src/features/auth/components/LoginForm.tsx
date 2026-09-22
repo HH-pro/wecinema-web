@@ -617,7 +617,7 @@ function LoginFormInner({
               className="font-medium" style={{ color: "var(--color-accent-primary)" }}>
               Forgot password?
             </button>
-            <Link href="/explore" className="font-medium" style={{ color: "var(--color-accent-primary)" }}>
+            <Link href="/pricing" className="font-medium" style={{ color: "var(--color-accent-primary)" }}>
               HypeMode?
             </Link>
           </div>

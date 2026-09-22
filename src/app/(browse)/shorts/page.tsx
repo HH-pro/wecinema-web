@@ -27,6 +27,9 @@ export default async function ShortsPage() {
   const videos = await getShortsVideos(100);
   return (
     <Suspense fallback={<div style={{ position: "fixed", inset: 0, background: "#000" }} />}>
+      {/* The player fills the viewport, so the page's heading is visually
+          hidden rather than absent — it had no <h1> at all. */}
+      <h1 className="sr-only">Short Films — Watch Independent Shorts on WeCinema</h1>
       <ShortsPlayer videos={videos} />
     </Suspense>
   );

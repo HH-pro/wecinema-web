@@ -24,6 +24,7 @@ import {
 } from "@/components/auth/shared";
 import { OtpInput } from "@/features/auth/components/OtpInput";
 import { safeRedirect } from "@/lib/utils/safeRedirect";
+import { trackSignUp } from "@/lib/analytics/track";
 
 // ─── Panel wrapper ────────────────────────────────────────────
 
@@ -136,6 +137,9 @@ function VerifyOTPStep({
     setLoading(true);
     try {
       await authService.verifyEmailOtp({ email, otp: result.data.otp });
+      // The account only truly exists once the address is verified, so this —
+      // not register() — is the signup conversion.
+      trackSignUp("email");
       setDone(true);
       setTimeout(onVerified, 1500);
     } catch (err) {
@@ -306,6 +310,7 @@ function RegisterForm({ redirect }: { redirect: string }) {
     setGoogleLoading(true);
     try {
       const res = await authService.loginWithGoogle();
+      trackSignUp("google");
       applyLogin(res);
       router.push(redirect);
     } catch (err) {

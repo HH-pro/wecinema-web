@@ -40,12 +40,13 @@ WeCinema combines a streaming catalog, a creator community (HypeMode), and a rig
 - **For creators**: Upload films and scripts, build an audience, and sell work or license rights with escrow-protected payments (funds released on delivery).
 - **For viewers**: Stream independent films by genre, theme and rating; discover new creators.
 - **Marketplace types**: for-sale films, licensing, adaptation rights, and commissions.
-- **Pricing**: Free to watch and browse; subscription tiers (Basic, Premium, HypeMode, Studio) for creators.
+- **Pricing**: Free to watch and browse. Paid plans are Basic ($5/month) and Pro ($10/month). Selling is free to start — WeCinema takes a 15% fee on a sale only when it completes.
 
 ## Main sections
 
 - [Home](${SITE}/): Overview of WeCinema — watch, create and sell films and scripts.
 - [Explore](${SITE}/explore): Browse the full catalog of independent films.
+- [Pricing](${SITE}/pricing): Plan pricing for creators and buyers.
 - [Marketplace](${SITE}/marketplace): Buy and sell films, scripts, and adaptation/licensing rights.
 - [Browse listings](${SITE}/marketplace/browse): All active marketplace listings.
 - [Scripts](${SITE}/scripts): Read and buy original screenplays and scripts.

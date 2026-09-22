@@ -54,3 +54,24 @@ export async function getScriptsWithCount(
     return { scripts: [], total: 0 };
   }
 }
+
+/**
+ * Every script, newest first — for the `/scripts` browse page.
+ *
+ * This runs on the server so the script cards (and their `/scripts/{id}`
+ * links) are present in the initial HTML. The page previously fetched this
+ * list from a `useEffect`, which meant crawlers received an empty grid and
+ * `/scripts` exposed no internal links to any script at all.
+ */
+export async function getAllScripts(limit = 200): Promise<Script[]> {
+  try {
+    return sortNewestFirst(await fetchAllScripts()).slice(0, limit);
+  } catch (err) {
+    if (err instanceof ApiError) {
+      console.warn(`[scripts] all ${err.status} ${err.statusText}`);
+    } else {
+      console.error("[scripts] all", err);
+    }
+    return [];
+  }
+}

@@ -51,7 +51,6 @@ export default async function HypemodePage() {
           audience: { "@type": "Audience", audienceType: "Filmmakers and content creators" },
         }}
       />
-      <h1 className="sr-only">WeCinema Hype Mode — Get Your Films Discovered</h1>
       <HypemodeContent videos={videos} appUrl={clientEnv.NEXT_PUBLIC_APP_URL} />
     </>
   );

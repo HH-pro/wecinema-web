@@ -567,7 +567,7 @@ export default function Sidebar({ expand, onClose }: SidebarProps) {
               <NavItem href="/" icon={<IoMdHome />} label="Home" expand={expand} active={isActive("/")} />
               <NavItem href="/shorts" icon={<Clapperboard size={17} />} label="Shorts" expand={expand} active={isActive("/shorts")} />
               <NavItem
-                href={hasPaid ? "/hypemode" : "/explore"}
+                href={hasPaid ? "/hypemode" : "/pricing"}
                 onClick={hasPaid ? handleHypeModeClick : undefined}
                 icon={
                   <span className="relative inline-flex items-center justify-center">

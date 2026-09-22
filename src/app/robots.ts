@@ -5,7 +5,13 @@ const raw = clientEnv.NEXT_PUBLIC_SITE_URL ?? "";
 const SITE = /localhost/i.test(raw) ? "https://wecinema.co" : raw.replace(/\/$/, "");
 
 // Private/non-content areas no crawler should index.
+//
+// `/_next/static/` is deliberately NOT blocked: it holds the JS and CSS Google
+// needs to render and evaluate the page. Blanket-disallowing `/_next/` made
+// every page render broken in Search Console's eyes. Only the non-static
+// internals (RSC payloads, image optimiser, build traces) stay out.
 const DISALLOW = ["/api/", "/admin/", "/_next/"];
+const ALLOW = ["/", "/_next/static/"];
 
 // AI/answer-engine crawlers we explicitly WELCOME — being cited in ChatGPT,
 // Claude, Perplexity, and Google AI Overviews drives discovery for a video
@@ -27,10 +33,12 @@ const AI_CRAWLERS = [
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
-      { userAgent: "*", allow: "/", disallow: DISALLOW },
-      ...AI_CRAWLERS.map((userAgent) => ({ userAgent, allow: "/", disallow: DISALLOW })),
+      { userAgent: "*", allow: ALLOW, disallow: DISALLOW },
+      ...AI_CRAWLERS.map((userAgent) => ({ userAgent, allow: ALLOW, disallow: DISALLOW })),
     ],
-    sitemap: `${SITE}/sitemap.xml`,
+    // Both sitemaps are listed so Google discovers the video sitemap too — it
+    // existed but was referenced nowhere, so it was never fetched.
+    sitemap: [`${SITE}/sitemap.xml`, `${SITE}/video-sitemap.xml`],
     host: SITE,
   };
 }

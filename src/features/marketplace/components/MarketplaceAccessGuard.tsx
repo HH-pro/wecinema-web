@@ -90,7 +90,7 @@ export function MarketplaceAccessGuard({ children }: { children: React.ReactNode
           sellers again.
         </p>
         <Link
-          href="/explore"
+          href="/pricing"
           style={{
             display: "inline-flex",
             alignItems: "center",

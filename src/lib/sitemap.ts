@@ -11,7 +11,11 @@ import { serverEnv } from "@/config/env";
  * never 500 the sitemap, or Google drops every URL it already knows about.
  */
 
-const TIMEOUT_MS = 10_000;
+// Sitemap generation is an hourly background ISR job, not a user-facing
+// request, so it can afford to wait. The blog list endpoint returns ~1.1MB and
+// takes ~10s for a full page; at the old 10s ceiling it aborted under build
+// concurrency and the sitemap silently shipped with zero blog URLs.
+const TIMEOUT_MS = 45_000;
 // Single-sitemap spec ceiling is 50k URLs; stay well under with headroom for statics.
 const MAX_PER_TYPE = 20_000;
 
@@ -49,6 +53,46 @@ function asArray<T>(data: unknown, ...keys: string[]): T[] {
     }
   }
   return [];
+}
+
+/**
+ * Walk a paginated backend list endpoint until it is exhausted.
+ *
+ * The backend clamps `limit` server-side (blog to 50, listings to 100) and
+ * reports the clamp nowhere in the body, so asking for one huge page silently
+ * returned only the first slice — the live sitemap carried 50 of 66 blog posts.
+ * Paging off the response's own `pages`/`total` is the only safe read.
+ */
+async function fetchAllPages<T>(
+  buildPath: (page: number) => string,
+  keys: string[],
+  pageSize: number,
+): Promise<T[]> {
+  const out: T[] = [];
+  let page = 1;
+  // Hard ceiling so a backend reporting a bad `pages` value can't spin forever.
+  const maxPages = Math.ceil(MAX_PER_TYPE / pageSize) + 1;
+
+  while (page <= maxPages && out.length < MAX_PER_TYPE) {
+    const data = await getJson<unknown>(buildPath(page));
+    if (!data) break;
+
+    const batch = asArray<T>(data, ...keys);
+    if (batch.length === 0) break;
+    out.push(...batch);
+
+    const meta = (data ?? {}) as {
+      pages?: number;
+      pagination?: { pages?: number };
+    };
+    const totalPages = meta.pages ?? meta.pagination?.pages;
+    if (totalPages !== undefined && page >= totalPages) break;
+    if (batch.length < pageSize) break;
+
+    page += 1;
+  }
+
+  return out.slice(0, MAX_PER_TYPE);
 }
 
 export interface VideoLike {
@@ -92,10 +136,18 @@ interface BlogLike {
   createdAt?: string;
 }
 
+/**
+ * Backend clamps `limit` to 50 (routes/blog.js), but a 50-post page is ~1.1MB
+ * and ~10s. Smaller pages keep each request comfortably inside the timeout.
+ */
+const BLOG_PAGE_SIZE = 25;
+
 export async function getBlogSitemapEntries(): Promise<SitemapEntry[]> {
-  // Ask for one large page; backend may cap, in which case we get what it allows.
-  const data = await getJson<unknown>(`/blog?limit=${MAX_PER_TYPE}&page=1`);
-  const posts = asArray<BlogLike>(data, "posts", "data");
+  const posts = await fetchAllPages<BlogLike>(
+    (page) => `/blog?limit=${BLOG_PAGE_SIZE}&page=${page}`,
+    ["posts", "data"],
+    BLOG_PAGE_SIZE,
+  );
   return posts
     .filter((p) => p.slug)
     .slice(0, MAX_PER_TYPE)
@@ -113,9 +165,16 @@ interface ListingLike {
   createdAt?: string;
 }
 
+/** Backend clamps `limit` to 100 here (listingController.js). Page at that size. */
+const LISTING_PAGE_SIZE = 100;
+
 export async function getListingSitemapEntries(): Promise<SitemapEntry[]> {
-  const data = await getJson<unknown>(`/marketplace/listings/?limit=${MAX_PER_TYPE}&status=active`);
-  const listings = asArray<ListingLike>(data, "listings", "data");
+  const listings = await fetchAllPages<ListingLike>(
+    (page) =>
+      `/marketplace/listings/?limit=${LISTING_PAGE_SIZE}&page=${page}&status=active`,
+    ["listings", "data"],
+    LISTING_PAGE_SIZE,
+  );
   return listings
     .filter((l) => l._id && (l.status === undefined || l.status === "active"))
     .slice(0, MAX_PER_TYPE)

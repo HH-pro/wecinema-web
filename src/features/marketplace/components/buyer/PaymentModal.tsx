@@ -31,6 +31,7 @@ import { confirmOfferPayment } from '@/features/marketplace/api/offer.service';
 import { confirmDealPayment } from '@/features/deals/api/deal.service';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import type { Listing } from '@/types/marketplace.types';
+import { trackPurchase } from '@/lib/analytics/track';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? '/api';
 
@@ -398,6 +399,12 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
           // flow (3DS) that never returns here still creates the order.
           await confirmDealPayment(offerData.dealId, paymentIntent.id);
         }
+
+        trackPurchase({
+          orderId: offerData.type === 'direct_purchase' ? offerData.orderId : paymentIntent.id,
+          listingId: offerData.type === 'direct_purchase' ? offerData.listing._id : undefined,
+          value: offerData.amount,
+        });
 
         setPaymentStatus('success');
         successTimerRef.current = setTimeout(onSuccess, 1500);

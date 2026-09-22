@@ -252,3 +252,33 @@ export async function getTrendingTags(limit = 20, days = 30): Promise<TagSummary
     return [];
   }
 }
+
+/**
+ * The whole visible catalog, newest first — powers the `/explore` browse hub.
+ *
+ * `/explore` is the destination for the homepage hero CTA, the footer, the
+ * bottom nav and every genre/theme/rating breadcrumb, so it has to render its
+ * film links server-side: it is the main internal-link source for `/watch/*`.
+ */
+export async function getAllVideos(limit = 120): Promise<Video[]> {
+  try {
+    const data = await apiFetch<VideoListResponse | Video[]>(`/video/all`, {
+      revalidate: CACHE_TTL,
+      tags: ["videos:all"],
+    });
+    return extractList(data)
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime(),
+      )
+      .slice(0, limit);
+  } catch (err) {
+    if (err instanceof ApiError) {
+      console.warn(`[videos] all ${err.status} ${err.statusText}`);
+    } else {
+      console.error("[videos] all", err);
+    }
+    return [];
+  }
+}

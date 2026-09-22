@@ -15,6 +15,7 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import * as authService from "@/features/auth/services/authService";
 import { AppError, api } from "@/features/auth/services/apiClient";
 import { GoogleSignInButton, FullScreenSpinner } from "@/components/auth/shared";
+import { trackSubscription, trackBeginCheckout } from "@/lib/analytics/track";
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -373,10 +374,20 @@ function ExploreContentInner({ appUrl: _appUrl }: { appUrl: string }) {
   }, [selectedPlan, applyLogin]);
 
   const handlePaymentSuccess = useCallback(async () => {
+    // Fire before the redirect — the page unmounts 2.5s later.
+    const plan = PLANS.find((p) => p.id === selectedPlan);
+    if (plan) trackSubscription({ plan: plan.title, value: plan.amount });
     setPhase("success");
     try { await refreshUser(); } catch { /* non-critical */ }
     setTimeout(() => router.replace("/"), 2500);
-  }, [router, refreshUser]);
+  }, [router, refreshUser, selectedPlan]);
+
+  // Reaching the payment step is the checkout start.
+  useEffect(() => {
+    if (phase !== "payment" || !selectedPlan) return;
+    const plan = PLANS.find((p) => p.id === selectedPlan);
+    if (plan) trackBeginCheckout({ plan: plan.title, value: plan.amount });
+  }, [phase, selectedPlan]);
 
   // ── Already premium screen ─────────────────────────────────────
   if (phase === "already_premium") {
