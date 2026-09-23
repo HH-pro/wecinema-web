@@ -70,8 +70,11 @@ const STYLES = `
   .hdr-mobile-pills { display:flex; }
   @media (max-width:480px), (min-width:881px) { .hdr-mobile-pills { display:none; } }
 
+  /* Same breakpoint as .hdr-nav-links / .hdr-mobile-pills so one of the two
+     Genre/Rating controls is always visible — a phone in "Desktop site" mode
+     lands at ~980px, which used to fall in a gap where neither showed. */
   .hdr-filters { display:none; }
-  @media (min-width:1061px) { .hdr-filters { display:flex; } }
+  @media (min-width:881px) { .hdr-filters { display:flex; } }
 
   .hdr-username { display:none; }
   @media (min-width:501px) { .hdr-username { display:inline; } }
@@ -154,6 +157,8 @@ const Header: FC<HeaderProps> = ({ toggleSidebar }) => {
 
   const genreRef = useRef<HTMLDivElement>(null);
   const ratingRef = useRef<HTMLDivElement>(null);
+  const genreMobRef = useRef<HTMLDivElement>(null);
+  const ratingMobRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -165,8 +170,8 @@ const Header: FC<HeaderProps> = ({ toggleSidebar }) => {
   useEffect(() => {
     const fn = (e: MouseEvent) => {
       const t = e.target as Node;
-      if (genreRef.current && !genreRef.current.contains(t)) setGenreOpen(false);
-      if (ratingRef.current && !ratingRef.current.contains(t)) setRatingOpen(false);
+      if (!genreRef.current?.contains(t) && !genreMobRef.current?.contains(t)) setGenreOpen(false);
+      if (!ratingRef.current?.contains(t) && !ratingMobRef.current?.contains(t)) setRatingOpen(false);
       if (userMenuRef.current && !userMenuRef.current.contains(t)) setUserMenuOpen(false);
     };
     document.addEventListener("mousedown", fn);
@@ -232,12 +237,18 @@ const Header: FC<HeaderProps> = ({ toggleSidebar }) => {
 
           {!searchOpen && (
             <div className="hdr-mobile-pills" style={{ alignItems: "center", gap: 6, marginLeft: 8, flexShrink: 0 }}>
-              <button className={`hdr-mob-pill ${genreOpen ? "open" : ""}`} onClick={() => { setGenreOpen((p) => !p); setRatingOpen(false); }}>
-                Genre <Chevron open={genreOpen} size={12} />
-              </button>
-              <button className={`hdr-mob-pill ${ratingOpen ? "open" : ""}`} onClick={() => { setRatingOpen((p) => !p); setGenreOpen(false); }}>
-                Rating <Chevron open={ratingOpen} size={12} />
-              </button>
+              <div style={{ position: "relative" }} ref={genreMobRef}>
+                <button className={`hdr-mob-pill ${genreOpen ? "open" : ""}`} onClick={() => { setGenreOpen((p) => !p); setRatingOpen(false); }} aria-expanded={genreOpen}>
+                  Genre <Chevron open={genreOpen} size={12} />
+                </button>
+                <GenreDropdown open={genreOpen} onSelect={handleGenreSelect} />
+              </div>
+              <div style={{ position: "relative" }} ref={ratingMobRef}>
+                <button className={`hdr-mob-pill ${ratingOpen ? "open" : ""}`} onClick={() => { setRatingOpen((p) => !p); setGenreOpen(false); }} aria-expanded={ratingOpen}>
+                  Rating <Chevron open={ratingOpen} size={12} />
+                </button>
+                <RatingDropdown open={ratingOpen} onSelect={handleRatingSelect} />
+              </div>
             </div>
           )}
 
